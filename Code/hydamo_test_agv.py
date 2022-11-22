@@ -39,3 +39,16 @@ mesh.mesh1d_add_branches_from_gdf(
 )
 
 # %%
+# Check for circular features in branches
+circular_branches = []
+for i, branch in enumerate(hydamo.branches.geometry):
+    
+    try:
+        start = branch.coords[0]
+        end = branch.coords[-1]
+        if (start == end):
+            circular_branches.append([branch,i])
+    except IndexError: print('List index out of range for index',i)
+    
+for circle in circular_branches:
+    print('ID circles: ',circle[1])   
