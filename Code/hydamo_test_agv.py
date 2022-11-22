@@ -12,16 +12,32 @@ folder = r"D:\work\P1414"
 
 hydamo = HyDAMO(extent_file= folder +"\GIS\WAGV\AGV_mask.shp")
 hydamo.branches.read_shp(
-    path = folder +"\GIS\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp",
+    path = folder + r"\GIS\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp",
     column_mapping={"ruwheidsty": "typeruwheid"},
     index_col="code",
 )
 
+hydamo.bridges.read_shp(
+    path = folder + r"\GIS\WAGV\brug_v13\brug_v13_clipped.shp",
+    column_mapping={"naam": "globalid", "ruwheidsty":"typeruwheid", 
+                    "intreeverl": "intreeverlies", "uittreever":"uittreeverlies"},
+    index_col="code",
+)
+
+hydamo.culverts.read_shp(
+    path = folder + r"\GIS\WAGV\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp",
+    column_mapping = {"naam": "globalid","hoogtebinn": "hoogtebinnenonderkantbene",
+                         "hoogtebin0":"hoogtebinnenonderkantbov", "vormkokeri":"vormkoker",
+                         "hoogteopen":"hoogteopening", "breedteope":"breedteopening",
+                         "intreeverl": "intreeverlies", "uittreever":"uittreeverlies",
+                         "ruwheidsty":"typeruwheid" },
+    index_col="code",
+)
 #%% Test plot the features
 
 # fig = plt.figure()
 # ax = plt.gca()
-# hydamo.branches.geometry.plot(ax=ax, label="Channel", linewidth=2, color="blue")
+# hydamo.bridges.geometry.plot(ax=ax, label="Channel", linewidth=2, color="blue")
 # ctx.add_basemap(ax, crs=28992, source=ctx.providers.OpenStreetMap.Mapnik)
 # plt.show()
 
@@ -42,9 +58,25 @@ for i, branch in enumerate(hydamo.branches.geometry):
             hydamo_branches_popped = hydamo_branches_popped.drop(code)
     except IndexError: print('List index out of range for index',i)
     
-print(len(hydamo.branches))
-print(len(hydamo_branches_popped))   
 
+#%% Snap structures to branches
+hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=1100)
+hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
+
+hydamo.culverts.snap_to_branch(hydamo.branches, snap_method='ends',maxdist=15)
+hydamo.culverts.dropna(axis=0,inplace=True,subset=["branch_offset"])
+
+hydamo.structures.convert.culverts(hydamo.culverts, management_device=None)
+#hydamo.structures.convert.bridges(hydamo.bridges)
+# Collect all structures in a Structures dataframe
+structures = hydamo.structures.as_dataframe(
+    rweirs=False,
+    bridges=True,
+    uweirs=False,
+    culverts=True,
+    orifices=False,
+    pumps=False,
+)
 
 #%% Create the FM model
 fm = FMModel()
@@ -58,7 +90,7 @@ mesh.mesh1d_add_branches_from_gdf(
     branch_name_col="code",
     node_distance=20,
     # max_dist_to_struc=None,
-    # structures=structures,
+    structures=hydamo.culverts,
 )
 
 
@@ -99,3 +131,4 @@ dimr.save(recurse=True)
 dimr = DIMRWriter(output_path=folder)
 dimr.write_dimrconfig(fm)#, rr_model=drrmodel, rtc_model=drtcmodel)
 dimr.write_runbat()
+# %%
