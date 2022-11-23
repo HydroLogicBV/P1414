@@ -1,12 +1,15 @@
 import contextily as ctx
 import matplotlib.pyplot as plt
+from hydrolib.core.io.structure.models import *
 from hydrolib.core.io.mdu.models import FMModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 from hydrolib.dhydamo.core.hydamo import HyDAMO
 from hydrolib.dhydamo.geometry import mesh
-
+from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from pathlib import Path
+
+
 #%%
 folder = r"D:\work\P1414"
 
@@ -33,6 +36,15 @@ hydamo.culverts.read_shp(
                          "ruwheidsty":"typeruwheid" },
     index_col="code",
 )
+
+hydamo.weirs.read_shp(
+    path = folder + r"\GIS\WAGV\stuw_v13\stuw_v13_clipped.shp",
+    column_mapping = {"naam": "globalid", "afvoercoef": "afvoercoefficient", 
+                      "soortstuwi":"soortstuw"},
+    index_col = "code",
+)
+
+
 #%% Test plot the features
 
 # fig = plt.figure()
@@ -46,7 +58,7 @@ hydamo.culverts.read_shp(
 # %% Check for circular features in branches
 
 circular_branches = []
-hydamo_branches_popped = hydamo.branches.copy()
+hydamo.branches_popped = hydamo.branches.copy()
 
 for i, branch in enumerate(hydamo.branches.geometry):
     
@@ -55,9 +67,10 @@ for i, branch in enumerate(hydamo.branches.geometry):
         end = branch.coords[-1]
         if (start == end):
             code = hydamo.branches.code[i]
-            hydamo_branches_popped = hydamo_branches_popped.drop(code)
+            hydamo.branches_popped = hydamo.branches_popped.drop(code)
     except IndexError: print('List index out of range for index',i)
-    
+
+hydamo.branches = hydamo.branches_popped     
 
 #%% Snap structures to branches
 hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=1100)
@@ -66,18 +79,57 @@ hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
 hydamo.culverts.snap_to_branch(hydamo.branches, snap_method='ends',maxdist=15)
 hydamo.culverts.dropna(axis=0,inplace=True,subset=["branch_offset"])
 
-hydamo.structures.convert.culverts(hydamo.culverts, management_device=None)
+hydamo.weirs.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
+hydamo.weirs.dropna(axis=0, inplace=True, subset=["branch_offset"])
+
+#hydamo.structures.convert.culverts(hydamo.culverts, management_device=None)
 #hydamo.structures.convert.bridges(hydamo.bridges)
+
+# Adding the bridges in a loop does work, however, two fields are still missing:
+# - csDefId: no clue what that does yet
+# - shift: might be branch_offset or chainage as I defined it right now
+
+for i, bridge in enumerate(hydamo.bridges.code):
+    hydamo.structures.add_bridge(
+        id = hydamo.bridges.code[i],
+        name = hydamo.bridges.code[i],
+        length = hydamo.bridges.lengte[i], 
+        branchid = hydamo.bridges.branch_id[i],
+        chainage = hydamo.bridges.branch_offset[i], # Unsure
+        frictiontype='StricklerKs',
+        csdefid = hydamo.bridges.code[i], # Unsure  
+        shift = hydamo.bridges.branch_offset[i], # Unsure
+        friction = hydamo.bridges.ruwheid[i],
+        inletlosscoeff = hydamo.bridges.intreeverlies[i],
+        outletlosscoeff = hydamo.bridges.uittreeverlies[i],
+    )
+
 # Collect all structures in a Structures dataframe
 structures = hydamo.structures.as_dataframe(
     rweirs=False,
     bridges=True,
     uweirs=False,
-    culverts=True,
+    culverts=False,
     orifices=False,
     pumps=False,
 )
+#%% Set the profiles for the branches
+# hydamo.crosssections.convert.profiles(
+#     crosssections=hydamo.profile,
+#     crosssection_roughness=hydamo.profile_roughness,
+#     profile_groups=hydamo.profile_group,
+#     profile_lines=hydamo.profile_line,
+#     param_profile=hydamo.param_profile,
+#     param_profile_values=hydamo.param_profile_values,
+#     branches=hydamo.branches,
+#     roughness_variant="High",
+# )
 
+# Set a default cross section
+default = hydamo.crosssections.add_rectangle_definition(
+    height=5.0, width=5.0, closed=False, roughnesstype="StricklerKs", roughnessvalue=30, name="default"
+)
+hydamo.crosssections.set_default_definition(definition=default, shift=10.0)
 #%% Create the FM model
 fm = FMModel()
 # Set start and stop time
@@ -86,16 +138,18 @@ fm.time.tstop = 2 * 3600 * 24
 
 mesh.mesh1d_add_branches_from_gdf(
     fm.geometry.netfile.network,
-    branches=hydamo_branches_popped,
+    branches=hydamo.branches,
     branch_name_col="code",
     node_distance=20,
     # max_dist_to_struc=None,
-    structures=hydamo.culverts,
+    structures=structures,
 )
+
+models = Df2HydrolibModel(hydamo)
 
 
 # %% Export to DIMR configuration
-#fm.geometry.structurefile = [StructureModel(structure=models.structures)]
+fm.geometry.structurefile = [StructureModel(structure=models.structures)]
 #fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
 #fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
 
