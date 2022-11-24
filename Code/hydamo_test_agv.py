@@ -17,18 +17,15 @@ folder = r"D:\Work\Project\P1414"
 
 hydamo = HyDAMO(extent_file=folder + "\GIS\WAGV\AGV_mask.shp")
 hydamo.branches.read_shp(
-<<<<<<< Updated upstream
-    path=folder + r"\GIS\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp",
-    column_mapping={"ruwheidsty": "typeruwheid"},
-=======
+
     path = folder + r"\GIS\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp",
-    column_mapping =   {"ruwheidsty":"typeruwheid"},
->>>>>>> Stashed changes
+    column_mapping ={
+        "ruwheidsty":"typeruwheid",
+    },
     index_col="code",
 )
 
 hydamo.bridges.read_shp(
-<<<<<<< Updated upstream
     path=folder + r"\GIS\WAGV\brug_v13\brug_v13_clipped.shp",
     column_mapping={
         "naam": "globalid",
@@ -36,19 +33,10 @@ hydamo.bridges.read_shp(
         "intreeverl": "intreeverlies",
         "uittreever": "uittreeverlies",
     },
-=======
-    path = folder + r"\GIS\WAGV\brug_v13\brug_v13_clipped.shp",
-    column_mapping =   {"naam": "globalid", 
-                        "ruwheidsty":"typeruwheid", 
-                        "intreeverl": "intreeverlies", 
-                        "uittreever":"uittreeverlies",
-                        },
->>>>>>> Stashed changes
     index_col="code",
 )
 
 hydamo.culverts.read_shp(
-<<<<<<< Updated upstream
     path=folder + r"\GIS\WAGV\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp",
     column_mapping={
         "naam": "globalid",
@@ -61,24 +49,10 @@ hydamo.culverts.read_shp(
         "uittreever": "uittreeverlies",
         "ruwheidsty": "typeruwheid",
     },
-=======
-    path = folder + r"\GIS\WAGV\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp",
-    column_mapping =   {"naam": "globalid",
-                        "hoogtebinn": "hoogtebinnenonderkantbene",
-                        "hoogtebin0":"hoogtebinnenonderkantbov", 
-                        "vormkokeri":"vormkoker",
-                        "hoogteopen":"hoogteopening",
-                        "breedteope":"breedteopening",
-                        "intreeverl": "intreeverlies",
-                        "uittreever":"uittreeverlies",
-                        "ruwheidsty":"typeruwheid",
-                        },
->>>>>>> Stashed changes
     index_col="code",
 )
 
 hydamo.weirs.read_shp(
-<<<<<<< Updated upstream
     path=folder + r"\GIS\WAGV\stuw_v13\stuw_v13_clipped.shp",
     column_mapping={
         "naam": "globalid",
@@ -86,14 +60,6 @@ hydamo.weirs.read_shp(
         "soortstuwi": "soortstuw",
     },
     index_col="code",
-=======
-    path = folder + r"\GIS\WAGV\stuw_v13\stuw_v13_clipped.shp",
-    column_mapping =   {"naam": "globalid", 
-                        "afvoercoef": "afvoercoefficient", 
-                        "soortstuwi":"soortstuw",
-                        },
-    index_col = "code",
->>>>>>> Stashed changes
 )
 
 hydamo.profile.read_shp(
