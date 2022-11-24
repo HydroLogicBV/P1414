@@ -12,8 +12,8 @@ from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 from tqdm import tqdm
 
 #%%
-# folder = r"D:\work\P1414"
-folder = r"D:\Work\Project\P1414"
+folder = r"D:\work\P1414"
+#folder = r"D:\Work\Project\P1414"
 
 hydamo = HyDAMO(extent_file=folder + "\GIS\WAGV\AGV_mask.shp")
 hydamo.branches.read_shp(
@@ -62,26 +62,26 @@ hydamo.weirs.read_shp(
     index_col="code",
 )
 
-hydamo.profile.read_shp(
-    path = folder + r"\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped.shp",
-    column_mapping =   {#"code":"globalid",
-                        "metingprof":"profiellijnid",
-                        "codevolgnu":"codevolgnummer",  
-                        },
-    index_col = "code",
-)
+# hydamo.profile.read_shp(
+#     path = folder + r"\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped.shp",
+#     column_mapping =   {#"code":"globalid",
+#                         "metingprof":"profiellijnid",
+#                         "codevolgnu":"codevolgnummer",  
+#                         },
+#     index_col = "code",
+# )
 
-hydamo.profile_roughness.read_shp(
-    path = folder + r"\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped.shp",
-    column_mapping =   {#"code":"profielpuntid",
-                        "ruwheidsty":"typeruwheid",
-                        "ruwheidswa":"ruwheidlaag",
-                        "ruwheidsw0":"ruwheidhoog",
-                        },
-    index_col = "code",
-)
+# hydamo.profile_roughness.read_shp(
+#     path = folder + r"\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped.shp",
+#     column_mapping =   {#"code":"profielpuntid",
+#                         "ruwheidsty":"typeruwheid",
+#                         "ruwheidswa":"ruwheidlaag",
+#                         "ruwheidsw0":"ruwheidhoog",
+#                         },
+#     index_col = "code",
+# )
 
-hydamo.profile_roughness.set_data
+#hydamo.profile_roughness.set_data
 #%% Test plot the features
 
 fig = plt.figure()
@@ -121,8 +121,10 @@ hydamo.branches = hydamo.branches_popped
 hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
 hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
 
-# hydamo.culverts.snap_to_branch(hydamo.branches, snap_method="ends", maxdist=15)
-# hydamo.culverts.dropna(axis=0, inplace=True, subset=["branch_offset"])
+hydamo.culverts.snap_to_branch(hydamo.branches, snap_method="ends", maxdist=15)
+hydamo.culverts.dropna(axis=0, inplace=True, subset=["branch_offset"]) # Without branch
+hydamo.culverts.dropna(axis=0,inplace=True,subset=["hoogteopening"]) # Without dimensions
+hydamo.culverts.drop(hydamo.culverts[hydamo.culverts['vormkoker'] != (1 or 3)].index, inplace=True) # Without unknown shapes
 
 # hydamo.weirs.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
 # hydamo.weirs.dropna(axis=0, inplace=True, subset=["branch_offset"])
@@ -134,31 +136,83 @@ hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
 # hydamo.structures.convert.culverts(hydamo.culverts, management_device=None)
 # hydamo.structures.convert.bridges(hydamo.bridges)
 
-# Adding the bridges in a loop does work, however, two fields are still missing:
-# - csDefId: no clue what that does yet
-# - shift: might be branch_offset or chainage as I defined it right now
+# Add structures in a loop to provide the right format 
+def get_crosssection_culvert_AGV(shape: int = 1, height: float = None, 
+                                width: float = None, closed:int = 1):
+    shapedict = {1:"circle",3: "rectangle"} 
+    shape_str = shapedict[shape]
+
+    # Include the diameter when the culvert is a circle
+    if shape == 1: diameter = width
+    else: diameter = None
+
+    crosssection = {"shape"    : shape_str,
+                    "diameter" : diameter,
+                    "height"   : height,
+                    "width"    : width,
+                    "closed"   : closed,
+                    }
+    return crosssection
+
+
+# Define a list of possible roughness types to interpret the underlying data 
+roughness_list=["Bos en Bijkerk", "Chezy", "Manning", 
+                "StricklerKn", "StricklerKs", "White Colebrook",
+    ]
+
 
 for i, bridge in enumerate(tqdm(hydamo.bridges.code)):
     hydamo.structures.add_bridge(
-        id=hydamo.bridges.code[i],
-        name=hydamo.bridges.code[i],
-        length=hydamo.bridges.lengte[i],
-        branchid=hydamo.bridges.branch_id[i],
-        chainage=hydamo.bridges.branch_offset[i],  # Unsure
-        frictiontype="StricklerKs",
-        csdefid=hydamo.bridges.code[i],  # Unsure
-        shift=hydamo.bridges.branch_offset[i],  # Unsure
-        friction=hydamo.bridges.ruwheid[i],
-        inletlosscoeff=hydamo.bridges.intreeverlies[i],
-        outletlosscoeff=hydamo.bridges.uittreeverlies[i],
+        id = hydamo.bridges.code[i],
+        name = hydamo.bridges.code[i],
+        length = hydamo.bridges.lengte[i],
+        branchid = hydamo.bridges.branch_id[i],
+        chainage = hydamo.bridges.branch_offset[i],  #TODO Validate the use of offset
+        frictiontype = roughness_list[hydamo.bridges.typeruwheid[i]],
+        csdefid = hydamo.bridges.code[i],  #TODO Check influence of csdefid
+        shift = hydamo.bridges.branch_offset[i],  #TODO Validate the use of offset
+        friction = hydamo.bridges.ruwheid[i],
+        inletlosscoeff = hydamo.bridges.intreeverlies[i],
+        outletlosscoeff = hydamo.bridges.uittreeverlies[i],
     )
+
+for i, culvert in enumerate(tqdm(hydamo.culverts.iterrows())):
+    hydamo.structures.add_culvert(
+        id = hydamo.culverts.code[i],
+        name = hydamo.culverts.code[i],
+        branchid = hydamo.culverts.branch_id[i],
+        chainage = hydamo.culverts.branch_offset[i], #TODO Valdiate the use of offset 
+        leftlevel = hydamo.culverts.hoogtebinnenonderkantbov[i],
+        rightlevel = hydamo.culverts.hoogtebinnenonderkantbene[i],
+        length = hydamo.culverts.lengte[i],
+        inletlosscoeff = hydamo.culverts.intreeverlies[i],
+        outletlosscoeff = hydamo.culverts.uittreeverlies[i],
+        crosssection = get_crosssection_culvert_AGV(shape=hydamo.culverts.vormkoker[i],
+                                                    height=hydamo.culverts.hoogteopening[i],
+                                                    width=hydamo.culverts.breedteopening[i],
+                                                    closed=1), #TODO Check for automatic cross section based on shape
+        numlosscoeff = None , #TODO Check definition
+        relopening = None, #TODO Check definition
+        losscoeff = None, #TODO Check definition
+        bedfrictiontype = roughness_list[hydamo.culverts.typeruwheid[i]],
+        bedfriction = hydamo.culverts.ruwheid[i],
+    )
+
+
+# Add observation points (empty for now)
+hydamo.observationpoints.add_points(
+    [],
+    [],
+    locationTypes=["1d","1d"],
+    snap_distance=10.0
+)
 
 # Collect all structures in a Structures dataframe
 structures = hydamo.structures.as_dataframe(
     rweirs=False,
     bridges=True,
     uweirs=False,
-    culverts=False,
+    culverts=True,
     orifices=False,
     pumps=False,
 )
