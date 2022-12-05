@@ -83,7 +83,7 @@ hydamo.opening.read_gpkg_layer(
 hydamo.pumpstations.read_shp(
     path = folder + r"\GIS\WAGV\pomp_gemaal_v13\pomp_gemaal_v13_clipped_streefpeil.shp",
     column_mapping = {
-        'pompid':'globalid'
+        'gemaalcode':'globalid'
     },
 )
 
@@ -165,6 +165,15 @@ hydamo.pumpstations.dropna(axis=0, inplace=True, subset=["branch_offset"])
 pumps = ExtendedDataFrame()
 pumps['gemaalid'] = hydamo.pumpstations['globalid']
 pumps['maximalecapaciteit'] = hydamo.pumpstations['maximaleca']
+pumps['globalid'] = hydamo.pumpstations['code']
+
+# Define managementinformation in a separate ExtendedDataFrame
+sturing = ExtendedDataFrame()
+sturing['pompid'] = hydamo.pumpstations['code']
+sturing['streefwaarde'] = hydamo.pumpstations['peil1']
+sturing['ondergrens'] = hydamo.pumpstations['peil1'] - 0.5 # Very crude #TODO fix this conversion
+sturing['bovengrens'] = hydamo.pumpstations['peil1'] + 0.5 # Very crude #TODO fix this conversion
+
 
 # Add information on kunstwerkopening to opening
 hydamo.opening['kunstwerkopeningid'] = hydamo.opening['globalid']
@@ -180,7 +189,8 @@ hydamo.structures.convert.weirs(
 
 hydamo.structures.convert.pumps(
     hydamo.pumpstations,
-    pumps = pumps
+    pumps = pumps,
+    management = sturing
 )
 
 # Define a list of possible roughness types
@@ -228,8 +238,8 @@ for i, culvert in tqdm(hydamo.culverts.iterrows()):
 
 
 
-#%%
-
+#%% #####################################################
+# Finalize the input to the dhydro model
 # Add observation points (empty for now)
 hydamo.observationpoints.add_points(
     [],
@@ -247,7 +257,9 @@ structures = hydamo.structures.as_dataframe(
     orifices=False,
     pumps=False,
 )
-#%% Set the profiles for the branches
+#%% #################################################################
+# Set the crosssections for the branches
+
 # hydamo.crosssections.convert.profiles(
 #     crosssections=hydamo.profile,
 #     crosssection_roughness=hydamo.profile_roughness,
@@ -269,7 +281,8 @@ default = hydamo.crosssections.add_rectangle_definition(
     name="default",
 )
 hydamo.crosssections.set_default_definition(definition=default, shift=10.0)
-#%% Create the FM model
+#%% ####################################################
+# Create the FM model
 fm = FMModel()
 # Set start and stop time
 fm.time.refdate = 20160601
@@ -287,7 +300,8 @@ mesh.mesh1d_add_branches_from_gdf(
 models = Df2HydrolibModel(hydamo)
 
 
-# %% Export to DIMR configuration
+# %% ####################################################
+# Export to DIMR configuration
 fm.geometry.structurefile = [StructureModel(structure=models.structures)]
 # fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
 # fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
@@ -324,4 +338,3 @@ dimr.save(recurse=True)
 dimr = DIMRWriter(output_path=folder)
 dimr.write_dimrconfig(fm)  # , rr_model=drrmodel, rtc_model=drtcmodel)
 dimr.write_runbat()
-# %%
