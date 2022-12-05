@@ -8,16 +8,19 @@ from hydrolib.core.io.structure.models import *
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
 from hydrolib.dhydamo.geometry import mesh
+from hydrolib.dhydamo.io.common import ExtendedDataFrame
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 from tqdm import tqdm
+from data_functions import *
 
-#%%
+#%% ############################################
+# Data laden 
+
 folder = r"D:\work\P1414_ROI"
 #folder = r"D:\Work\Project\P1414"
 
 hydamo = HyDAMO(extent_file=folder + "\GIS\WAGV\AGV_mask.shp")
 hydamo.branches.read_shp(
-
     path = folder + r"\GIS\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp",
     column_mapping ={
         "ruwheidsty":"typeruwheid",
@@ -55,11 +58,33 @@ hydamo.culverts.read_shp(
 hydamo.weirs.read_shp(
     path=folder + r"\GIS\WAGV\stuw_v13\stuw_v13_clipped.shp",
     column_mapping={
-        "naam": "globalid",
+        "code": "globalid",
+        "naam": "code",
         "afvoercoef": "afvoercoefficient",
         "soortstuwi": "soortstuw",
     },
-    index_col="code",
+    index_col="globalid",
+)
+hydamo.opening.read_gpkg_layer(
+    gpkg_path =folder + r"\GIS\WAGV\doorstroomopening_stuw_v13_clipped.gpkg", 
+    layer_name='doorstroomopening_stuw_v13_clipped',
+    column_mapping = {
+        'laagstedoo':'laagstedoorstroombreedte',
+        'laagstedo0': 'laagstedoorstroomhoogte',
+        'stuwcode':'stuwid',
+        'code':'globalid',
+        'vormopenin':'vormopening',
+        'afvoercoef':'afvoercoefficient',
+        'hoogstedoo':'hoogstedoorstroombreedte',
+        'hoogstedo0': 'hoogstedoorstroomhoogte'
+    },
+)
+
+hydamo.pumpstations.read_shp(
+    path = folder + r"\GIS\WAGV\pomp_gemaal_v13\pomp_gemaal_v13_clipped_streefpeil.shp",
+    column_mapping = {
+        'pompid':'globalid'
+    },
 )
 
 # hydamo.profile.read_shp(
@@ -81,8 +106,10 @@ hydamo.weirs.read_shp(
 #     index_col = "code",
 # )
 
-#hydamo.profile_roughness.set_data
-#%% Test plot the features
+
+
+#%%  ################################################
+# Test plot the features 
 
 fig = plt.figure()
 ax = plt.gca()
@@ -95,7 +122,9 @@ plt.show()
 
 #print(hydamo)
 
-# %% Check for circular features in branches
+
+# %% ##################################################
+# Check for circular features in branches
 
 circular_branches = []
 hydamo.branches_popped = hydamo.branches.copy()
@@ -114,10 +143,10 @@ for i, branch in hydamo.branches.iterrows():
 
 # remove branches with none as index
 hydamo.branches_popped = hydamo.branches_popped.drop([None], axis=0)
-
 hydamo.branches = hydamo.branches_popped
 
-#%% Snap structures to branches
+#%% #######################################################
+# Snap structures to branches
 hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
 hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
 
@@ -129,33 +158,32 @@ hydamo.culverts.drop(hydamo.culverts[hydamo.culverts['vormkoker'] != (1 or 3)].i
 hydamo.weirs.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
 hydamo.weirs.dropna(axis=0, inplace=True, subset=["branch_offset"])
 
-# hydamo.structures.convert.weirs(
-#     weirs=hydamo.weirs,
-# )
+hydamo.pumpstations.snap_to_branch(hydamo.branches,snap_method = 'overal', maxdist=10)
+hydamo.pumpstations.dropna(axis=0, inplace=True, subset=["branch_offset"])
 
-# hydamo.structures.convert.culverts(hydamo.culverts, management_device=None)
-# hydamo.structures.convert.bridges(hydamo.bridges)
+# Define pumpinformation in a separate ExtendedDataFrame
+pumps = ExtendedDataFrame()
+pumps['gemaalid'] = hydamo.pumpstations['globalid']
+pumps['maximalecapaciteit'] = hydamo.pumpstations['maximaleca']
 
-# Define function to get crosssection dictionary #TODO Put in separate file
-def get_crosssection_culvert_AGV(shape: int = 1, height: float = None, 
-                                width: float = None, closed:int = 1):
-    shapedict = {1:"circle",3: "rectangle"} 
-    shape_str = shapedict[shape]
+# Add information on kunstwerkopening to opening
+hydamo.opening['kunstwerkopeningid'] = hydamo.opening['globalid']
+hydamo.opening['overlaatonderlaat'] = 'Overlaat'
 
-    # Include the diameter when the culvert is a circle
-    if shape == 1: diameter = width
-    else: diameter = None
+#%% ######################################################
+# Add structures
+hydamo.structures.convert.weirs(
+    weirs=hydamo.weirs,
+    opening = hydamo.opening,
+    management_device=hydamo.opening
+)
 
-    crosssection = {"shape"    : shape_str,
-                    "diameter" : diameter,
-                    "height"   : height,
-                    "width"    : width,
-                    "closed"   : closed,
-                    }
-    return crosssection
+hydamo.structures.convert.pumps(
+    hydamo.pumpstations,
+    pumps = pumps
+)
 
-
-# Define a list of possible roughness types to interpret the underlying data 
+# Define a list of possible roughness types
 roughness_list=["Bos en Bijkerk", "Chezy", "Manning", 
                 "StricklerKn", "StricklerKs", "White Colebrook",
     ]
@@ -176,7 +204,7 @@ for i, bridge in enumerate(tqdm(hydamo.bridges.code)):
         outletlosscoeff = hydamo.bridges.uittreeverlies[i],
     )
 
-for i, culvert in tqdm(hydamo.culverts.iterrows())):
+for i, culvert in tqdm(hydamo.culverts.iterrows()):
     hydamo.structures.add_culvert(
         id = culvert.code,
         name = culvert.code,
@@ -197,22 +225,11 @@ for i, culvert in tqdm(hydamo.culverts.iterrows())):
         bedfrictiontype = roughness_list[culvert.typeruwheid],
         bedfriction = culvert.ruwheid,
     )
+
+
+
 #%%
-for i, weir in tqdm(hydamo.weirs.iterrows()):
-    hydamo.structures.add_uweir(
-        id = weir.code,
-        name = weir.code,
-        branchid = weir.branch_id,
-        chainage = weir.branch_offset,
-        crestlevel = None, #TODO Check crestlevel
-        crestwidth = None, #TODO Check crestwidth
-        dischargecoeff = weir.afvoercoefficient,
-        usevelocityheight = "true",
-        allowedflowdir = "both",  # TODO: String?
-        numlevels = None, # Check whether this is valid
-        yvalues = None, # Check whether yvalues is valid
-        zvalues = None, # Check whether zvalues is valid
-    )
+
 # Add observation points (empty for now)
 hydamo.observationpoints.add_points(
     [],
@@ -223,9 +240,9 @@ hydamo.observationpoints.add_points(
 
 # Collect all structures in a Structures dataframe
 structures = hydamo.structures.as_dataframe(
-    rweirs=False,
+    rweirs=True,
     bridges=True,
-    uweirs=False,
+    uweirs=True,
     culverts=True,
     orifices=False,
     pumps=False,
