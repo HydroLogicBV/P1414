@@ -8,9 +8,10 @@ from hydrolib.core.io.structure.models import *
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
 from hydrolib.dhydamo.geometry import mesh
-from hydrolib.dhydamo.io.common import ExtendedDataFrame
+from hydrolib.dhydamo.io.common import ExtendedDataFrame, ExtendedGeoDataFrame
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 from tqdm import tqdm
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 
 from data_functions import *
 
@@ -178,6 +179,12 @@ sturing["bovengrens"] = hydamo.pumpstations["peil1"] + 0.5  # Very crude #TODO f
 # Add information on kunstwerkopening to opening
 hydamo.opening["kunstwerkopeningid"] = hydamo.opening["globalid"]
 hydamo.opening["overlaatonderlaat"] = "Overlaat"
+
+# Drop duplicates in globalid of pumpstations and covert back to ExtendedGeoDataFrame
+subset_pumps = hydamo.pumpstations.drop_duplicates(subset=['globalid'])
+pumpgeotype = hydamo.pumpstations.geotype
+hydamo.pumpstations = ExtendedGeoDataFrame(geotype=pumpgeotype)
+hydamo.pumpstations.set_data(subset_pumps)
 
 #%% ######################################################
 # Add structures
