@@ -13,7 +13,7 @@ from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 from tqdm import tqdm
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 import importlib
-import data_functions
+import data_functions as daf
 from data_functions import *
 importlib.reload(data_functions)
 #%% ############################################
@@ -24,7 +24,7 @@ folder = r"D:\work\P1414_ROI"
 
 hydamo = HyDAMO(extent_file=folder + "\GIS\WAGV\AGV_mask.shp")
 hydamo.branches.read_shp(
-    path=folder + r"\GIS\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp",
+    path=folder + r"\GIS\Uitgesneden watergangen\AGV.shp",
     column_mapping={
         "ruwheidsty": "typeruwheid",
     },
@@ -142,7 +142,8 @@ for i, branch in hydamo.branches.iterrows():
     #     j += 1
 
 # remove branches with none as index
-hydamo.branches_popped = hydamo.branches_popped.drop([None], axis=0)
+try: hydamo.branches_popped = hydamo.branches_popped.drop([None], axis=0)
+except: KeyError()
 hydamo.branches = hydamo.branches_popped
 
 #%% #######################################################
@@ -168,7 +169,7 @@ pumps = ExtendedDataFrame()
 pumps["gemaalid"] = hydamo.pumpstations["globalid"]
 pumps["maximalecapaciteit"] = hydamo.pumpstations["maximaleca"]
 pumps["globalid"] = hydamo.pumpstations["code"]
-pumps['code'] = getuniquecode('Pumps', len(hydamo.pumpstations['globalid']))
+pumps['code'] = daf.getuniquecode('Pumps', len(hydamo.pumpstations['globalid']))
 
 # Define managementinformation in a separate ExtendedDataFrame
 sturing = ExtendedDataFrame()
@@ -233,7 +234,7 @@ for i, culvert in tqdm(hydamo.culverts.iterrows()):
         length=culvert.lengte,
         inletlosscoeff=culvert.intreeverlies,
         outletlosscoeff=culvert.uittreeverlies,
-        crosssection=get_crosssection_culvert_AGV(
+        crosssection=daf.get_crosssection_culvert_AGV(
             shape=culvert.vormkoker,
             height=culvert.hoogteopening,
             width=culvert.breedteopening,
@@ -342,3 +343,5 @@ dimr.save(recurse=True)
 dimr = DIMRWriter(output_path=folder)
 dimr.write_dimrconfig(fm)  # , rr_model=drrmodel, rtc_model=drtcmodel)
 dimr.write_runbat()
+
+# %%
