@@ -12,9 +12,10 @@ from hydrolib.dhydamo.io.common import ExtendedDataFrame, ExtendedGeoDataFrame
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 from tqdm import tqdm
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
-
+import importlib
+import data_functions
 from data_functions import *
-
+importlib.reload(data_functions)
 #%% ############################################
 # Data laden
 
@@ -167,14 +168,15 @@ pumps = ExtendedDataFrame()
 pumps["gemaalid"] = hydamo.pumpstations["globalid"]
 pumps["maximalecapaciteit"] = hydamo.pumpstations["maximaleca"]
 pumps["globalid"] = hydamo.pumpstations["code"]
+pumps['code'] = getuniquecode('Pumps', len(hydamo.pumpstations['globalid']))
 
 # Define managementinformation in a separate ExtendedDataFrame
 sturing = ExtendedDataFrame()
 sturing["pompid"] = hydamo.pumpstations["code"]
 sturing["streefwaarde"] = hydamo.pumpstations["peil1"]
-sturing["ondergrens"] = hydamo.pumpstations["peil1"] - 0.5  # Very crude #TODO fix this conversion
-sturing["bovengrens"] = hydamo.pumpstations["peil1"] + 0.5  # Very crude #TODO fix this conversion
-
+sturing["ondergrens"] = hydamo.pumpstations["peil1"] - 0.05  # Very crude #TODO fix this conversion
+sturing["bovengrens"] = hydamo.pumpstations["peil1"] + 0.05  # Very crude #TODO fix this conversion
+sturing['doelvariabele'] = 'waterstand'
 
 # Add information on kunstwerkopening to opening
 hydamo.opening["kunstwerkopeningid"] = hydamo.opening["globalid"]

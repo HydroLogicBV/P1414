@@ -22,3 +22,10 @@ def get_crosssection_culvert_AGV(shape: int = 1, height: float = None,
                     }
     return crosssection
 
+
+def getuniquecode(startstr: str, lengthlist: list) -> list:
+    code = []
+    for i in range(lengthlist):
+        addstr = startstr+str(i)
+        code.append(addstr)
+    return code
