@@ -1,7 +1,9 @@
+import importlib
 from pathlib import Path
 
 import contextily as ctx
 import matplotlib.pyplot as plt
+import numpy as np
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
 from hydrolib.core.io.mdu.models import FMModel
 from hydrolib.core.io.structure.models import *
@@ -10,17 +12,18 @@ from hydrolib.dhydamo.core.hydamo import HyDAMO
 from hydrolib.dhydamo.geometry import mesh
 from hydrolib.dhydamo.io.common import ExtendedDataFrame, ExtendedGeoDataFrame
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
-from tqdm import tqdm
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
-import importlib
+from tqdm import tqdm
+
 import data_functions as daf
 from data_functions import *
-importlib.reload(data_functions)
+
+# importlib.reload(data_functions)
 #%% ############################################
 # Data laden
 
-folder = r"D:\work\P1414_ROI"
-# folder = r"D:\Work\Project\P1414"
+# folder = r"D:\work\P1414_ROI"
+folder = r"D:\Work\Project\P1414"
 
 hydamo = HyDAMO(extent_file=folder + "\GIS\WAGV\AGV_mask.shp")
 hydamo.branches.read_shp(
@@ -142,9 +145,14 @@ for i, branch in hydamo.branches.iterrows():
     #     j += 1
 
 # remove branches with none as index
-try: hydamo.branches_popped = hydamo.branches_popped.drop([None], axis=0)
-except: KeyError()
-hydamo.branches = hydamo.branches_popped
+# try:
+#     hydamo.branches_popped = hydamo.branches_popped.drop([None], axis=0)
+# except KeyError:
+#     pass
+# print(hydamo.branches_popped)
+# hydamo.branches_popped.dropna(axis="geometry", inplace=True)
+hydamo.branches = hydamo.branches_popped.set_geometry("geometry")
+
 
 #%% #######################################################
 # Snap structures to branches
@@ -169,7 +177,7 @@ pumps = ExtendedDataFrame()
 pumps["gemaalid"] = hydamo.pumpstations["globalid"]
 pumps["maximalecapaciteit"] = hydamo.pumpstations["maximaleca"]
 pumps["globalid"] = hydamo.pumpstations["code"]
-pumps['code'] = daf.getuniquecode('Pumps', len(hydamo.pumpstations['globalid']))
+pumps["code"] = daf.getuniquecode("Pumps", len(hydamo.pumpstations["globalid"]))
 
 # Define managementinformation in a separate ExtendedDataFrame
 sturing = ExtendedDataFrame()
@@ -177,14 +185,14 @@ sturing["pompid"] = hydamo.pumpstations["code"]
 sturing["streefwaarde"] = hydamo.pumpstations["peil1"]
 sturing["ondergrens"] = hydamo.pumpstations["peil1"] - 0.05  # Very crude #TODO fix this conversion
 sturing["bovengrens"] = hydamo.pumpstations["peil1"] + 0.05  # Very crude #TODO fix this conversion
-sturing['doelvariabele'] = 'waterstand'
+sturing["doelvariabele"] = "waterstand"
 
 # Add information on kunstwerkopening to opening
 hydamo.opening["kunstwerkopeningid"] = hydamo.opening["globalid"]
 hydamo.opening["overlaatonderlaat"] = "Overlaat"
 
 # Drop duplicates in globalid of pumpstations and covert back to ExtendedGeoDataFrame
-subset_pumps = hydamo.pumpstations.drop_duplicates(subset=['globalid'])
+subset_pumps = hydamo.pumpstations.drop_duplicates(subset=["globalid"])
 pumpgeotype = hydamo.pumpstations.geotype
 hydamo.pumpstations = ExtendedGeoDataFrame(geotype=pumpgeotype)
 hydamo.pumpstations.set_data(subset_pumps)
