@@ -1,5 +1,9 @@
 #########################
 # File with different function definitions, used in converting HyDAMO data to a D-HyDAMO model
+import numpy as np
+import geopandas as gpd
+import xarray as xr
+import shapely 
 
 def get_crosssection_culvert_AGV(shape: int = 1, height: float = None, 
                                 width: float = None, closed:int = 1):
@@ -29,3 +33,29 @@ def getuniquecode(startstr: str, lengthlist: int) -> list:
         addstr = startstr+str(i)
         code.append(addstr)
     return code
+
+def add_streefpeil_to_gemaal(streefpeilfile, inputfilename, outputfilename):
+
+    streefpeilenxr = xr.open_dataset(streefpeilfile)
+    streefpeilenxr.rio.write_crs("epsg:4326",inplace=True)
+
+    filename = inputfilename
+    weirs = gpd.read_file(filename)
+    if not weirs.crs == 'epsg:4326':  weirs = weirs.to_crs('epsg:4326') 
+
+    weirs['streefpeil'] = np.nan
+    for i in range(len(weirs)):
+        # Make the selection available for MultiPoints
+        if type(weirs.geometry[i]) == shapely.geometry.multipoint.MultiPoint:
+            lon = weirs.geometry[i][0].x
+            lat = weirs.geometry[i][0].y
+
+        # Make the selection available for single Points
+        if type(weirs.geometry[i]) == shapely.geometry.point.Point:
+            lon = weirs.geometry[i].x
+            lat = weirs.geometry[i].y
+            
+        value = streefpeilenxr.sel(lon=lon, lat=lat, method="nearest").get('Band1').data
+        weirs['streefpeil'].iloc[i] = value
+
+    weirs.to_file(outputfilename)
