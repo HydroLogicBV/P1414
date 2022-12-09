@@ -4,9 +4,11 @@ from pathlib import Path
 import contextily as ctx
 import matplotlib.pyplot as plt
 import numpy as np
+from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
+from hydrolib.core.io.friction.models import FrictionModel
 from hydrolib.core.io.mdu.models import FMModel
-from hydrolib.core.io.structure.models import *
+from hydrolib.core.io.structure.models import StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
 from hydrolib.dhydamo.geometry import mesh
@@ -91,6 +93,17 @@ hydamo.pumpstations.read_shp(
     column_mapping={"gemaalcode": "globalid"},
 )
 
+print("profile start")
+profile_gpkg = folder + r"\GIS\WAGV\profielen_light.gpkg"
+hydamo.profile.read_gpkg_layer(
+    profile_gpkg,
+    layer_name="profielpunt",
+    groupby_column="profiellijnid",
+    order_column="codevolgnummer",
+    id_col="code",
+)
+
+print("profile end")
 # hydamo.profile.read_shp(
 #     path = folder + r"\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped.shp",
 #     column_mapping =   {#"code":"globalid",
@@ -117,11 +130,12 @@ hydamo.pumpstations.read_shp(
 fig = plt.figure()
 ax = plt.gca()
 hydamo.branches.geometry.plot(ax=ax, label="Channels", linewidth=0.5, color="black")
+hydamo.profile.geometry.plot(ax=ax, color="red", label="Cross section", linewidth=5)
 hydamo.culverts.geometry.plot(ax=ax, label="Culverts", linewidth=2, color="blue")
-hydamo.bridges.geometry.plot(ax=ax, label="Bridges", markersize=2, color="red")
+# hydamo.bridges.geometry.plot(ax=ax, label="Bridges", markersize=2, color="red")
 hydamo.weirs.geometry.plot(ax=ax, label="Weirs", markersize=2, color="orange")
 ctx.add_basemap(ax, crs=28992, source=ctx.providers.OpenStreetMap.Mapnik)
-plt.show()
+plt.show(block=False)
 
 # print(hydamo)
 
@@ -155,6 +169,17 @@ hydamo.branches = hydamo.branches_popped.set_geometry("geometry")
 
 
 #%% #######################################################
+# Snap profiles to branch
+
+hydamo.profile_roughness.read_gpkg_layer(profile_gpkg, layer_name="ruwheidsprofiel")
+hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
+hydamo.profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
+hydamo.profile_line.read_gpkg_layer(profile_gpkg, layer_name="profiellijn")
+hydamo.profile_group.read_gpkg_layer(profile_gpkg, layer_name="profielgroep")
+hydamo.profile.drop("code", axis=1, inplace=True)
+hydamo.profile["code"] = hydamo.profile["profiellijnid"]
+
+
 # Snap structures to branches
 hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
 hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
@@ -270,30 +295,7 @@ structures = hydamo.structures.as_dataframe(
     orifices=False,
     pumps=False,
 )
-#%% #################################################################
-# Set the crosssections for the branches
 
-# hydamo.crosssections.convert.profiles(
-#     crosssections=hydamo.profile,
-#     crosssection_roughness=hydamo.profile_roughness,
-#     profile_groups=hydamo.profile_group,
-#     profile_lines=hydamo.profile_line,
-#     param_profile=hydamo.param_profile,
-#     param_profile_values=hydamo.param_profile_values,
-#     branches=hydamo.branches,
-#     roughness_variant="High",
-# )
-
-# Set a default cross section
-default = hydamo.crosssections.add_rectangle_definition(
-    height=5.0,
-    width=5.0,
-    closed=False,
-    roughnesstype="StricklerKs",
-    roughnessvalue=30,
-    name="default",
-)
-hydamo.crosssections.set_default_definition(definition=default, shift=10.0)
 #%% ####################################################
 # Create the FM model
 fm = FMModel()
@@ -310,20 +312,45 @@ mesh.mesh1d_add_branches_from_gdf(
     structures=structures,
 )
 
-models = Df2HydrolibModel(hydamo)
 
+#%% #################################################################
+# Set the crosssections for the branches
+
+hydamo.crosssections.convert.profiles(
+    crosssections=hydamo.profile,
+    crosssection_roughness=hydamo.profile_roughness,
+    # profile_groups=hydamo.profile_group, # skip as no bridges or weirs with profile
+    profile_lines=hydamo.profile_line,
+    param_profile=hydamo.param_profile,
+    param_profile_values=hydamo.param_profile_values,
+    branches=hydamo.branches,
+    roughness_variant="High",
+)
+
+# Set a default cross section
+default = hydamo.crosssections.add_rectangle_definition(
+    height=5.0,
+    width=5.0,
+    closed=False,
+    roughnesstype="StricklerKs",
+    roughnessvalue=30,
+    name="default",
+)
+hydamo.crosssections.set_default_definition(definition=default, shift=10.0)
 
 # %% ####################################################
+
+models = Df2HydrolibModel(hydamo)
 # Export to DIMR configuration
 fm.geometry.structurefile = [StructureModel(structure=models.structures)]
-# fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
-# fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
+fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
+fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
 
-# fm.geometry.frictfile = []
-# for i, fric_def in enumerate(models.friction_defs):
-#    fric_model = FrictionModel(global_=fric_def)
-#    fric_model.filepath = f"roughness_{i}.ini"
-#    fm.geometry.frictfile.append(fric_model)
+fm.geometry.frictfile = []
+for i, fric_def in enumerate(models.friction_defs):
+    fric_model = FrictionModel(global_=fric_def)
+    fric_model.filepath = f"roughness_{i}.ini"
+    fm.geometry.frictfile.append(fric_model)
 
 # fm.output.obsfile = [ObservationPointModel(observationpoint=models.obspoints)]
 
@@ -338,6 +365,7 @@ fm.geometry.structurefile = [StructureModel(structure=models.structures)]
 #         global_= onedfield
 #     )
 # Now we write the file structure:
+
 
 fm.filepath = Path(folder) / "fm" / "test.mdu"
 dimr = DIMR()
