@@ -3,6 +3,7 @@
 import numpy as np
 import geopandas as gpd
 import xarray as xr
+import pandas as pd
 import shapely 
 
 def get_crosssection_culvert_AGV(shape: int = 1, height: float = None, 
@@ -59,3 +60,18 @@ def add_streefpeil_to_gemaal(streefpeilfile, inputfilename, outputfilename):
         weirs['streefpeil'].iloc[i] = value
 
     weirs.to_file(outputfilename)
+
+def vormkoker_str2int(stringlistvorm: pd.Series) -> list:
+    vormdict = {'Rond': 1, 'Driehoekig': 2,'Rechthoekig':3,'Eivormig':4,
+                'Ellipsvormig': 5,'Paraboolvormig':6, 'Trapeziumvormig': 7,
+                'Heulprofiel': 8, 'Muilprofiel': 9, 'Langwerpig': 10,
+                'Scherp': 11,'Onbekend': 99}
+
+    intlist = []
+
+    for vorm in stringlistvorm:
+        if vorm == None: 
+            vorm = 'Onbekend'
+        intlist.append(vormdict[vorm])
+
+    return intlist

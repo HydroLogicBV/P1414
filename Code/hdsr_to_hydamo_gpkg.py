@@ -15,12 +15,15 @@ import data_functions as daf
 folder_data = r"D:\work\P1414_ROI\GIS\HDSR\Legger"
 
 #### WATERGANGEN ####
-filename = "\Hydro_Objecten(2)\HydroObject.shp"
-hydroobject = gpd.read_file(folder_data + filename)
+filename = "D:\work\P1414_ROI\GIS\Uitgesneden watergangen\HDSR.shp"
+hydroobject = gpd.read_file(filename)
 hydroobjectsub = hydroobject[['CODE','GLOBALID','LENGTE','geometry']]
 hydroobjectsub = hydroobjectsub.rename(columns={'CODE':'code',
                                                 'GLOBALID':'globalid',
                                                 'LENGTE':'lengte'})
+hydroobjectsub['typeruwheid'] = 6
+hydroobjectsub['ruwheid'] = 23.0
+
 #### BRUGGEN ####
 filename = "\Bruggen\Bruggen.shp"
 bridges = gpd.read_file(folder_data+filename)
@@ -90,6 +93,9 @@ sturing = sturing.rename(columns={ 'CODE':'pompid',
 sturing['ondergrens'] = sturing['streefwaarde'] - 0.05
 sturing['bovengrens'] = sturing['streefwaarde'] + 0.05
 sturing['doelvariabele'] = 'waterstand'
+sturing['code'] = daf.getuniquecode('HDSR_sturing_', len(sturing['pompid']))
+sturing['globalid'] = daf.getuniquecode('HDSR_sturing_glob_',len(sturing['pompid']))
+
 
 # Sla de verschillende kunstwerken en watergangen op in een geopackage per waterschap
 file_gpkg = "D:\work\P1414_ROI\GIS\HDSR\HDSR_hydamo.gpkg"
