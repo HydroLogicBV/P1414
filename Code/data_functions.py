@@ -12,11 +12,11 @@ def get_crosssection_culvert_AGV(shape: int = 1, height: float = None,
     Function defines a cross section based on different parameters that interact with the shape of the culvert.
 
     '''
-    shapedict = {1:"circle",3: "rectangle"} 
+    shapedict = {1:"circle",3: "rectangle", 5:"circle", 99:"rectangle"} 
     shape_str = shapedict[shape]
 
     # Include the diameter when the culvert is a circle
-    if shape == 1: diameter = width
+    if shape == (1 or 5): diameter = width
     else: diameter = None
 
     crosssection = {"shape"    : shape_str,
@@ -70,8 +70,8 @@ def vormkoker_str2int(stringlistvorm: pd.Series) -> list:
     intlist = []
 
     for vorm in stringlistvorm:
-        if vorm == None: 
-            vorm = 'Onbekend'
-        intlist.append(vormdict[vorm])
+        if vorm == None: vorm_to_list = None
+        else: vorm_to_list = vormdict[vorm]
+        intlist.append(vorm_to_list)
 
     return intlist
