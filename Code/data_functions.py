@@ -3,6 +3,7 @@
 import numpy as np
 import geopandas as gpd
 import xarray as xr
+import pandas as pd
 import shapely 
 
 def get_crosssection_culvert_AGV(shape: int = 1, height: float = None, 
@@ -11,11 +12,11 @@ def get_crosssection_culvert_AGV(shape: int = 1, height: float = None,
     Function defines a cross section based on different parameters that interact with the shape of the culvert.
 
     '''
-    shapedict = {1:"circle",3: "rectangle"} 
+    shapedict = {1:"circle",3: "rectangle", 5:"circle", 99:"rectangle"} 
     shape_str = shapedict[shape]
 
     # Include the diameter when the culvert is a circle
-    if shape == 1: diameter = width
+    if shape == (1 or 5): diameter = width
     else: diameter = None
 
     crosssection = {"shape"    : shape_str,
@@ -59,3 +60,18 @@ def add_streefpeil_to_gemaal(streefpeilfile, inputfilename, outputfilename):
         weirs['streefpeil'].iloc[i] = value
 
     weirs.to_file(outputfilename)
+
+def vormkoker_str2int(stringlistvorm: pd.Series) -> list:
+    vormdict = {'Rond': 1, 'Driehoekig': 2,'Rechthoekig':3,'Eivormig':4,
+                'Ellipsvormig': 5,'Paraboolvormig':6, 'Trapeziumvormig': 7,
+                'Heulprofiel': 8, 'Muilprofiel': 9, 'Langwerpig': 10,
+                'Scherp': 11,'Onbekend': 99}
+
+    intlist = []
+
+    for vorm in stringlistvorm:
+        if vorm == None: vorm_to_list = None
+        else: vorm_to_list = vormdict[vorm]
+        intlist.append(vorm_to_list)
+
+    return intlist
