@@ -7,6 +7,7 @@ import numpy as np
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
 from hydrolib.core.io.friction.models import FrictionModel
+from hydrolib.core.io.inifield.models import IniFieldModel
 from hydrolib.core.io.mdu.models import FMModel
 from hydrolib.core.io.structure.models import StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
@@ -319,7 +320,7 @@ mesh.mesh1d_add_branches_from_gdf(
 hydamo.crosssections.convert.profiles(
     crosssections=hydamo.profile,
     crosssection_roughness=hydamo.profile_roughness,
-    # profile_groups=hydamo.profile_group, # skip as no bridges or weirs with profile
+    # profile_groups=hydamo.profile_group,  # skip as no bridges or weirs with profile
     profile_lines=hydamo.profile_line,
     param_profile=hydamo.param_profile,
     param_profile_values=hydamo.param_profile_values,
@@ -336,7 +337,10 @@ default = hydamo.crosssections.add_rectangle_definition(
     roughnessvalue=30,
     name="default",
 )
-hydamo.crosssections.set_default_definition(definition=default, shift=10.0)
+hydamo.crosssections.set_default_definition(definition=default, shift=0.0)
+
+# %% Set initial conditions
+hydamo.external_forcings.set_initial_waterdepth(1.5)
 
 # %% ####################################################
 
@@ -359,7 +363,7 @@ for i, fric_def in enumerate(models.friction_defs):
 # extmodel.lateral = models.laterals_ext
 # fm.external_forcing.extforcefilenew = extmodel
 
-# fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
+fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
 # for ifield, onedfield in enumerate(models.onedfieldmodels):
 #     fm.geometry.inifieldfile.initial[ifield].datafile = OneDFieldModel(
 #         global_= onedfield

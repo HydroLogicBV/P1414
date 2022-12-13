@@ -74,15 +74,14 @@ for name, group in tqdm(grouped_points):
 
         for point in l_points:
             # Check if profile points are too close together, and skip if that is the case
-            # Don't do this if it's the last point
-            if ix < sorted_group.shape[0]:
-                if code_volg_nr > 0:
-                    p_0 = list_of_points[code_volg_nr - 1]
-                    p_1 = point
-                    p_dist = p_0.distance(p_1)
+            # if ix < sorted_group.shape[0]:
+            if code_volg_nr > 0:
+                p_0 = list_of_points[code_volg_nr - 1]
+                p_1 = point
+                p_dist = p_0.distance(p_1)
 
-                    if p_dist < dist_tol:
-                        continue
+                if p_dist < dist_tol:
+                    continue
 
             # Because sorted_group has been sorted on codevolgnr, we can assume sequentiallity
             code_volg_nr += 1
