@@ -9,7 +9,10 @@ EPSG = 28992
 
 def clip_branches(in_branches_path: str, buffered_branches: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     in_branches = gpd.read_file(in_branches_path).to_crs(buffered_branches.crs)
-    return gpd.overlay(in_branches, buffered_branches, how="intersection", keep_geom_type=True)
+    out_branches = gpd.overlay(
+        in_branches, buffered_branches, how="intersection", keep_geom_type=True
+    )
+    return out_branches.explode()
 
 
 def read_rm_branches(rm_branches_path: str) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
