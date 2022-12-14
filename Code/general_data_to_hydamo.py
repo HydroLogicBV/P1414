@@ -1,3 +1,4 @@
+#%%
 import importlib
 from pathlib import Path
 
@@ -24,12 +25,12 @@ from data_functions import *
 #%% ############################################
 # Data laden
 
-# folder = r"D:\work\P1414_ROI"
+folder = r"D:\work\P1414_ROI"
 gpkg_file = r"D:\work\P1414_ROI\GIS\HDSR\HDSR_hydamo.gpkg"
 
 hydamo = HyDAMO()
 hydamo.branches.read_gpkg_layer(gpkg_file, layer_name='waterloop', index_col = 'code')
-hydamo.bridges.read_gpkg_layer(gpkg_file, layer_name='brug')
+hydamo.bridges.read_gpkg_layer(gpkg_file, layer_name='brug', index_col='code')
 hydamo.culverts.read_gpkg_layer(gpkg_file, layer_name='duiker')
 hydamo.weirs.read_gpkg_layer(gpkg_file, layer_name='stuw')
 hydamo.opening.read_gpkg_layer(gpkg_file, layer_name='kunstwerkopening')
@@ -58,13 +59,13 @@ hydamo.branches = hydamo.branches_popped.set_geometry("geometry")
 #%% #######################################################
 # Snap profiles to branch
 
-hydamo.profile_roughness.read_gpkg_layer(profile_gpkg, layer_name="ruwheidsprofiel")
-hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
-hydamo.profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
-hydamo.profile_line.read_gpkg_layer(profile_gpkg, layer_name="profiellijn")
-hydamo.profile_group.read_gpkg_layer(profile_gpkg, layer_name="profielgroep")
-hydamo.profile.drop("code", axis=1, inplace=True)
-hydamo.profile["code"] = hydamo.profile["profiellijnid"]
+# hydamo.profile_roughness.read_gpkg_layer(profile_gpkg, layer_name="ruwheidsprofiel")
+# hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
+# hydamo.profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
+# hydamo.profile_line.read_gpkg_layer(profile_gpkg, layer_name="profiellijn")
+# hydamo.profile_group.read_gpkg_layer(profile_gpkg, layer_name="profielgroep")
+# hydamo.profile.drop("code", axis=1, inplace=True)
+# hydamo.profile["code"] = hydamo.profile["profiellijnid"]
 
 
 # Snap structures to branches
@@ -82,46 +83,36 @@ hydamo.weirs.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
 hydamo.weirs.dropna(axis=0, inplace=True, subset=["branch_offset"])
 
 hydamo.pumpstations.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
+hydamo.pumps.drop(axis=0,index=hydamo.pumpstations[np.isnan(hydamo.pumpstations.branch_offset)].index, inplace=True)
 hydamo.pumpstations.dropna(axis=0, inplace=True, subset=["branch_offset"])
-
-
 
 #%% ######################################################
 # Add structures
 hydamo.structures.convert.weirs(
     weirs=hydamo.weirs, 
     opening=hydamo.opening, 
-    management_device=hydamo.opening)
+    management_device=hydamo.management_device)
 
 hydamo.structures.convert.pumps(
     hydamo.pumpstations, 
     pumps=hydamo.pumps, 
     management=hydamo.management)
 
-# Define a list of possible roughness types
-roughness_list = [
-    "Bos en Bijkerk",
-    "Chezy",
-    "Manning",
-    "StricklerKn",
-    "StricklerKs",
-    "White Colebrook",
-]
 
 # Add structures in a loop to provide the right format
-for i, bridge in enumerate(tqdm(hydamo.bridges.code)):
+for i, bridge in tqdm(hydamo.bridges.iterrows()):
     hydamo.structures.add_bridge(
-        id=hydamo.bridges.code[i],
-        name=hydamo.bridges.code[i],
-        length=hydamo.bridges.lengte[i],
-        branchid=hydamo.bridges.branch_id[i],
-        chainage=hydamo.bridges.branch_offset[i],  
-        frictiontype=roughness_list[hydamo.bridges.typeruwheid[i]],
-        csdefid=hydamo.bridges.code[i],  # TODO Check influence of csdefid
-        shift=hydamo.bridges.branch_offset[i],  # TODO Validate the use of offset
-        friction=hydamo.bridges.ruwheid[i],
-        inletlosscoeff=hydamo.bridges.intreeverlies[i],
-        outletlosscoeff=hydamo.bridges.uittreeverlies[i],
+        id=bridge.code,
+        name=bridge.code,
+        length=bridge.lengte,
+        branchid=bridge.branch_id,
+        chainage=bridge.branch_offset,  
+        frictiontype=daf.get_roughness(bridge.typeruwheid),
+        csdefid=bridge.code,  # TODO Check influence of csdefid
+        shift=bridge.branch_offset,  # TODO Validate the use of offset
+        friction=bridge.ruwheid,
+        inletlosscoeff=bridge.intreeverlies,
+        outletlosscoeff=bridge.uittreeverlies,
     )
 
 for i, culvert in tqdm(hydamo.culverts.iterrows()):
@@ -129,7 +120,7 @@ for i, culvert in tqdm(hydamo.culverts.iterrows()):
         id=culvert.code,
         name=culvert.code,
         branchid=culvert.branch_id,
-        chainage=culvert.branch_offset,  # TODO Valdiate the use of offset
+        chainage=culvert.branch_offset,  
         leftlevel=culvert.hoogtebinnenonderkantbov,
         rightlevel=culvert.hoogtebinnenonderkantbene,
         length=culvert.lengte,
@@ -141,10 +132,7 @@ for i, culvert in tqdm(hydamo.culverts.iterrows()):
             width=culvert.breedteopening,
             closed=1,
         ),  
-        numlosscoeff=None,  # TODO Check definition
-        relopening=None,  # TODO Check definition
-        losscoeff=None,  # TODO Check definition
-        bedfrictiontype=roughness_list[culvert.typeruwheid],
+        bedfrictiontype=get_roughness(culvert.typeruwheid),
         bedfriction=culvert.ruwheid,
     )
 

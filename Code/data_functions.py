@@ -75,3 +75,15 @@ def vormkoker_str2int(stringlistvorm: pd.Series) -> list:
         intlist.append(vorm_to_list)
 
     return intlist
+
+def get_roughness(ruwheid: int):
+    roughness_list = [
+    "Bos en Bijkerk",
+    "Chezy",
+    "Manning",
+    "StricklerKn",
+    "StricklerKs",
+    "White Colebrook",
+    ]
+
+    return roughness_list[ruwheid]
