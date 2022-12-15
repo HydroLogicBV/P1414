@@ -46,6 +46,7 @@ for ix, branch in tqdm(branches_gdf.iterrows(), total=branches_gdf.shape[0]):
 
     branch_gid = str(uuid.uuid4())
     branches_gdf_new.loc[ix, "globalid"] = branch_gid
+    branches_gdf_new.loc[ix, "code"] = branch_gid
 
     if (
         hydrovak[["AVVBODDR", "AVVBODH"]].empty
@@ -68,6 +69,10 @@ for ix, branch in tqdm(branches_gdf.iterrows(), total=branches_gdf.shape[0]):
         hydrovak[["IWS_W_WATP"]].empty
         | hydrovak[["AVVTALUL"]].empty
         | hydrovak[["AVVTALUR"]].empty
+    ) or (
+        (hydrovak[["IWS_W_WATP"]].to_numpy()[0] == 0)
+        | (hydrovak[["AVVTALUL"]].to_numpy()[0] == 0)
+        | (hydrovak[["AVVTALUR"]].to_numpy()[0] == 0)
     ):
         prof_type = "rectangle"
     else:
@@ -100,6 +105,9 @@ for ix, branch in tqdm(branches_gdf.iterrows(), total=branches_gdf.shape[0]):
 
 hydroobject_normgp = gpd.GeoDataFrame(ho_ngp_list, geometry="geometry", crs=28992)
 normgeparamprofielwaarde = gpd.GeoDataFrame(ngp_list, geometry="geometry", crs=28992)
+
+b0 = branches_gdf_new.loc[branches_gdf_new.geometry.type == "MultiPolygon"]
+print(b0)
 
 layers = dict(
     [

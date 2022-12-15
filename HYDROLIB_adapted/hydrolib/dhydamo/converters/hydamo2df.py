@@ -4,10 +4,11 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from hydrolib.dhydamo.geometry.mesh import Network
-from hydrolib.dhydamo.io.common import ExtendedDataFrame, ExtendedGeoDataFrame
 from pydantic import validate_arguments
 from shapely.geometry import Point
+
+from hydrolib.dhydamo.geometry.mesh import Network
+from hydrolib.dhydamo.io.common import ExtendedDataFrame, ExtendedGeoDataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -191,6 +192,7 @@ class CrossSectionsIO:
         elif param_profile is None:
             print("No parametrised crossections available for branches.")
         else:
+            print("number of branches without measured profile: {}".format(nnocross))
             # Derive norm cross sections for norm parametrised
             param_profiles_converted = self.crosssections.parametrised_to_profiles(
                 param_profile,
@@ -204,12 +206,14 @@ class CrossSectionsIO:
             ]
             branchdata["chainage"] = branchdata.length / 2.0
 
+            # print("number of profiles: {}".format(len(param_profiles_converted)))
             # Add cross sections
             for branchid, css in param_profiles_converted.items():
                 chainage = branchdata.at[branchid, "chainage"]
 
+                # Changed HL
                 if css["type"] == "rectangle":
-                    name = self.add_rectangle_definition(
+                    name = self.crosssections.add_rectangle_definition(
                         height=css["height"],
                         width=css["width"],
                         closed=css["closed"],
@@ -218,7 +222,7 @@ class CrossSectionsIO:
                     )
 
                 if css["type"] == "trapezium":
-                    name = self.add_trapezium_definition(
+                    name = self.crosssections.add_trapezium_definition(
                         slope=css["slope"],
                         maximumflowwidth=css["maximumflowwidth"],
                         bottomwidth=css["bottomwidth"],
@@ -236,6 +240,11 @@ class CrossSectionsIO:
                 )
 
         nnocross = len(self.crosssections.get_branches_without_crosssection())
+        print(
+            "number of branches without either measured nor parameterized profile: {}".format(
+                nnocross
+            )
+        )
         logger.info(
             f"After adding 'normgeparametriseerd' the number of branches without cross section is: {nnocross}."
         )

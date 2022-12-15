@@ -1,5 +1,6 @@
 # %% Init
 print("Initializing")
+import sys
 
 import geopandas as gpd
 
@@ -7,12 +8,16 @@ BUFFER_DIST = 50
 EPSG = 28992
 
 
-def clip_branches(in_branches_path: str, buffered_branches: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def clip_branches(
+    in_branches_path: str,
+    buffered_branches: gpd.GeoDataFrame,
+) -> gpd.GeoDataFrame:
     in_branches = gpd.read_file(in_branches_path).to_crs(buffered_branches.crs)
     out_branches = gpd.overlay(
         in_branches, buffered_branches, how="intersection", keep_geom_type=True
     )
-    return out_branches.explode()
+    out_branches = out_branches.explode()
+    return out_branches
 
 
 def read_rm_branches(rm_branches_path: str) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
@@ -28,7 +33,9 @@ def read_rm_branches(rm_branches_path: str) -> tuple[gpd.GeoDataFrame, gpd.GeoDa
 old_rm_branches_path = r"D:\Work\Project\P1414\GIS\Randstadmodel_oud\rm_Branches_28992.shp"
 
 old_rm_branches, onderdoorgangen = read_rm_branches(old_rm_branches_path)
-buffered_old_rm_branches = gpd.GeoDataFrame(geometry=old_rm_branches.buffer(distance=BUFFER_DIST))
+buffered_old_rm_branches = gpd.GeoDataFrame(
+    geometry=old_rm_branches.buffer(distance=BUFFER_DIST)
+).dissolve(by=None)
 
 onderdoorgangen_path = r"D:\Work\Project\P1414\GIS\Uitgesneden watergangen\onderdoorgangen.shp"
 onderdoorgangen.to_file(onderdoorgangen_path)
@@ -43,7 +50,6 @@ intersected_branches = clip_branches(
     in_branches_path=agv_branches_path, buffered_branches=buffered_old_rm_branches
 )
 intersected_branches.to_file(clipped_agv_branches_path)
-
 # %% HHD
 print("HHD")
 

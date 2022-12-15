@@ -27,14 +27,24 @@ from data_functions import *
 
 # folder = r"D:\work\P1414_ROI"
 folder = r"D:\Work\Project\P1414"
+norm_profile_gpkg = folder + r"\GIS\WAGV\norm_profielen.gpkg"
+output_folder = folder + r"\Models\AGV\V2"
+profile_gpkg = folder + r"\GIS\WAGV\profielen_light.gpkg"
+
 
 hydamo = HyDAMO(extent_file=folder + "\GIS\WAGV\AGV_mask.shp")
-hydamo.branches.read_shp(
-    path=folder + r"\GIS\Uitgesneden watergangen\AGV.shp",
-    column_mapping={
-        "ruwheidsty": "typeruwheid",
-    },
-    index_col="code",
+# hydamo.branches.read_shp(
+#     path=folder + r"\GIS\Uitgesneden watergangen\AGV.shp",
+#     column_mapping={
+#         "ruwheidsty": "typeruwheid",
+#     },
+#     index_col="code",
+# )
+hydamo.branches.read_gpkg_layer(
+    norm_profile_gpkg,
+    layer_name="hydroobject",
+    column_mapping={"ruwheidsty": "typeruwheid"},
+    index_col="globalid",
 )
 
 hydamo.bridges.read_shp(
@@ -95,14 +105,39 @@ hydamo.pumpstations.read_shp(
 )
 
 print("profile start")
-profile_gpkg = folder + r"\GIS\WAGV\profielen_light.gpkg"
 hydamo.profile.read_gpkg_layer(
     profile_gpkg,
     layer_name="profielpunt",
     groupby_column="profiellijnid",
     order_column="codevolgnummer",
-    id_col="code",
+    index_col="code",
 )
+
+# Snap profiles to branch
+
+hydamo.profile_roughness.read_gpkg_layer(profile_gpkg, layer_name="ruwheidsprofiel")
+hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
+hydamo.profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
+hydamo.profile_line.read_gpkg_layer(profile_gpkg, layer_name="profiellijn")
+hydamo.profile_group.read_gpkg_layer(profile_gpkg, layer_name="profielgroep")
+hydamo.profile.drop("code", axis=1, inplace=True)
+hydamo.profile["code"] = hydamo.profile["profiellijnid"]
+
+# Add param_profiles
+
+hydamo.param_profile.read_gpkg_layer(
+    norm_profile_gpkg,
+    layer_name="hydroobject_normgp",
+    index_col="globalid",
+)
+hydamo.param_profile_values.read_gpkg_layer(
+    norm_profile_gpkg,
+    layer_name="normgeparamprofielwaarde",
+    index_col="normgeparamprofielid",
+)
+# hydamo.param_profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
+# hydamo.param_profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
+
 
 print("profile end")
 # hydamo.profile.read_shp(
@@ -170,15 +205,6 @@ hydamo.branches = hydamo.branches_popped.set_geometry("geometry")
 
 
 #%% #######################################################
-# Snap profiles to branch
-
-hydamo.profile_roughness.read_gpkg_layer(profile_gpkg, layer_name="ruwheidsprofiel")
-hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
-hydamo.profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
-hydamo.profile_line.read_gpkg_layer(profile_gpkg, layer_name="profiellijn")
-hydamo.profile_group.read_gpkg_layer(profile_gpkg, layer_name="profielgroep")
-hydamo.profile.drop("code", axis=1, inplace=True)
-hydamo.profile["code"] = hydamo.profile["profiellijnid"]
 
 
 # Snap structures to branches
@@ -307,7 +333,7 @@ fm.time.tstop = 2 * 3600 * 24
 mesh.mesh1d_add_branches_from_gdf(
     fm.geometry.netfile.network,
     branches=hydamo.branches,
-    branch_name_col="code",
+    branch_name_col="globalid",
     node_distance=20,
     # max_dist_to_struc=None,
     structures=structures,
@@ -327,6 +353,7 @@ hydamo.crosssections.convert.profiles(
     branches=hydamo.branches,
     roughness_variant="High",
 )
+print(len(hydamo.crosssections.crosssection_def))
 
 # Set a default cross section
 default = hydamo.crosssections.add_rectangle_definition(
@@ -371,16 +398,16 @@ fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
 # Now we write the file structure:
 
 
-fm.filepath = Path(folder) / "fm" / "test.mdu"
+fm.filepath = Path(output_folder) / "fm" / "test.mdu"
 dimr = DIMR()
 dimr.component.append(
-    FMComponent(name="DFM", workingDir=Path(folder) / "fm", model=fm, inputfile=fm.filepath)
+    FMComponent(name="DFM", workingDir=Path(output_folder) / "fm", model=fm, inputfile=fm.filepath)
 )
 dimr.save(recurse=True)
 # import shutil
 # shutil.copy(data_path / "initialWaterDepth.ini", folder / "fm")
 
-dimr = DIMRWriter(output_path=folder)
+dimr = DIMRWriter(output_path=output_folder)
 dimr.write_dimrconfig(fm)  # , rr_model=drrmodel, rtc_model=drtcmodel)
 dimr.write_runbat()
 

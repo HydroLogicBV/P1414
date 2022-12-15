@@ -3,12 +3,14 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from hydrolib.core.io.bc.models import Constant, ForcingModel, TimeSeries
 from hydrolib.core.io.crosssection.models import (
     CircleCrsDef,
     CrossSection,
     RectangleCrsDef,
     YZCrsDef,
+    ZWCrsDef,
 )
 from hydrolib.core.io.ext.models import Boundary, Lateral
 from hydrolib.core.io.friction.models import FrictGlobal
@@ -16,7 +18,14 @@ from hydrolib.core.io.inifield.models import InitialField
 from hydrolib.core.io.obs.models import ObservationPoint
 from hydrolib.core.io.onedfield.models import OneDFieldGlobal
 from hydrolib.core.io.storagenode.models import StorageNode
-from hydrolib.core.io.structure.models import Bridge, Culvert, Orifice, Pump, UniversalWeir, Weir
+from hydrolib.core.io.structure.models import (
+    Bridge,
+    Culvert,
+    Orifice,
+    Pump,
+    UniversalWeir,
+    Weir,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +185,12 @@ class Df2HydrolibModel:
         # Rectangle
         cs_rect = _get_cstype_part_of_dict("rectangle")
         cs = [RectangleCrsDef(**cs) for cs in cs_rect.values()]
+        self._clear_comments(cs)
+        self.crossdefs += cs
+
+        # ZW, added HL
+        cs_zw = _get_cstype_part_of_dict("zw")
+        cs = [ZWCrsDef(**cs) for cs in cs_zw.values()]
         self._clear_comments(cs)
         self.crossdefs += cs
 

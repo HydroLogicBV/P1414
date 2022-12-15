@@ -7,6 +7,11 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import shapely
+from pydantic import validate_arguments
+from scipy.spatial import KDTree
+from shapely.geometry import LineString, Point, Polygon
+from tqdm.auto import tqdm
+
 from hydrolib import dhydamo
 from hydrolib.dhydamo.converters.hydamo2df import (
     CrossSectionsIO,
@@ -16,10 +21,6 @@ from hydrolib.dhydamo.converters.hydamo2df import (
 )
 from hydrolib.dhydamo.geometry.spatial import find_nearest_branch
 from hydrolib.dhydamo.io.common import ExtendedDataFrame, ExtendedGeoDataFrame
-from pydantic import validate_arguments
-from scipy.spatial import KDTree
-from shapely.geometry import LineString, Point, Polygon
-from tqdm.auto import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -1062,6 +1063,11 @@ class CrossSections:
         for param in parametrised.itertuples():
             branch = [branch for branch in branches if branch.globalid == param.hydroobjectid]
 
+            # added HL
+            # skip parametrised profile if no profile-less branch corresponds to it
+            if not branch:
+                continue
+
             values = parametrised_values[
                 parametrised_values.normgeparamprofielid == param.normgeparamprofielid
             ]
@@ -1096,6 +1102,10 @@ class CrossSections:
 
             if pd.isnull(
                 values[values.soortparameter == "taludhelling linkerzijde"].waarde
+            ).empty:  # Added HL
+                css_type = "rectangle"
+            elif pd.isnull(
+                values[values.soortparameter == "taludhelling linkerzijde"].waarde
             ).values[0]:
                 css_type = "rectangle"
             else:
@@ -1121,6 +1131,9 @@ class CrossSections:
                     values[values.soortparameter == "taludhelling linkerzijde"].waarde.values[0]
                     + values[values.soortparameter == "taludhelling rechterzijde"].waarde.values[0]
                 ) / 2.0
+                if slope == 0:
+                    print(values)
+                    raise ValueError("slope should not become zero, are taludhellingen nonzero?")
 
             if roughness_variant == RoughnessVariant.LOW:
                 roughness = values.ruwheidlaag.values[0]
@@ -1138,7 +1151,7 @@ class CrossSections:
                         values[values.soortparameter == "bodembreedte"].waarde.values[0],
                         3,
                     ),
-                    "closed": 0,
+                    "closed": 1,  # Changed HL
                     "thalweg": 0.0,
                     "typeruwheid": values.typeruwheid.values[0],
                     "ruwheid": roughness,
