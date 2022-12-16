@@ -1,4 +1,4 @@
-import importlib
+import shutil
 from pathlib import Path
 
 import contextily as ctx
@@ -9,6 +9,7 @@ from hydrolib.core.io.dimr.models import DIMR, FMComponent
 from hydrolib.core.io.friction.models import FrictionModel
 from hydrolib.core.io.inifield.models import IniFieldModel
 from hydrolib.core.io.mdu.models import FMModel
+from hydrolib.core.io.onedfield.models import OneDFieldModel
 from hydrolib.core.io.structure.models import StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
@@ -27,9 +28,10 @@ from data_functions import *
 
 # folder = r"D:\work\P1414_ROI"
 folder = r"D:\Work\Project\P1414"
-norm_profile_gpkg = folder + r"\GIS\WAGV\norm_profielen.gpkg"
-output_folder = folder + r"\Models\AGV\V2"
+norm_profile_gpkg = folder + r"\GIS\WAGV\norm_profielen_test.gpkg"
+output_folder = folder + r"\Models\AGV\V3"
 profile_gpkg = folder + r"\GIS\WAGV\profielen_light.gpkg"
+Path(output_folder).mkdir(parents=True, exist_ok=True)
 
 
 hydamo = HyDAMO(extent_file=folder + "\GIS\WAGV\AGV_mask.shp")
@@ -335,7 +337,7 @@ mesh.mesh1d_add_branches_from_gdf(
     branches=hydamo.branches,
     branch_name_col="globalid",
     node_distance=20,
-    # max_dist_to_struc=None,
+    max_dist_to_struc=3,
     structures=structures,
 )
 
@@ -353,7 +355,6 @@ hydamo.crosssections.convert.profiles(
     branches=hydamo.branches,
     roughness_variant="High",
 )
-print(len(hydamo.crosssections.crosssection_def))
 
 # Set a default cross section
 default = hydamo.crosssections.add_rectangle_definition(
@@ -390,12 +391,9 @@ for i, fric_def in enumerate(models.friction_defs):
 # extmodel.lateral = models.laterals_ext
 # fm.external_forcing.extforcefilenew = extmodel
 
-fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
+# fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
 # for ifield, onedfield in enumerate(models.onedfieldmodels):
-#     fm.geometry.inifieldfile.initial[ifield].datafile = OneDFieldModel(
-#         global_= onedfield
-#     )
-# Now we write the file structure:
+#     fm.geometry.inifieldfile.initial[ifield] = OneDFieldModel(global_=onedfield)
 
 
 fm.filepath = Path(output_folder) / "fm" / "test.mdu"
@@ -404,7 +402,8 @@ dimr.component.append(
     FMComponent(name="DFM", workingDir=Path(output_folder) / "fm", model=fm, inputfile=fm.filepath)
 )
 dimr.save(recurse=True)
-# import shutil
+
+
 # shutil.copy(data_path / "initialWaterDepth.ini", folder / "fm")
 
 dimr = DIMRWriter(output_path=output_folder)

@@ -31,11 +31,13 @@ def read_rm_branches(rm_branches_path: str) -> tuple[gpd.GeoDataFrame, gpd.GeoDa
 
 
 old_rm_branches_path = r"D:\Work\Project\P1414\GIS\Randstadmodel_oud\rm_Branches_28992.shp"
+buffered_branches_path = r"D:\Work\Project\P1414\GIS\Randstadmodel_oud\buffered_branches.shp"
 
 old_rm_branches, onderdoorgangen = read_rm_branches(old_rm_branches_path)
 buffered_old_rm_branches = gpd.GeoDataFrame(
     geometry=old_rm_branches.buffer(distance=BUFFER_DIST)
 ).dissolve(by=None)
+buffered_old_rm_branches.to_file(buffered_branches_path)
 
 onderdoorgangen_path = r"D:\Work\Project\P1414\GIS\Uitgesneden watergangen\onderdoorgangen.shp"
 onderdoorgangen.to_file(onderdoorgangen_path)
