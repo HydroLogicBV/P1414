@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 import contextily as ctx
@@ -6,17 +5,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
+from hydrolib.core.io.ext.models import ExtModel
 from hydrolib.core.io.friction.models import FrictionModel
 from hydrolib.core.io.inifield.models import IniFieldModel
 from hydrolib.core.io.mdu.models import FMModel
-from hydrolib.core.io.onedfield.models import OneDFieldModel
 from hydrolib.core.io.structure.models import StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
 from hydrolib.dhydamo.geometry import mesh
 from hydrolib.dhydamo.io.common import ExtendedDataFrame, ExtendedGeoDataFrame
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
-from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from tqdm import tqdm
 
 import data_functions as daf
@@ -28,13 +26,17 @@ from data_functions import *
 
 # folder = r"D:\work\P1414_ROI"
 folder = r"D:\Work\Project\P1414"
+
+extent_shp_path = folder + "\GIS\WAGV\AGV_mask.shp"
 norm_profile_gpkg = folder + r"\GIS\WAGV\norm_profielen_test.gpkg"
-output_folder = folder + r"\Models\AGV\V3"
+output_folder = folder + r"\Models\AGV\V5"
 profile_gpkg = folder + r"\GIS\WAGV\profielen_light.gpkg"
+twod_depth_path = "D:\Work\Project\P1414\GIS\WAGV\AGV_dummy_depth_v2.tif"
+
 Path(output_folder).mkdir(parents=True, exist_ok=True)
 
 
-hydamo = HyDAMO(extent_file=folder + "\GIS\WAGV\AGV_mask.shp")
+hydamo = HyDAMO(extent_file=extent_shp_path)
 # hydamo.branches.read_shp(
 #     path=folder + r"\GIS\Uitgesneden watergangen\AGV.shp",
 #     column_mapping={
@@ -116,14 +118,15 @@ hydamo.profile.read_gpkg_layer(
 )
 
 # Snap profiles to branch
-
 hydamo.profile_roughness.read_gpkg_layer(profile_gpkg, layer_name="ruwheidsprofiel")
 hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
 hydamo.profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
 hydamo.profile_line.read_gpkg_layer(profile_gpkg, layer_name="profiellijn")
 hydamo.profile_group.read_gpkg_layer(profile_gpkg, layer_name="profielgroep")
+
 hydamo.profile.drop("code", axis=1, inplace=True)
 hydamo.profile["code"] = hydamo.profile["profiellijnid"]
+
 
 # Add param_profiles
 
@@ -226,6 +229,7 @@ hydamo.weirs.dropna(axis=0, inplace=True, subset=["branch_offset"])
 hydamo.pumpstations.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
 hydamo.pumpstations.dropna(axis=0, inplace=True, subset=["branch_offset"])
 
+
 # Define pumpinformation in a separate ExtendedDataFrame
 pumps = ExtendedDataFrame()
 pumps["gemaalid"] = hydamo.pumpstations["globalid"]
@@ -250,6 +254,7 @@ subset_pumps = hydamo.pumpstations.drop_duplicates(subset=["globalid"])
 pumpgeotype = hydamo.pumpstations.geotype
 hydamo.pumpstations = ExtendedGeoDataFrame(geotype=pumpgeotype)
 hydamo.pumpstations.set_data(subset_pumps)
+
 
 #%% ######################################################
 # Add structures
@@ -279,7 +284,8 @@ for i, bridge in enumerate(tqdm(hydamo.bridges.code)):
         chainage=hydamo.bridges.branch_offset[i],  # TODO Validate the use of offset
         frictiontype=roughness_list[hydamo.bridges.typeruwheid[i]],
         csdefid=hydamo.bridges.code[i],  # TODO Check influence of csdefid
-        shift=hydamo.bridges.branch_offset[i],  # TODO Validate the use of offset
+        # shift=hydamo.bridges.branch_offset[i],  # TODO Validate the use of offset
+        shift=10,
         friction=hydamo.bridges.ruwheid[i],
         inletlosscoeff=hydamo.bridges.intreeverlies[i],
         outletlosscoeff=hydamo.bridges.uittreeverlies[i],
@@ -344,7 +350,7 @@ mesh.mesh1d_add_branches_from_gdf(
 
 #%% #################################################################
 # Set the crosssections for the branches
-
+print(hydamo.profile)
 hydamo.crosssections.convert.profiles(
     crosssections=hydamo.profile,
     crosssection_roughness=hydamo.profile_roughness,
@@ -368,8 +374,43 @@ default = hydamo.crosssections.add_rectangle_definition(
 hydamo.crosssections.set_default_definition(definition=default, shift=0.0)
 
 # %% Set initial conditions
-hydamo.external_forcings.set_initial_waterdepth(1.5)
+# hydamo.external_forcings.set_initial_waterdepth(1.5)
 
+# %% 2D
+twod = True
+if twod:
+    print("doing 2D")
+    extent = gpd.read_file(extent_shp_path)
+    network = fm.geometry.netfile.network
+
+    mesh.mesh2d_add_rectilinear(network=network, polygon=extent.geometry.values[0], dx=100, dy=100)
+    # mesh.mesh2d_altitude_from_raster(
+    #     network=network, rasterpath=twod_depth_path, where="face", stat="mean", fill_value=-999
+    # )
+
+    mesh.links1d2d_add_links_1d_to_2d(network=network)
+    # mesh.links1d2d_add_links_2d_to_1d_embedded(network=network)
+    mesh.mesh2d_altitude_from_raster(
+        network=network,
+        rasterpath=twod_depth_path,
+        where="face",
+        stat="mean",
+        fill_option="fill_value",
+        fill_value=np.nan,
+    )
+    # xy = np.stack(
+    #     [
+    #         getattr(network._mesh2d, f"mesh2d_face_x"),
+    #         getattr(network._mesh2d, f"mesh2d_face_y"),
+    #     ],
+    #     axis=1,
+    # )
+    # print(xy.shape)
+    # z_values = np.full(xy.shape[0], fill_value=-1)
+    # getattr(network._mesh2d, "mesh2d_face_x")
+    # setattr(network._mesh2d, "mesh2d_face_z", z_values)
+
+    print("2D done")
 # %% ####################################################
 
 models = Df2HydrolibModel(hydamo)
@@ -386,12 +427,12 @@ for i, fric_def in enumerate(models.friction_defs):
 
 # fm.output.obsfile = [ObservationPointModel(observationpoint=models.obspoints)]
 
-# extmodel = ExtModel()
-# extmodel.boundary = models.boundaries_ext
-# extmodel.lateral = models.laterals_ext
-# fm.external_forcing.extforcefilenew = extmodel
+extmodel = ExtModel()
+extmodel.boundary = models.boundaries_ext
+extmodel.lateral = models.laterals_ext
+fm.external_forcing.extforcefilenew = extmodel
 
-# fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
+fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
 # for ifield, onedfield in enumerate(models.onedfieldmodels):
 #     fm.geometry.inifieldfile.initial[ifield] = OneDFieldModel(global_=onedfield)
 
@@ -409,5 +450,3 @@ dimr.save(recurse=True)
 dimr = DIMRWriter(output_path=output_folder)
 dimr.write_dimrconfig(fm)  # , rr_model=drrmodel, rtc_model=drtcmodel)
 dimr.write_runbat()
-
-# %%

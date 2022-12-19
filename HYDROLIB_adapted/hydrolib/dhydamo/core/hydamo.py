@@ -1004,12 +1004,18 @@ class CrossSections:
 
             # determine thalweg
             if branches is not None:
-                branche_geom = branches[branches.code == css.branch_id].geometry.values
-
+                branche_geom = branches[
+                    branches.index == css.branch_id
+                ].geometry.values  # changed branches.code to branches.index
+                # try:
                 if css.geometry.intersection(branche_geom[0]).geom_type == "MultiPoint":
                     thalweg_xyz = css.geometry.intersection(branche_geom[0])[0].coords[:][0]
                 else:
                     thalweg_xyz = css.geometry.intersection(branche_geom[0]).coords[:][0]
+                # except:
+                #     print(branche_geom)
+                #     print(css)
+                #     raise NameError("AUw")
                 # and the Y-coordinate of the thalweg
                 thalweg = np.hypot(thalweg_xyz[0] - xyz[0, 0], thalweg_xyz[1] - xyz[0, 1])
             else:

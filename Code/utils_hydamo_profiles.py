@@ -33,7 +33,7 @@ def convert_pp_to_hydamo(
         # Create unique ident for branch and add to branch
         branch_gid = str(uuid.uuid4())
         branches_gdf.loc[ix_1, "globalid"] = branch_gid
-        # branches_gdf_new.loc[ix_1, "code"] = branch_gid
+        branches_gdf.loc[ix_1, "code"] = branch_gid
 
         # Check if width and depth parameters are available, if not, skip
         if (

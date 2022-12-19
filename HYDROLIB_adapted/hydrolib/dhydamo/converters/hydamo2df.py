@@ -181,7 +181,9 @@ class CrossSectionsIO:
 
         # Check the number of branches with cross sections
         no_crosssection_id = self.crosssections.get_branches_without_crosssection()
-        no_crosssection = [b for b in branches.itertuples() if b.code in no_crosssection_id]
+        no_crosssection = [
+            b for b in branches.itertuples() if b.code in no_crosssection_id
+        ]  # changed HL b.code to b.index
 
         nnocross = len(no_crosssection)
         logger.info(
