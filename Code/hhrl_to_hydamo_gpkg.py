@@ -25,11 +25,13 @@ roughness_list = [
 ]
 #### WATERGANGEN ####
 filename = r"D:\work\P1414_ROI\GIS\Uitgesneden watergangen\HHR.shp"
+#filename = r"D:\work\P1414_ROI\GIS\HHRijnland\Legger\Watergang\Watergang_as.shp"
 hydroobject = gpd.read_file(filename)
 
-hydroobjectsub = hydroobject[['CODE','RUWHEIDSWA', 'TYPERUWHEI','geometry']]
+hydroobjectsub = hydroobject[['CODE','RUWHEIDSWA', 'LENGTE','TYPERUWHEI','geometry']]
 hydroobjectsub = hydroobjectsub.rename(columns={'CODE':'globalid',
                                                 'RUWHEIDSWA':'ruwheid',
+                                                'LENGTE': 'lengte',
                                                 'TYPERUWHEI':'typeruwheid'})
 for n,typeruwheid in enumerate(hydroobjectsub['typeruwheid']):
     hydroobjectsub['typeruwheid'][n] = roughness_list.index(typeruwheid)
@@ -47,7 +49,7 @@ bridgessub['typeruwheid'] = 4
 bridgessub['ruwheid'] = 75.
 bridgessub['intreeverlies'] = 0.5
 bridgessub['uittreeverlies'] = 0.7
-#%%
+
 #### DUIKERS ####
 filename_duiker = "\Duiker\duiker.shp"
 filename_sifon = "\Sifon\sifon_2.shp"
@@ -93,28 +95,34 @@ culverts_total['uittreeverlies'] = 0.8
 if type(culverts_total.vormkoker.iloc[0]) == str:
     culverts_total.vormkoker = daf.vormkoker_str2int(culverts_total.vormkoker)
 
-# %%
 #### STUWEN ####
 filename = "\Stuw\stuw.shp"
 weirs = gpd.read_file(folder_data+filename)
 
-weirssub = weirs[['CODE','gml_id','geometry']]
+weirssub = weirs[['CODE','gml_id','SOORTSTUW','geometry']]
 weirssub = weirssub.rename(columns={'gml_id':'globalid',
-                                    'CODE':'code'})
+                                    'CODE':'code',
+                                    'SOORTSTUW':'soortstuw'})
 weirssub['afvoercoefficient'] = 1.
  
-opening = weirs[['gml_id','DOORSTROOM','LAAGSTEDOO', 'geometry']]
+opening = weirs[['gml_id','DOORSTROOM','LAAGSTEDOO','KRUINVORM', 'HOOGTECONS','geometry']]
 opening = opening.rename(columns={'gml_id':'stuwid',
                                   'DOORSTROOM':'laagstedoorstroombreedte',
-                                  'LAAGSTEDOO':'laagstedoorstroomhoogte'})
+                                  'LAAGSTEDOO':'laagstedoorstroomhoogte',
+                                  'HOOGTECONS':'hoogstedoorstroomhoogte',
+                                  'KRUINVORM':'vormopening',})
+opening['hoogstedoorstroombreedte'] = opening['laagstedoorstroombreedte']
+opening['afvoercoefficient'] = 0.85
 opening['globalid'] = np.nan
 for i in range(len(opening['globalid'])):
     opening['globalid'].iloc[i] = 'HHRL_opening_'+str(weirs['ORACLE_OBJ'].iloc[i])
 
 management_device = opening[['globalid','geometry']]
-management_device = management_device.rename(columns={'globalid':'kunstwerkopeningid'})
+management_device['code'] = daf.getuniquecode('HHRL_sturing_',len(management_device['geometry']))
+management_device = management_device.rename(columns={'globalid':'kunstwerkopeninging'})
+management_device['soortregelbaarheid'] = weirs['SOORTREGEL']
 management_device['overlaatonderlaat'] = 'overlaat'
-# %%
+
 #### GEMALEN ####
 filename = "\Gemaal\gemaal_peil.shp"
 pumpingstations = gpd.read_file(folder_data+filename)
@@ -127,7 +135,7 @@ pumps = pumpingstations[['ORACLE_OBJ','MAXIMALECA','geometry']]
 pumps = pumps.rename(columns={'MAXIMALECA':'maximalecapaciteit',
                               'ORACLE_OBJ':'code'})
 pumps['gemaalid'] = pumpingstationssub['globalid']
-pumps['globalid'] = daf.getuniquecode('HDSR_pomp_',len(pumps['maximalecapaciteit']))
+pumps['globalid'] = daf.getuniquecode('HHRL_pomp_',len(pumps['maximalecapaciteit']))
 
 sturing = pumpingstations[['streefpeil','geometry']]
 sturing = sturing.rename(columns={ 'streefpeil':'streefwaarde'})
@@ -135,8 +143,8 @@ sturing['pompid'] = pumps['globalid']
 sturing['ondergrens'] = sturing['streefwaarde'] - 0.05
 sturing['bovengrens'] = sturing['streefwaarde'] + 0.05
 sturing['doelvariabele'] = 'waterstand'
-sturing['code'] = daf.getuniquecode('HDSR_sturing_', len(sturing['pompid']))
-sturing['globalid'] = daf.getuniquecode('HDSR_sturing_glob_',len(sturing['pompid']))
+sturing['code'] = daf.getuniquecode('HHRL_sturing_', len(sturing['pompid']))
+sturing['globalid'] = daf.getuniquecode('HHRL_sturing_glob_',len(sturing['pompid']))
 
 # Sla de verschillende kunstwerken en watergangen op in een geopackage per waterschap
 file_gpkg = "D:\work\P1414_ROI\GIS\HHRijnland\HHRL_hydamo.gpkg"

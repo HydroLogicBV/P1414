@@ -71,7 +71,7 @@ def vormkoker_str2int(stringlistvorm: pd.Series) -> list:
 
     for vorm in stringlistvorm:
         if vorm == None: vorm_to_list = None
-        else: vorm_to_list = vormdict[vorm]
+        else: vorm_to_list = vormdict[vorm.capitalize()]
         intlist.append(vorm_to_list)
 
     return intlist
