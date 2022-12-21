@@ -393,10 +393,10 @@ if twod:
     mesh.mesh2d_altitude_from_raster(
         network=network,
         rasterpath=twod_depth_path,
-        where="face",
+        where="node",  # Face does not work
         stat="mean",
         fill_option="fill_value",
-        fill_value=np.nan,
+        fill_value=100,
     )
     # xy = np.stack(
     #     [

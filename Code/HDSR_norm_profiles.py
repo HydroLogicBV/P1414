@@ -4,9 +4,7 @@ from utils_hydamo_profiles import convert_pp_to_hydamo
 
 if __name__ == "__main__":
     # prepare AGV data for function
-    branches_path = (
-        r"D:\Work\Project\P1414\GIS\HDSR\Legger\Hydro_Objecten(2)\HydroObject_clipped_rm.shp"
-    )
+    branches_path = r"D:\Work\Project\P1414\GIS\Uitgesneden watergangen\HDSR.shp"
     norm_profiles_output_path = r"D:\Work\Project\P1414\GIS\HDSR\norm_profielen_test.gpkg"
 
     branches_gdf = gpd.read_file(branches_path)
@@ -40,11 +38,12 @@ if __name__ == "__main__":
     # save hydamo data in geopackage
     layers = dict(
         [
-            ("hydroobject", out_branches_gdf[["CODE", "globalid", "geometry"]]),
+            ("hydroobject", out_branches_gdf[["code", "globalid", "geometry"]]),
             ("hydroobject_normgp", hydroobject_normgp),
             ("normgeparamprofielwaarde", normgeparamprofielwaarde),
         ]
     )
 
+    print(out_branches_gdf.loc[out_branches_gdf.geometry.geometry.type == "MultiLineString"])
     for name, layer in layers.items():
         layer.to_file(filename=norm_profiles_output_path, driver="GPKG", layer=name)

@@ -25,19 +25,24 @@ from data_functions import *
 #%% ############################################
 # Data laden
 
-folder = r"D:\work\P1414_ROI"
-gpkg_file = r"D:\work\P1414_ROI\GIS\HDSR\HDSR_hydamo.gpkg"
+# folder = r"D:\work\P1414_ROI"
+folder = r"D:\Work\Project\P1414"
+gpkg_file = folder + r"\GIS\HDSR\HDSR_hydamo.gpkg"
+norm_profile_gpkg = folder + r"\GIS\HDSR\norm_profielen_test.gpkg"
+
+extent_shp_path = folder + "\GIS\WAGV\AGV_mask.shp"
+twod_depth_path = "D:\Work\Project\P1414\GIS\WAGV\AGV_dummy_depth_v2.tif"
 
 hydamo = HyDAMO()
-hydamo.branches.read_gpkg_layer(gpkg_file, layer_name='waterloop', index_col = 'code')
-hydamo.bridges.read_gpkg_layer(gpkg_file, layer_name='brug', index_col='code')
-hydamo.culverts.read_gpkg_layer(gpkg_file, layer_name='duiker')
-hydamo.weirs.read_gpkg_layer(gpkg_file, layer_name='stuw')
-hydamo.opening.read_gpkg_layer(gpkg_file, layer_name='kunstwerkopening')
-hydamo.management_device.read_gpkg_layer(gpkg_file, layer_name= 'regelmiddel')
-hydamo.pumpstations.read_gpkg_layer(gpkg_file, layer_name='gemaal')
-hydamo.pumps.read_gpkg_layer(gpkg_file, layer_name='pomp')
-hydamo.management.read_gpkg_layer(gpkg_file, layer_name='sturing')
+hydamo.branches.read_gpkg_layer(gpkg_file, layer_name="waterloop", index_col="code")
+hydamo.bridges.read_gpkg_layer(gpkg_file, layer_name="brug", index_col="code")
+hydamo.culverts.read_gpkg_layer(gpkg_file, layer_name="duiker")
+hydamo.weirs.read_gpkg_layer(gpkg_file, layer_name="stuw")
+hydamo.opening.read_gpkg_layer(gpkg_file, layer_name="kunstwerkopening")
+hydamo.management_device.read_gpkg_layer(gpkg_file, layer_name="regelmiddel")
+hydamo.pumpstations.read_gpkg_layer(gpkg_file, layer_name="gemaal")
+hydamo.pumps.read_gpkg_layer(gpkg_file, layer_name="pomp")
+hydamo.management.read_gpkg_layer(gpkg_file, layer_name="sturing")
 
 # %% ##################################################
 # Check for circular features in branches
@@ -58,6 +63,16 @@ hydamo.branches = hydamo.branches_popped.set_geometry("geometry")
 
 #%% #######################################################
 # Snap profiles to branch
+hydamo.param_profile.read_gpkg_layer(
+    norm_profile_gpkg,
+    layer_name="hydroobject_normgp",
+    index_col="globalid",
+)
+hydamo.param_profile_values.read_gpkg_layer(
+    norm_profile_gpkg,
+    layer_name="normgeparamprofielwaarde",
+    index_col="normgeparamprofielid",
+)
 
 # hydamo.profile_roughness.read_gpkg_layer(profile_gpkg, layer_name="ruwheidsprofiel")
 # hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
@@ -83,20 +98,22 @@ hydamo.weirs.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
 hydamo.weirs.dropna(axis=0, inplace=True, subset=["branch_offset"])
 
 hydamo.pumpstations.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
-hydamo.pumps.drop(axis=0,index=hydamo.pumpstations[np.isnan(hydamo.pumpstations.branch_offset)].index, inplace=True)
+hydamo.pumps.drop(
+    axis=0,
+    index=hydamo.pumpstations[np.isnan(hydamo.pumpstations.branch_offset)].index,
+    inplace=True,
+)
 hydamo.pumpstations.dropna(axis=0, inplace=True, subset=["branch_offset"])
 
 #%% ######################################################
 # Add structures
 hydamo.structures.convert.weirs(
-    weirs=hydamo.weirs, 
-    opening=hydamo.opening, 
-    management_device=hydamo.management_device)
+    weirs=hydamo.weirs, opening=hydamo.opening, management_device=hydamo.management_device
+)
 
 hydamo.structures.convert.pumps(
-    hydamo.pumpstations, 
-    pumps=hydamo.pumps, 
-    management=hydamo.management)
+    hydamo.pumpstations, pumps=hydamo.pumps, management=hydamo.management
+)
 
 
 # Add structures in a loop to provide the right format
@@ -106,7 +123,7 @@ for i, bridge in tqdm(hydamo.bridges.iterrows()):
         name=bridge.code,
         length=bridge.lengte,
         branchid=bridge.branch_id,
-        chainage=bridge.branch_offset,  
+        chainage=bridge.branch_offset,
         frictiontype=daf.get_roughness(bridge.typeruwheid),
         csdefid=bridge.code,  # TODO Check influence of csdefid
         shift=bridge.branch_offset,  # TODO Validate the use of offset
@@ -120,7 +137,7 @@ for i, culvert in tqdm(hydamo.culverts.iterrows()):
         id=culvert.code,
         name=culvert.code,
         branchid=culvert.branch_id,
-        chainage=culvert.branch_offset,  
+        chainage=culvert.branch_offset,
         leftlevel=culvert.hoogtebinnenonderkantbov,
         rightlevel=culvert.hoogtebinnenonderkantbene,
         length=culvert.lengte,
@@ -131,7 +148,7 @@ for i, culvert in tqdm(hydamo.culverts.iterrows()):
             height=culvert.hoogteopening,
             width=culvert.breedteopening,
             closed=1,
-        ),  
+        ),
         bedfrictiontype=get_roughness(culvert.typeruwheid),
         bedfriction=culvert.ruwheid,
     )
@@ -164,7 +181,7 @@ mesh.mesh1d_add_branches_from_gdf(
     branches=hydamo.branches,
     branch_name_col="code",
     node_distance=20,
-    # max_dist_to_struc=None,
+    max_dist_to_struc=3,
     structures=structures,
 )
 
@@ -194,6 +211,26 @@ default = hydamo.crosssections.add_rectangle_definition(
 )
 hydamo.crosssections.set_default_definition(definition=default, shift=10.0)
 
+# %% 2D
+twod = False
+if twod:
+    print("doing 2D")
+    extent = gpd.read_file(extent_shp_path)
+    network = fm.geometry.netfile.network
+
+    mesh.mesh2d_add_rectilinear(network=network, polygon=extent.geometry.values[0], dx=100, dy=100)
+
+    mesh.links1d2d_add_links_1d_to_2d(network=network)
+    mesh.mesh2d_altitude_from_raster(
+        network=network,
+        rasterpath=twod_depth_path,
+        where="node",  # Face does not work
+        stat="mean",
+        fill_option="fill_value",
+        fill_value=100,
+    )
+
+    print("2D done")
 # %% ####################################################
 
 models = Df2HydrolibModel(hydamo)
