@@ -19,9 +19,11 @@ Path(output_fig_path).mkdir(exist_ok=True)
 
 # raster options
 resolution = 30  # m
-dhydro_resolution = 100
+dhydro_resolution = 100  # m
 distance_tol = np.ceil(np.sqrt(2 * dhydro_resolution**2))  # m
 interpolation = r"nearest"
+
+# bounds of colorbar
 vmin = 1
 vmax = 1.6
 
@@ -31,6 +33,9 @@ variable = r"Mesh2d_waterdepth"
 map_data = load_map_data(input_file_path, variable)
 map_data[map_data < 0.01] = np.nan
 
+# Loop over frames and check if png exist.
+# If not, check if tiff exists to make png from.
+# If both don't exist, create both
 frames = []
 for ix in tqdm(range(25)):
     output_png_file_path = output_fig_path + r"\{}.png".format(ix)

@@ -1,4 +1,3 @@
-import math
 import uuid
 from typing import Tuple
 
@@ -36,14 +35,26 @@ def convert_pp_to_hydamo(
         branches_gdf.loc[ix_1, "code"] = branch_gid
 
         # Check if width and depth parameters are available, if not, skip
+        # Also skip if no width is available
         if (
-            branch[
-                [index_mapping["bodembreedte"], index_mapping["bodemhoogte benedenstrooms"]]
-            ].empty
-        ) or (
-            branch[[index_mapping["bodembreedte"], index_mapping["bodemhoogte benedenstrooms"]]]
-            .isna()
-            .values.any()
+            (
+                branch[
+                    [index_mapping["bodembreedte"], index_mapping["bodemhoogte benedenstrooms"]]
+                ].empty
+            )
+            or (
+                branch[
+                    [index_mapping["bodembreedte"], index_mapping["bodemhoogte benedenstrooms"]]
+                ]
+                .isna()
+                .values.any()
+            )
+            or (branch[[index_mapping["bodembreedte"], index_mapping["water_width_index"]]].empty)
+            or (
+                branch[[index_mapping["bodembreedte"], index_mapping["water_width_index"]]]
+                .isna()
+                .values.any()
+            )
         ):
             # print("no profile for branch {}".format(branch_gid))
             continue
@@ -66,13 +77,15 @@ def convert_pp_to_hydamo(
             prof_type = "rectangle"
             width_ix = index_mapping["water_width_index"]
         elif (
-            math.isnan(branch[index_mapping["hoogte insteek linkerzijde"]])
-            | math.isnan(branch[index_mapping["taludhelling linkerzijde"]])
-            | math.isnan(branch[index_mapping["taludhelling rechterzijde"]])
+            np.isnan(branch[index_mapping["hoogte insteek linkerzijde"]])
+            | np.isnan(branch[index_mapping["hoogte insteek rechterzijde"]])
+            | np.isnan(branch[index_mapping["taludhelling linkerzijde"]])
+            | np.isnan(branch[index_mapping["taludhelling rechterzijde"]])
         ):
             prof_type = "rectangle"
         elif (
             (branch[index_mapping["hoogte insteek linkerzijde"]] == 0)
+            | (branch[index_mapping["hoogte insteek rechterzijde"]] == 0)
             | (branch[index_mapping["taludhelling linkerzijde"]] == 0)
             | (branch[index_mapping["taludhelling rechterzijde"]] == 0)
         ):
