@@ -2,11 +2,8 @@ import geopandas as gpd
 
 from utils_hydamo_profiles import convert_pp_to_hydamo
 
-if __name__ == "__main__":
-    # prepare AGV data for function
-    branches_path = r"D:\Work\Project\P1414\GIS\Uitgesneden watergangen\HDSR.shp"
-    norm_profiles_output_path = r"D:\Work\Project\P1414\GIS\HDSR\norm_profielen_test.gpkg"
 
+def hdsr_norm_profiles(input_path: str, output_path: str) -> None:
     branches_gdf = gpd.read_file(branches_path)
     branches_gdf["ruwheidsty"] = 6
     branches_gdf["ruwheidhoo"] = 23.0
@@ -47,3 +44,10 @@ if __name__ == "__main__":
     print(out_branches_gdf.loc[out_branches_gdf.geometry.geometry.type == "MultiLineString"])
     for name, layer in layers.items():
         layer.to_file(filename=norm_profiles_output_path, driver="GPKG", layer=name)
+
+
+if __name__ == "__main__":
+    # set paths
+    branches_path = r"D:\Work\Project\P1414\GIS\Uitgesneden watergangen\HDSR.shp"
+    norm_profiles_output_path = r"D:\Work\Project\P1414\GIS\HDSR\norm_profielen_test.gpkg"
+    hdsr_norm_profiles(input_path=branches_path, output_path=norm_profiles_output_path)

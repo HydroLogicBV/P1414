@@ -6,40 +6,39 @@
 # - Samenvoegen in een gpkg (opslagtechnisch en overzichtelijker)
 
 # Importeer de benodige packages
-import geopandas as gpd
-import numpy as np
-import pandas as pd
+import uuid
+from copy import copy
 
-import data_functions as daf
+import geopandas as gpd
 
 # Definieer locatie waar bestanden staan
 p_folder = r"D:\Work\Project\P1414"
-folder_data = p_folder + r"\GIS\HDSR\Legger"
-file_gpkg = p_folder + r"\GIS\HDSR\HDSR_hydamo.gpkg"
+
+branches_path = p_folder + r"\GIS\HDSR\norm_profielen_test.gpkg"
+bridges_path = p_folder + r"\GIS\HDSR\Legger\Bruggen\Bruggen.shp"
+culvert_path = p_folder + r"\GIS\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen.shp"
+pump_path = p_folder + r"\GIS\HDSR\Legger\Gemalen\Gemalen_peil.shp"
+weir_path = p_folder + r"\GIS\HDSR\Legger\Stuwen\BR_Stuwen.shp"
+
+output_gpkg = p_folder + r"\GIS\HDSR\HDSR_hydamo.gpkg"
 
 #### WATERGANGEN ####
-filename = p_folder + r"\GIS\Uitgesneden watergangen\HDSR.shp"
-
-# filename_test = p_folder + r"\GIS\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
-# hydroobject = gpd.read_file(filename_test)
-# hydroobjectsub = hydroobject[["CODE", "GLOBALID", "LENGTE", "geometry"]]
-# hydroobjectsub = hydroobjectsub.rename(
-#     columns={"CODE": "code", "GLOBALID": "globalid", "LENGTE": "lengte"}
-# )
-
-filename_test = r"D:\Work\Project\P1414\GIS\HDSR\norm_profielen_test.gpkg"
-hydroobject = gpd.read_file(filename_test, layer="hydroobject")
-hydroobjectsub = hydroobject[["code", "globalid", "geometry"]]
-
+hydroobject = gpd.read_file(branches_path, layer="hydroobject")
+hydroobjectsub = copy(hydroobject[["code", "globalid", "geometry"]])
 
 hydroobjectsub["typeruwheid"] = 6
 hydroobjectsub["ruwheid"] = 23.0
 
 hydroobjectsub = hydroobjectsub.to_crs("epsg:28992")
+
+## normprofielen ##
+hydroobject_normgp = gpd.read_file(branches_path, layer="hydroobject_normgp")
+normgeparamprofielwaarde = gpd.read_file(branches_path, layer="normgeparamprofielwaarde")
+
+
 #### BRUGGEN ####
-filename = "\Bruggen\Bruggen.shp"
-bridges = gpd.read_file(folder_data + filename)
-bridgessub = bridges[["OBJECTID", "CODE", "WS_DOORVAA", "geometry"]]
+bridges = gpd.read_file(bridges_path)
+bridgessub = copy(bridges[["OBJECTID", "CODE", "WS_DOORVAA", "geometry"]])
 bridgessub = bridgessub.rename(
     columns={"OBJECTID": "globalid", "CODE": "code", "WS_DOORVAA": "lengte"}
 )
@@ -53,21 +52,22 @@ bridgessub.dropna(axis=0, inplace=True, subset=["geometry"])
 bridgessub = bridgessub.to_crs("epsg:28992")
 
 #### DUIKERS ####
-filename = "\Kokers_Lijnen\Kokers_Lijnen.shp"
-culverts = gpd.read_file(folder_data + filename)
-culvertssub = culverts[
-    [
-        "OBJECTID",
-        "CODE",
-        "VORMKOKER",
-        "LENGTE",
-        "HOOGTEOPEN",
-        "BREEDTEOPE",
-        "HOOGTEBOKB",
-        "HOOGTEBO_1",
-        "geometry",
+culverts = gpd.read_file(culvert_path)
+culvertssub = copy(
+    culverts[
+        [
+            "OBJECTID",
+            "CODE",
+            "VORMKOKER",
+            "LENGTE",
+            "HOOGTEOPEN",
+            "BREEDTEOPE",
+            "HOOGTEBOKB",
+            "HOOGTEBO_1",
+            "geometry",
+        ]
     ]
-]
+)
 culvertssub = culvertssub.rename(
     columns={
         "HOOGTEBOKB": "hoogtebinnenonderkantbene",
@@ -87,15 +87,14 @@ culvertssub["uittreeverlies"] = 0.8
 culvertssub = culvertssub.to_crs("epsg:28992")
 
 #### STUWEN ####
-filename = "\Stuwen\BR_Stuwen.shp"
-weirs = gpd.read_file(folder_data + filename)
+weirs = gpd.read_file(weir_path)
 
-weirssub = weirs[["CODE", "STUWID", "SOORTSTUW", "geometry"]]
+weirssub = copy(weirs[["CODE", "STUWID", "SOORTSTUW", "geometry"]])
 weirssub = weirssub.rename(columns={"STUWID": "globalid", "SOORTSTUW": "soortstuw"})
 weirssub["afvoercoefficient"] = 1.0
 weirssub = weirssub.to_crs("epsg:28992")
 
-opening = weirs[["STUWID", "DOORSTROOM", "LAAGSTEDOO", "HOOGSTEDOO", "geometry"]]
+opening = copy(weirs[["STUWID", "DOORSTROOM", "LAAGSTEDOO", "HOOGSTEDOO", "geometry"]])
 opening = opening.rename(
     columns={
         "STUWID": "stuwid",
@@ -104,55 +103,53 @@ opening = opening.rename(
         "HOOGSTEDOO": "hoogstedoorstroomhoogte",
     }
 )
-opening["globalid"] = daf.getuniquecode("HDSR_OPEN_", len(weirssub["globalid"]))
+opening["globalid"] = [str(uuid.uuid4()) for _ in range(opening.shape[0])]
 opening["hoogstedoorstroombreedte"] = opening["laagstedoorstroombreedte"]
 opening["vormopening"] = 3
 opening["afvoercoefficient"] = 0.85
 opening = opening.to_crs("epsg:28992")
 
-management_device = opening[["globalid", "geometry"]]
+management_device = copy(opening[["globalid", "geometry", "stuwid"]])
 management_device = management_device.rename(columns={"globalid": "kunstwerkopeningid"})
+management_device["globalid"] = [str(uuid.uuid4()) for _ in range(management_device.shape[0])]
+management_device["code"] = management_device["globalid"]
 management_device["soortregelbaarheid"] = weirs["SOORTREGEL"]
-management_device["code"] = daf.getuniquecode("HDSR_sturing_", len(management_device["geometry"]))
 management_device["overlaatonderlaat"] = "overlaat"
 management_device = management_device.to_crs("epsg:28992")
 
 #### GEMALEN ####
-filename = "\Gemalen\Gemalen_peil.shp"
-pumpingstations = gpd.read_file(folder_data + filename)
+pumpingstations = gpd.read_file(pump_path)
 
-pumpingstationssub = pumpingstations[["GEMAALID", "geometry"]]
-pumpingstationssub["code"] = daf.getuniquecode("HDSR_gemaal_", len(pumpingstations["GEMAALID"]))
-pumpingstationssub = pumpingstationssub.rename(columns={"GEMAALID": "globalid"})
+pumpingstationssub = copy(pumpingstations[["GEMAALID", "geometry"]])
+pumpingstationssub["globalid"] = [str(uuid.uuid4()) for _ in range(pumpingstationssub.shape[0])]
+pumpingstationssub = pumpingstationssub.rename(columns={"GEMAALID": "code"})
 pumpingstationssub = pumpingstationssub.to_crs("epsg:28992")
 
-pumps = pumpingstations[["GEMAALID", "CODE", "MAXIMALECA", "geometry"]]
-pumps = pumps.rename(
-    columns={"GEMAALID": "gemaalid", "MAXIMALECA": "maximalecapaciteit", "CODE": "globalid"}
-)
-pumps["code"] = daf.getuniquecode("HDSR_pomp_", len(pumps["gemaalid"]))
+pumps = copy(pumpingstations[["CODE", "MAXIMALECA", "geometry"]])
+pumps = pumps.rename(columns={"MAXIMALECA": "maximalecapaciteit", "CODE": "code"})
+pumps["gemaalid"] = pumpingstationssub["globalid"]
+pumps["globalid"] = [str(uuid.uuid4()) for _ in range(pumps.shape[0])]
 pumps = pumps.to_crs("epsg:28992")
 
-sturing = pumpingstations[["CODE", "streefpeil", "geometry"]]
-sturing = sturing.rename(columns={"CODE": "pompid", "streefpeil": "streefwaarde"})
+sturing = copy(pumpingstations[["streefpeil", "geometry"]])
+sturing = sturing.rename(columns={"streefpeil": "streefwaarde"})
+sturing["pompid"] = pumps["globalid"]
 sturing["ondergrens"] = sturing["streefwaarde"] - 0.05
 sturing["bovengrens"] = sturing["streefwaarde"] + 0.05
 sturing["doelvariabele"] = "waterstand"
-sturing["code"] = daf.getuniquecode("HDSR_sturing_", len(sturing["pompid"]))
-sturing["globalid"] = daf.getuniquecode("HDSR_sturing_glob_", len(sturing["pompid"]))
+sturing["code"] = sturing["pompid"]
+sturing["globalid"] = [str(uuid.uuid4()) for _ in range(sturing.shape[0])]
 sturing = sturing.to_crs("epsg:28992")
 
 # Sla de verschillende kunstwerken en watergangen op in een geopackage per waterschap
-
-
-hydroobjectsub.to_file(file_gpkg, layer="waterloop", driver="GPKG")
-bridgessub.to_file(file_gpkg, layer="brug", driver="GPKG")
-culvertssub.to_file(file_gpkg, layer="duiker", driver="GPKG")
-weirssub.to_file(file_gpkg, layer="stuw", driver="GPKG")
-opening.to_file(file_gpkg, layer="kunstwerkopening", driver="GPKG")
-management_device.to_file(file_gpkg, layer="regelmiddel", driver="GPKG")
-pumpingstationssub.to_file(file_gpkg, layer="gemaal", driver="GPKG")
-pumps.to_file(file_gpkg, layer="pomp", driver="GPKG")
-sturing.to_file(file_gpkg, layer="sturing", driver="GPKG")
-
-# %%
+hydroobjectsub.to_file(output_gpkg, layer="waterloop", driver="GPKG")
+bridgessub.to_file(output_gpkg, layer="brug", driver="GPKG")
+culvertssub.to_file(output_gpkg, layer="duiker", driver="GPKG")
+weirssub.to_file(output_gpkg, layer="stuw", driver="GPKG")
+opening.to_file(output_gpkg, layer="kunstwerkopening", driver="GPKG")
+management_device.to_file(output_gpkg, layer="regelmiddel", driver="GPKG")
+pumpingstationssub.to_file(output_gpkg, layer="gemaal", driver="GPKG")
+pumps.to_file(output_gpkg, layer="pomp", driver="GPKG")
+sturing.to_file(output_gpkg, layer="sturing", driver="GPKG")
+hydroobject_normgp.to_file(output_gpkg, layer="hydroobject_normgp", driver="GPKG")
+normgeparamprofielwaarde.to_file(output_gpkg, layer="normgeparamprofielwaarde", driver="GPKG")
