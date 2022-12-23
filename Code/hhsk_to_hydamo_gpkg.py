@@ -74,8 +74,9 @@ weirssub = weirs[['CODE','GlobalID','geometry']]
 weirssub = weirssub.rename(columns={'GlobalID':'globalid',
                                     'CODE':'code',
                                     })
-weirssub['afvoercoefficient'] = 0.85
+
 weirssub['soortstuw'] = 'overlaat'
+weirssub['afvoercoefficient'] = 1
 
 opening = weirs[['GlobalID','KRUINBREED','KRUINHOOGT','geometry']]
 opening = opening.rename(columns={'GlobalID':'stuwid',
@@ -84,6 +85,7 @@ opening = opening.rename(columns={'GlobalID':'stuwid',
 opening['hoogstedoorstroombreedte'] = opening['laagstedoorstroombreedte']
 opening['hoogstedoorstroomhoogte'] = opening['laagstedoorstroomhoogte']
 opening['vormopening'] = 3
+opening['afvoercoefficient'] = 0.85
 
 opening['globalid'] = np.nan
 for i in range(len(opening['globalid'])):
@@ -91,7 +93,9 @@ for i in range(len(opening['globalid'])):
 
 management_device = opening[['globalid','geometry']]
 management_device = management_device.rename(columns={'globalid':'kunstwerkopeningid'})
+management_device["code"] = daf.getuniquecode("HHSK_regelmiddel_", len(management_device["geometry"]))
 management_device['overlaatonderlaat'] = 'overlaat'
+management_device["soortregelbaarheid"] = 1
 
 #### GEMALEN ####
 filename = "\Gemaal_peil.shp"

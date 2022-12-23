@@ -25,9 +25,9 @@ from data_functions import *
 #%% ############################################
 # Data laden
 
-# folder = r"D:\work\P1414_ROI"
-folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HDSR\HDSR_hydamo.gpkg"
+folder = r"D:\work\P1414_ROI"
+#folder = r"D:\Work\Project\P1414"
+gpkg_file = folder + r"\GIS\HHDelfland\HHDL_hydamo.gpkg"
 norm_profile_gpkg = folder + r"\GIS\HDSR\norm_profielen_test.gpkg"
 
 extent_shp_path = folder + "\GIS\WAGV\AGV_mask.shp"
@@ -35,7 +35,7 @@ twod_depth_path = "D:\Work\Project\P1414\GIS\WAGV\AGV_dummy_depth_v2.tif"
 
 hydamo = HyDAMO()
 hydamo.branches.read_gpkg_layer(gpkg_file, layer_name="waterloop", index_col="code")
-hydamo.bridges.read_gpkg_layer(gpkg_file, layer_name="brug", index_col="code")
+#hydamo.bridges.read_gpkg_layer(gpkg_file, layer_name="brug", index_col="code")
 hydamo.culverts.read_gpkg_layer(gpkg_file, layer_name="duiker")
 hydamo.weirs.read_gpkg_layer(gpkg_file, layer_name="stuw")
 hydamo.opening.read_gpkg_layer(gpkg_file, layer_name="kunstwerkopening")
@@ -63,16 +63,16 @@ hydamo.branches = hydamo.branches_popped.set_geometry("geometry")
 
 #%% #######################################################
 # Snap profiles to branch
-hydamo.param_profile.read_gpkg_layer(
-    norm_profile_gpkg,
-    layer_name="hydroobject_normgp",
-    index_col="globalid",
-)
-hydamo.param_profile_values.read_gpkg_layer(
-    norm_profile_gpkg,
-    layer_name="normgeparamprofielwaarde",
-    index_col="normgeparamprofielid",
-)
+# hydamo.param_profile.read_gpkg_layer(
+#     norm_profile_gpkg,
+#     layer_name="hydroobject_normgp",
+#     index_col="globalid",
+# )
+# hydamo.param_profile_values.read_gpkg_layer(
+#     norm_profile_gpkg,
+#     layer_name="normgeparamprofielwaarde",
+#     index_col="normgeparamprofielid",
+# )
 
 # hydamo.profile_roughness.read_gpkg_layer(profile_gpkg, layer_name="ruwheidsprofiel")
 # hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
@@ -83,9 +83,9 @@ hydamo.param_profile_values.read_gpkg_layer(
 # hydamo.profile["code"] = hydamo.profile["profiellijnid"]
 
 
-# Snap structures to branches
-hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
-hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
+# # Snap structures to branches
+# hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=10)
+# hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
 
 hydamo.culverts.snap_to_branch(hydamo.branches, snap_method="ends", maxdist=15)
 hydamo.culverts.dropna(axis=0, inplace=True, subset=["branch_offset"])  # Without branch

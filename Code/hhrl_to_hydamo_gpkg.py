@@ -67,9 +67,6 @@ culvertssub = culvertssub.rename(columns={'HOOGTEBINN':'hoogtebinnenonderkantben
                                           'BREEDTEOPE':'breedteopening',
                                           'VORMKOKER':'vormkoker',
                                           'LENGTE':'lengte'})
-culvertssub['globalid'] = np.nan
-for i in range(len(culvertssub['globalid'])):
-    culvertssub['globalid'].iloc[i] = 'HHRL_duiker_'+str(culverts['ORACLE_OBJ'].iloc[i])
 
 sifonssub = sifons[['CODE','VORMKOKER','LENGTE',
                         'HOOGTEOPEN','BREEDTEOPE','HOOGTEBINN',
@@ -81,15 +78,15 @@ sifonssub = sifonssub.rename(columns={'HOOGTEBINN':'hoogtebinnenonderkantbene',
                                           'BREEDTEOPE':'breedteopening',
                                           'VORMKOKER':'vormkoker',
                                           'LENGTE':'lengte'})
-sifonssub['globalid'] = np.nan
-for i in range(len(sifonssub['globalid'])):
-    sifonssub['globalid'].iloc[i] = 'HHRL_duiker_'+str(sifons['ORACLE_OBJ'].iloc[i])
+
 
 culverts_total = culvertssub.append(sifonssub)
 culverts_total['typeruwheid'] = 4
 culverts_total['ruwheid'] = 75.
 culverts_total['intreeverlies'] = 0.6
 culverts_total['uittreeverlies'] = 0.8
+
+culverts_total['globalid'] = daf.getuniquecode('HHRL_duiker_', len(culverts_total['geometry']))
 
 # Check if vormkoker is an int or a str
 if type(culverts_total.vormkoker.iloc[0]) == str:
