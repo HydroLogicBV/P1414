@@ -4,7 +4,7 @@ from utils_hydamo_profiles import convert_pp_to_hydamo
 
 
 def hdsr_norm_profiles(input_path: str, output_path: str) -> None:
-    branches_gdf = gpd.read_file(branches_path)
+    branches_gdf = gpd.read_file(input_path)
     branches_gdf["ruwheidsty"] = 6
     branches_gdf["ruwheidhoo"] = 23.0
     branches_gdf["ruwheidlaa"] = 23.0
@@ -40,10 +40,8 @@ def hdsr_norm_profiles(input_path: str, output_path: str) -> None:
             ("normgeparamprofielwaarde", normgeparamprofielwaarde),
         ]
     )
-
-    print(out_branches_gdf.loc[out_branches_gdf.geometry.geometry.type == "MultiLineString"])
     for name, layer in layers.items():
-        layer.to_file(filename=norm_profiles_output_path, driver="GPKG", layer=name)
+        layer.to_file(filename=output_path, driver="GPKG", layer=name)
 
 
 if __name__ == "__main__":

@@ -11,10 +11,12 @@ from copy import copy
 
 import geopandas as gpd
 
+from HDSR_norm_profiles import hdsr_norm_profiles
+
 # Definieer locatie waar bestanden staan
 p_folder = r"D:\Work\Project\P1414"
 
-branches_path = p_folder + r"\GIS\HDSR\norm_profielen_test.gpkg"
+branches_path = p_folder + r"\GIS\HDSR\hydro_object_w_norm_profielen.gpkg"
 bridges_path = p_folder + r"\GIS\HDSR\Legger\Bruggen\Bruggen.shp"
 culvert_path = p_folder + r"\GIS\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen.shp"
 pump_path = p_folder + r"\GIS\HDSR\Legger\Gemalen\Gemalen_peil.shp"
@@ -23,7 +25,15 @@ weir_path = p_folder + r"\GIS\HDSR\Legger\Stuwen\BR_Stuwen.shp"
 output_gpkg = p_folder + r"\GIS\HDSR\HDSR_hydamo.gpkg"
 
 #### WATERGANGEN ####
-hydroobject = gpd.read_file(branches_path, layer="hydroobject")
+# First try to find geopacke with branches and norm-profiles, if it does not exist, create it
+
+try:
+    hydroobject = gpd.read_file(branches_path, layer="hydroobject")
+except (FileNotFoundError, ValueError):
+    old_branches_path = p_folder + r"\GIS\Uitgesneden watergangen\HDSR.shp"
+    hdsr_norm_profiles(input_path=old_branches_path, output_path=branches_path)
+    hydroobject = gpd.read_file(branches_path, layer="hydroobject")
+
 hydroobjectsub = copy(hydroobject[["code", "globalid", "geometry"]])
 
 hydroobjectsub["typeruwheid"] = 6
@@ -153,3 +163,6 @@ pumps.to_file(output_gpkg, layer="pomp", driver="GPKG")
 sturing.to_file(output_gpkg, layer="sturing", driver="GPKG")
 hydroobject_normgp.to_file(output_gpkg, layer="hydroobject_normgp", driver="GPKG")
 normgeparamprofielwaarde.to_file(output_gpkg, layer="normgeparamprofielwaarde", driver="GPKG")
+
+# %%
+ 
