@@ -119,7 +119,7 @@ management_device = opening[['globalid','geometry']]
 management_device = management_device.rename(columns={'globalid':'kunstwerkopeningid'})
 management_device['code'] = daf.getuniquecode('HHDL_regelmiddel_',len(management_device['geometry']))
 management_device["soortregelbaarheid"] = weirs['REGELBAARH']
-management_device['overlaatonderlaat'] = 'overlaat'
+management_device['overlaatonderlaat'] = 'Overlaat'
 
 #### GEMALEN ####
 filename = "\Ondersteunende kunstwerken\Gemaal_peil.shp"

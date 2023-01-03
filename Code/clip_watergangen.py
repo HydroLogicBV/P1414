@@ -12,7 +12,7 @@ from tqdm import tqdm
 # BUFFER_DIST = 10
 EPSG = 28992
 
-p_folder = r"D:\Work\Project\P1414\GIS"
+p_folder = r"D:\work\P1414_ROI\GIS"
 old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited.shp"
 
 agv_branches_path = p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"
@@ -32,10 +32,10 @@ clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v4_test.sh
 HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
 clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v4_test.shp"
 
-AGV = False
-HDSR = False
-HHD = False
-HHR = False
+AGV = True
+HDSR = True
+HHD = True
+HHR = True
 HHSK = True
 
 

@@ -118,7 +118,7 @@ management_device = opening[['globalid','geometry']]
 management_device['code'] = daf.getuniquecode('HHRL_sturing_',len(management_device['geometry']))
 management_device = management_device.rename(columns={'globalid':'kunstwerkopeninging'})
 management_device['soortregelbaarheid'] = weirs['SOORTREGEL']
-management_device['overlaatonderlaat'] = 'overlaat'
+management_device['overlaatonderlaat'] = 'Overlaat'
 
 #### GEMALEN ####
 filename = "\Gemaal\gemaal_peil.shp"

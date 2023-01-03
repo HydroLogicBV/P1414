@@ -94,7 +94,7 @@ for i in range(len(opening['globalid'])):
 management_device = opening[['globalid','geometry']]
 management_device = management_device.rename(columns={'globalid':'kunstwerkopeningid'})
 management_device["code"] = daf.getuniquecode("HHSK_regelmiddel_", len(management_device["geometry"]))
-management_device['overlaatonderlaat'] = 'overlaat'
+management_device['overlaatonderlaat'] = 'Overlaat'
 management_device["soortregelbaarheid"] = 1
 
 #### GEMALEN ####
