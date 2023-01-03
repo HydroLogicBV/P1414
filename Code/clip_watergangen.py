@@ -2,6 +2,7 @@
 print("Initializing")
 import uuid
 from copy import copy
+from typing import List, Tuple
 
 import geopandas as gpd
 import numpy as np
@@ -150,10 +151,22 @@ def _clip_branches(
 
 def check_branch_overlap(
     new_branches: gpd.GeoDataFrame, old_branches: gpd.GeoDataFrame, min_overlap: float = 0.25
-) -> gpd.GeoDataFrame:
+) -> Tuple[gpd.GeoDataFrame, List[float]]:
     """
-    Only keep branches with an overlap larger than min_overlap.
-    Replaces MultiLineStrings with original data
+    Computes overlap between unclipped and clipped branches.
+    Only keeps branches with an overlap larger than min_overlap.
+    Replaces MultiLineStrings (i.e. lines that are only partiallyt clipped) with unclipped data if overlap is larger than min_ocerlap
+
+    Args:
+        new_branches (gpd.GeoDataFrame): clipped branches that are checked against old_branches
+        old_branches (gpd.GeoDataFrame): un-clipped branches, used to compute the amount of overlap between clipped and unclipped
+        min_overlap (float): fraction of clipped branch / unclipped branch. Branches are kept if this fraction is larger than min_overlap
+
+    Returns:
+        out_branches (gpd.GeoDataFrame): sanitized branches
+        stats (List): list of stats [number of initial split branches, number of remaining split branches,
+                                        number of replaced branches, number of dropped branches]
+
     """
     # print("Checking for split branches and fixing them")
 
@@ -262,6 +275,17 @@ def skip_branches_con(
 
 
 def read_rm_branches(rm_branches_path: str) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    """
+    function to read old RM-model branches and skip underpasses (marked by "OND")
+
+    Args:
+        rm_branches_path (str): path of shape file containing the old branches
+
+    Returns:
+        rm_branches (gpd.GeoDataFrame): GeoDataFrame containing the branches
+        onderdoorgangen (gpd.GeoDataFrame): GeoDataFrame containing underpasses
+    """
+
     rm_branches = gpd.read_file(rm_branches_path, geometry="geometry").to_crs(crs=EPSG)
     ondd_bool = (rm_branches["Source"].str.contains("OND")) | (
         rm_branches["Target"].str.contains("OND")

@@ -30,7 +30,7 @@ output_gpkg = p_folder + r"\GIS\HDSR\HDSR_hydamo.gpkg"
 try:
     hydroobject = gpd.read_file(branches_path, layer="hydroobject")
 except (FileNotFoundError, ValueError):
-    old_branches_path = p_folder + r"\GIS\Uitgesneden watergangen\HDSR.shp"
+    old_branches_path = p_folder + r"\GIS\Uitgesneden watergangen\HDSR_v4_test.shp"
     hdsr_norm_profiles(input_path=old_branches_path, output_path=branches_path)
     hydroobject = gpd.read_file(branches_path, layer="hydroobject")
 
@@ -117,7 +117,9 @@ opening["globalid"] = [str(uuid.uuid4()) for _ in range(opening.shape[0])]
 opening["hoogstedoorstroombreedte"] = opening["laagstedoorstroombreedte"]
 opening["vormopening"] = 3
 opening["afvoercoefficient"] = 0.85
-opening = opening.to_crs("epsg:28992")
+opening["geometry"] = None
+# opening = opening.to_crs("epsg:28992")
+
 
 management_device = copy(opening[["globalid", "geometry", "stuwid"]])
 management_device = management_device.rename(columns={"globalid": "kunstwerkopeningid"})
@@ -125,7 +127,7 @@ management_device["globalid"] = [str(uuid.uuid4()) for _ in range(management_dev
 management_device["code"] = management_device["globalid"]
 management_device["soortregelbaarheid"] = weirs["SOORTREGEL"]
 management_device["overlaatonderlaat"] = "overlaat"
-management_device = management_device.to_crs("epsg:28992")
+# management_device = management_device.to_crs("epsg:28992")
 
 #### GEMALEN ####
 pumpingstations = gpd.read_file(pump_path)
