@@ -66,7 +66,6 @@ def clip_branches(
                                          1. fraction of branch that is covered by overlay branches is >= min_overlap
                                          2. at least 1 other branch connects to both ends of a branch
 
-
     """
 
     # Load input branches, explode multilinestrings, and assign unique ids.
