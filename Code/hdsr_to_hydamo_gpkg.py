@@ -14,7 +14,7 @@ import geopandas as gpd
 from HDSR_norm_profiles import hdsr_norm_profiles
 
 # Definieer locatie waar bestanden staan
-p_folder = r"D:\Work\Project\P1414"
+p_folder = r"D:\work\P1414_ROI"
 
 branches_path = p_folder + r"\GIS\HDSR\hydro_object_w_norm_profielen.gpkg"
 bridges_path = p_folder + r"\GIS\HDSR\Legger\Bruggen\Bruggen.shp"
@@ -126,7 +126,7 @@ management_device = management_device.rename(columns={"globalid": "kunstwerkopen
 management_device["globalid"] = [str(uuid.uuid4()) for _ in range(management_device.shape[0])]
 management_device["code"] = management_device["globalid"]
 management_device["soortregelbaarheid"] = weirs["SOORTREGEL"]
-management_device["overlaatonderlaat"] = "overlaat"
+management_device["overlaatonderlaat"] = "Overlaat"
 # management_device = management_device.to_crs("epsg:28992")
 
 #### GEMALEN ####
