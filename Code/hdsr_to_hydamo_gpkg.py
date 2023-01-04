@@ -14,8 +14,8 @@ import geopandas as gpd
 from HDSR_norm_profiles import hdsr_norm_profiles
 
 # Definieer locatie waar bestanden staan
-p_folder = r"D:\work\P1414_ROI"
-
+# p_folder = r"D:\work\P1414_ROI"
+p_folder = r"D:\Work\Project\P1414"
 branches_path = p_folder + r"\GIS\HDSR\hydro_object_w_norm_profielen.gpkg"
 bridges_path = p_folder + r"\GIS\HDSR\Legger\Bruggen\Bruggen.shp"
 culvert_path = p_folder + r"\GIS\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen.shp"
@@ -30,9 +30,28 @@ output_gpkg = p_folder + r"\GIS\HDSR\HDSR_hydamo.gpkg"
 try:
     hydroobject = gpd.read_file(branches_path, layer="hydroobject")
 except (FileNotFoundError, ValueError):
-    old_branches_path = p_folder + r"\GIS\Uitgesneden watergangen\HDSR_v4_test.shp"
-    hdsr_norm_profiles(input_path=old_branches_path, output_path=branches_path)
+    # set paths
+    old_branches_path = r"D:\Work\Project\P1414\GIS\Uitgesneden watergangen\HDSR_v4_test.shp"
+
+    # set column mapping
+    index_mapping = dict(
+        [
+            ("bodembreedte", "IWS_W_BODB"),
+            ("bodemhoogte benedenstrooms", "IWS_W_BODH"),
+            ("bodemhoogte bovenstrooms", "IWS_W_BODH"),
+            ("hoogte insteek linkerzijde", "IWS_W_INST"),
+            ("hoogte insteek rechterzijde", "IWS_W_IN_1"),
+            ("taludhelling linkerzijde", "IWS_W_TALU"),
+            ("taludhelling rechterzijde", "IWS_W_TA_1"),
+            ("typeruwheid", "ruwheidsty"),
+            ("ruwheidhoog", "ruwheidhoo"),
+            ("ruwheidlaag", "ruwheidlaa"),
+            ("water_width_index", "IWS_W_WATB"),
+        ]
+    )
+    hdsr_norm_profiles(input_path=old_branches_path, index_mapping=index_mapping, output_path=branches_path)
     hydroobject = gpd.read_file(branches_path, layer="hydroobject")
+
 
 hydroobjectsub = copy(hydroobject[["code", "globalid", "geometry"]])
 
@@ -52,6 +71,7 @@ bridgessub = copy(bridges[["OBJECTID", "CODE", "WS_DOORVAA", "geometry"]])
 bridgessub = bridgessub.rename(
     columns={"OBJECTID": "globalid", "CODE": "code", "WS_DOORVAA": "lengte"}
 )
+bridgessub["globalid"] = [str(uuid.uuid4()) for _ in range(bridgessub.shape[0])]
 bridgessub["typeruwheid"] = 4
 bridgessub["ruwheid"] = 75.0
 bridgessub["intreeverlies"] = 0.5
@@ -90,6 +110,7 @@ culvertssub = culvertssub.rename(
         "LENGTE": "lengte",
     }
 )
+culvertssub["globalid"] = [str(uuid.uuid4()) for _ in range(culvertssub.shape[0])]
 culvertssub["typeruwheid"] = 4
 culvertssub["ruwheid"] = 75.0
 culvertssub["intreeverlies"] = 0.6
@@ -98,16 +119,18 @@ culvertssub = culvertssub.to_crs("epsg:28992")
 
 #### STUWEN ####
 weirs = gpd.read_file(weir_path)
+weirs["globalid"] = [str(uuid.uuid4()) for _ in range(weirs.shape[0])]
 
-weirssub = copy(weirs[["CODE", "STUWID", "SOORTSTUW", "geometry"]])
-weirssub = weirssub.rename(columns={"STUWID": "globalid", "SOORTSTUW": "soortstuw"})
+weirssub = copy(weirs[["CODE", "globalid", "SOORTSTUW", "geometry"]])
+weirssub = weirssub.rename(columns={ "SOORTSTUW": "soortstuw", "CODE": "code"})
+
 weirssub["afvoercoefficient"] = 1.0
 weirssub = weirssub.to_crs("epsg:28992")
 
-opening = copy(weirs[["STUWID", "DOORSTROOM", "LAAGSTEDOO", "HOOGSTEDOO", "geometry"]])
+opening = copy(weirs[["globalid", "DOORSTROOM", "LAAGSTEDOO", "HOOGSTEDOO", "geometry"]])
 opening = opening.rename(
     columns={
-        "STUWID": "stuwid",
+        "globalid": "stuwid",
         "DOORSTROOM": "laagstedoorstroombreedte",
         "LAAGSTEDOO": "laagstedoorstroomhoogte",
         "HOOGSTEDOO": "hoogstedoorstroomhoogte",
@@ -135,13 +158,17 @@ pumpingstations = gpd.read_file(pump_path)
 pumpingstationssub = copy(pumpingstations[["GEMAALID", "geometry"]])
 pumpingstationssub["globalid"] = [str(uuid.uuid4()) for _ in range(pumpingstationssub.shape[0])]
 pumpingstationssub = pumpingstationssub.rename(columns={"GEMAALID": "code"})
+pumpingstationssub = pumpingstationssub.astype({"code": str})
 pumpingstationssub = pumpingstationssub.to_crs("epsg:28992")
 
-pumps = copy(pumpingstations[["CODE", "MAXIMALECA", "geometry"]])
-pumps = pumps.rename(columns={"MAXIMALECA": "maximalecapaciteit", "CODE": "code"})
+pumps = copy(pumpingstations[["MAXIMALECA", "geometry", "GEMAALID"]])
+pumps = pumps.rename(columns={"MAXIMALECA": "maximalecapaciteit", "GEMAALID": "code"})
+pumps = pumps.astype({"code": str})
 pumps["gemaalid"] = pumpingstationssub["globalid"]
 pumps["globalid"] = [str(uuid.uuid4()) for _ in range(pumps.shape[0])]
-pumps = pumps.to_crs("epsg:28992")
+# pumps["code"] = pumps["globalid"]
+pumps["geometry"] = None
+# pumps = pumps.to_crs("epsg:28992")
 
 sturing = copy(pumpingstations[["streefpeil", "geometry"]])
 sturing = sturing.rename(columns={"streefpeil": "streefwaarde"})
@@ -150,8 +177,10 @@ sturing["ondergrens"] = sturing["streefwaarde"] - 0.05
 sturing["bovengrens"] = sturing["streefwaarde"] + 0.05
 sturing["doelvariabele"] = "waterstand"
 sturing["code"] = sturing["pompid"]
+sturing = sturing.astype({"code": str})
 sturing["globalid"] = [str(uuid.uuid4()) for _ in range(sturing.shape[0])]
-sturing = sturing.to_crs("epsg:28992")
+sturing["geometry"] = None
+# sturing = sturing.to_crs("epsg:28992")
 
 # Sla de verschillende kunstwerken en watergangen op in een geopackage per waterschap
 hydroobjectsub.to_file(output_gpkg, layer="waterloop", driver="GPKG")

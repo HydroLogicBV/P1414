@@ -1,5 +1,5 @@
 # %%
-from utilities import json_download_rijnland, wfs_download_rijnland
+from download_helpers.utilities import json_download_rijnland, wfs_download_rijnland
 
 # %% Stuw
 stuw_url = r"https://rijnland.enl-mcs.nl/arcgis/services/Stuw/MapServer/WFSServer?service=wfs&request=GetFeature&typeNames=stuw"

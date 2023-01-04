@@ -149,7 +149,7 @@ for ix, tile in pbar:
 
 
 ahn_merged, out_transform = merge(path_list)
-ahn_merged[ahn_merged > 10] = np.nan
+ahn_merged[ahn_merged > 100] = np.nan
 
 count, height, width = ahn_merged.shape
 profile = {
