@@ -19,9 +19,9 @@ roughness_mapping = {
 roughness_mapping = list(roughness_mapping)
 
 profile_points_path = (
-    r"D:\Work\Project\P1414\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped_rm.shp"
+    r"D:\work\P1414_ROI\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped_rm.shp"
 )
-profiles_output_path = r"D:\Work\Project\P1414\GIS\WAGV\profielen_light.gpkg"
+profiles_output_path = r"D:\work\P1414_ROI\GIS\WAGV\profielen_light.gpkg"
 
 # Load shapefile with profile points & group them by metingprof attribute
 profile_points = gpd.read_file(profile_points_path)

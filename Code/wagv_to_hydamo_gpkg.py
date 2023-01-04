@@ -18,7 +18,7 @@ folder_data = p_folder + r"\GIS\WAGV"
 file_gpkg = p_folder + r"\GIS\WAGV\WAGV_hydamo.gpkg"
 
 #### WATERGANGEN ####
-filename = p_folder + r"\GIS\Uitgesneden watergangen\WAGV.shp"
+filename = p_folder + r"\GIS\Uitgesneden watergangen\AGV_v4_test.shp"
 
 # filename_test = p_folder + r"\GIS\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
 # hydroobject = gpd.read_file(filename_test)
@@ -28,7 +28,7 @@ filename = p_folder + r"\GIS\Uitgesneden watergangen\WAGV.shp"
 # )
 
 filename_test = r"D:\work\P1414_ROI\GIS\AGV\norm_profielen_test.gpkg"
-hydroobject = gpd.read_file(filename, layer="hydroobject")
+hydroobject = gpd.read_file(filename)#, layer="hydroobject")
 hydroobjectsub = hydroobject[["code", "ruwheidsty", 'ruwheidlaa',"geometry"]]
 
 hydroobjectsub = hydroobjectsub.rename(columns={'ruwheidsty': 'typeruwheid',
@@ -37,7 +37,7 @@ hydroobjectsub = hydroobjectsub.rename(columns={'ruwheidsty': 'typeruwheid',
 hydroobjectsub['globalid'] = daf.getuniquecode('WAGV_watergang_', len(hydroobjectsub['geometry']))
 
 #### BRUGGEN ####
-filename = "\brug_v13\brug_v13_clipped.shp"
+filename = r"\brug_v13\brug_v13_clipped.shp"
 bridges = gpd.read_file(folder_data + filename)
 bridgessub = bridges[["code", "lengte", 'ruwheidsty','ruwheid',
                       'intreeverl', 'uittreever', "geometry"]]
@@ -50,7 +50,7 @@ bridgessub['globalid'] = daf.getuniquecode('WAGV_brug_glob_', len(bridgessub['ge
 bridgessub.dropna(axis=0, inplace=True, subset=["geometry"])
 
 #### DUIKERS ####
-filename = "\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp"
+filename = r"\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp"
 culverts = gpd.read_file(folder_data + filename)
 culvertssub = culverts[
     [
@@ -64,7 +64,7 @@ culvertssub = culverts[
         "ruwheidsty",
         "ruwheid",
         "intreeverl",
-        "uittreever"
+        "uittreever",
         "geometry",
     ]
 ]
@@ -83,7 +83,7 @@ culvertssub = culvertssub.rename(
 culvertssub['globalid'] = daf.getuniquecode('WAGV_duiker_', len(culvertssub['geometry']))
 
 #### STUWEN ####
-filename = "\stuw_v13\stuw_v13_clipped.shp"
+filename = r"\stuw_v13\stuw_v13_clipped.shp"
 weirs = gpd.read_file(folder_data + filename)
 
 weirssub = weirs[["code", "soortstuwi", "afvoercoef","geometry"]]
@@ -96,7 +96,7 @@ weirssub['code'] = daf.getuniquecode('WAGV_stuw_',len(weirssub['geometry']))
 filename = "\doorstroomopening_stuw_v13\doorstroomopening_stuw_v13_clipped.shp"
 opening_total = gpd.read_file(folder_data + filename)
 opening = opening_total[["stuwcode", "laagstedoo", "laagstedo0", "hoogstedoo",
-                         "hoogstedo0", "afvoercoef","vormopening","geometry"]]
+                         "hoogstedo0", "afvoercoef","vormopenin","geometry"]]
 opening = opening.rename(
     columns={
         "stuwcode": "stuwid",
@@ -117,17 +117,16 @@ management_device["overlaatonderlaat"] = "Overlaat"
 
 
 #### GEMALEN ####
-filename = "\Gemalen\Gemalen_peil.shp"
+filename = r"\pomp_gemaal_v13\pomp_gemaal_v13_clipped_streefpeil.shp"
 pumpingstations = gpd.read_file(folder_data + filename)
 
-pumpingstationssub = pumpingstations[["GEMAALID", "geometry"]]
-pumpingstationssub["code"] = daf.getuniquecode("HDSR_gemaal_", len(pumpingstations["GEMAALID"]))
-pumpingstationssub = pumpingstationssub.rename(columns={"GEMAALID": "globalid"})
+pumpingstationssub = pumpingstations[["gemaalcode", "code", "geometry"]]
+pumpingstationssub = pumpingstationssub.rename(columns={"gemaalcode": "globalid"})
 pumpingstationssub = pumpingstationssub.to_crs("epsg:28992")
 
-pumps = pumpingstations[["GEMAALID", "CODE", "MAXIMALECA", "geometry"]]
+pumps = pumpingstations[["gemaalcode", "CODE", "MAXIMALECA", "geometry"]]
 pumps = pumps.rename(
-    columns={"GEMAALID": "gemaalid", "MAXIMALECA": "maximalecapaciteit", "CODE": "globalid"}
+    columns={"gemaalcode": "gemaalid", "MAXIMALECA": "maximalecapaciteit", "CODE": "globalid"}
 )
 pumps["code"] = daf.getuniquecode("HDSR_pomp_", len(pumps["gemaalid"]))
 pumps = pumps.to_crs("epsg:28992")

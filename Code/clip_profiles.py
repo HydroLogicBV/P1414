@@ -22,7 +22,7 @@ def read_rm_branches(rm_branches_path: str) -> tuple[gpd.GeoDataFrame, gpd.GeoDa
     return rm_branches, onderdoorgangen
 
 
-old_rm_branches_path = r"D:\Work\Project\P1414\GIS\Randstadmodel_oud\rm_Branches_28992.shp"
+old_rm_branches_path = r"D:\work\P1414_ROI\GIS\Randstadmodel_oud\rm_Branches_28992.shp"
 
 old_rm_branches, onderdoorgangen = read_rm_branches(old_rm_branches_path)
 buffered_old_rm_branches = gpd.GeoDataFrame(geometry=old_rm_branches.buffer(distance=BUFFER_DIST))
@@ -32,10 +32,10 @@ buffered_old_rm_branches = gpd.GeoDataFrame(geometry=old_rm_branches.buffer(dist
 print("AGV")
 
 agv_profiles_path = (
-    r"D:\Work\Project\P1414\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped.shp"
+    r"D:\work\P1414_ROI\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped.shp"
 )
 clipped_agv_profiles_path = (
-    r"D:\Work\Project\P1414\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped_rm.shp"
+    r"D:\work\P1414_ROI\GIS\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped_rm.shp"
 )
 
 intersected_profiles = clip_profiles(
