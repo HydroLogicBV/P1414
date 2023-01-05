@@ -15,6 +15,9 @@ def get_crosssection_culvert_AGV(
     Function defines a cross section based on different parameters that interact with the shape of the culvert.
 
     """
+    if shape not in [1, 3, 5, 99]:
+        shape = 1
+
     shapedict = {1: "circle", 3: "rectangle", 5: "circle", 99: "rectangle"}
     shape_str = shapedict[shape]
 
@@ -28,7 +31,7 @@ def get_crosssection_culvert_AGV(
                 diameter = 0.75
 
     else:
-        diameter = None
+        diameter = np.nan
 
     crosssection = {
         "shape": shape_str,

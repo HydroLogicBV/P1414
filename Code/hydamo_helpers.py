@@ -1,5 +1,5 @@
 import uuid
-from typing import Tuple
+from typing import List, Tuple
 
 import geopandas as gpd
 import numpy as np
@@ -22,6 +22,18 @@ ROUGHNESS_MAPPING = list(roughness_mapping)
 def convert_pp_to_hydamo(
     branches_gdf: gpd.GeoDataFrame, index_mapping: dict
 ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    """
+    Function that converts parameterized profiles to HYDAMO compliant format.
+
+    Args:
+        branches_gdf (gpd.GeoDataFrame): input geodataframe containing branches
+        index_mapping (dict): dictionary containing a mapping from required keys to values present in branches_gdf
+
+    Returns:
+        hydroobject (gpd.GeoDataFrame): ouput geodataframe containing branches
+        hydroobject_normgp (gpd.GeoDataFrame): output geodataframe containing names of branches and corresponding profiles
+        normgeparamprofielwaarde (gpd.GeoDataFrame): output geodataframe containing parameterized profiles
+    """
 
     # script
     ho_ngp_list = []
@@ -157,14 +169,20 @@ def convert_pp_to_hydamo(
                     params["bodemhoogte bovenstrooms"],
                 )
 
+        # turn numerical roughnes types to strings
+        type_ruwheid = branch[index_mapping["typeruwheid"]]
+        if isinstance(type_ruwheid, int) or isinstance(type_ruwheid, float):
+            type_ruwheid = ROUGHNESS_MAPPING[int(type_ruwheid) - 1]
+
         # loop over parameters to add to ngp_list
         for ix_2, (key, value) in enumerate(params.items()):
+
             ngp_values = dict(
                 [
                     ("normgeparamprofielid", ngp_gid),
                     (
                         "typeruwheid",
-                        ROUGHNESS_MAPPING[int(branch[index_mapping["typeruwheid"]]) - 1],
+                        type_ruwheid,
                     ),
                     ("ruwheidhoog", branch[index_mapping["ruwheidhoog"]]),
                     ("ruwheidlaag", branch[index_mapping["ruwheidlaag"]]),
@@ -179,7 +197,19 @@ def convert_pp_to_hydamo(
     normgeparamprofielwaarde = gpd.GeoDataFrame(ngp_list, geometry="geometry", crs=28992)
 
     return (
-        branches_gdf,
+        branches_gdf[["code", "globalid", "geometry", "typeruwheid"]],
         hydroobject_normgp,
         normgeparamprofielwaarde,
     )
+
+
+def save_gpkg(
+    input_gdfs: List[gpd.GeoDataFrame], layers: List[str], output_path: str = None
+) -> None:
+    if len(input_gdfs) != len(layers):
+        raise ValueError("expected lists of equal lengths")
+
+    # save hydamo data in geopackage
+    if output_path is not None:
+        for name, gdf in zip(layers, input_gdfs):
+            gdf.to_file(filename=output_path, driver="GPKG", layer=name)
