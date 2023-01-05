@@ -28,13 +28,13 @@ max_snap_dist = 10
 #%% ############################################
 # Data laden
 
-# folder = r"D:\work\P1414_ROI"
-folder = r"D:\Work\Project\P1414"
+folder = r"D:\work\P1414_ROI"
+#folder = r"D:\Work\Project\P1414"
 gpkg_file = folder + r"\GIS\HDSR\HDSR_hydamo.gpkg"
 
-twod = False
-extent_shp_path = folder + "\GIS\WAGV\AGV_mask.shp"
-twod_depth_path = "D:\Work\Project\P1414\GIS\WAGV\AGV_dummy_depth_v2.tif"
+twod = True
+extent_shp_path = folder + "\GIS\HDSR\HDSR_extend.shp"
+twod_depth_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
 
 hydamo = HyDAMO()
 hydamo.branches.read_gpkg_layer(gpkg_file, layer_name="waterloop", index_col="code")
@@ -229,7 +229,7 @@ if twod:
         network=network,
         rasterpath=twod_depth_path,
         where="node",  # Face does not work
-        stat="mean",
+        stat="nanmean",
         fill_option="fill_value",
         fill_value=100,
     )

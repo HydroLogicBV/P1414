@@ -12,13 +12,13 @@ from rasterio.merge import merge
 from tqdm import tqdm
 
 # set parameters
-ahn3_path = r"D:\Work\Project\P1414\GIS\AHN\AHN3"
-ahn4_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4"
-ahn_merged_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-ahn_tiles_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_bladen.shp"
+ahn3_path = r"D:\work\P1414_ROI\GIS\AHN\AHN3"
+ahn4_path = r"D:\work\P1414_ROI\GIS\AHN\AHN4"
+ahn_merged_path = r"D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
+ahn_tiles_path = r"D:\work\P1414_ROI\GIS\AHN\AHN_bladen.shp"
 ahn3_url = r"https://download.pdok.nl/rws/ahn3/v1_0/5m_dtm/"
 ahn4_url = r"https://ns_hwh.fundaments.nl/hwh-ahn/ahn4/02b_DTM_5m/"
-branches_path = r"D:\Work\Project\P1414\GIS\Randstadmodel_oud\rm_Branches_28992_edited.shp"
+branches_path = r"D:\work\P1414_ROI\GIS\Randstadmodel_oud\rm_Branches_28992_edited.shp"
 
 max_download_attempts = 2
 
