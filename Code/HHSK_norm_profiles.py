@@ -4,14 +4,10 @@ import geopandas as gpd
 
 from utils_hydamo_profiles import convert_pp_to_hydamo
 
-if __name__ == "__main__":
-    # prepare AGV data for function
-    branches_path = (
-        r"D:\Work\Project\P1414\GIS\HDSR\Legger\Hydro_Objecten(2)\HydroObject_clipped_rm.shp"
-    )
-    norm_profiles_output_path = r"D:\Work\Project\P1414\GIS\HDSR\norm_profielen_test.gpkg"
 
-    branches_gdf = gpd.read_file(branches_path)
+def hhsk_norm_profiles(input_path: str, output_path: str) -> None:
+    # prepare HHSK data for function
+    branches_gdf = gpd.read_file(input_path)
     branches_gdf["ruwheidsty"] = 6
     branches_gdf["ruwheidhoo"] = 23.0
     branches_gdf["ruwheidlaa"] = 23.0
@@ -19,17 +15,17 @@ if __name__ == "__main__":
     # set column mapping
     index_mapping = dict(
         [
-            ("bodembreedte", "IWS_W_BODB"),
-            ("bodemhoogte benedenstrooms", "IWS_W_BODH"),
-            ("bodemhoogte bovenstrooms", "IWS_W_BODH"),
-            ("hoogte insteek linkerzijde", "IWS_W_INST"),
-            ("hoogte insteek rechterzijde", "IWS_W_IN_1"),
-            ("taludhelling linkerzijde", "IWS_W_TALU"),
-            ("taludhelling rechterzijde", "IWS_W_TA_1"),
+            ("bodembreedte", "BODEMBREED"),
+            ("bodemhoogte benedenstrooms", ""),
+            ("bodemhoogte bovenstrooms", ""),
+            ("hoogte insteek linkerzijde", ""),
+            ("hoogte insteek rechterzijde", ""),
+            ("taludhelling linkerzijde", "TALUDLINKS"),
+            ("taludhelling rechterzijde", "TALUDRECHT"),
             ("typeruwheid", "ruwheidsty"),
             ("ruwheidhoog", "ruwheidhoo"),
             ("ruwheidlaag", "ruwheidlaa"),
-            ("water_width_index", "IWS_W_WATB"),
+            ("water_width_index", "WATERBREED"),
         ]
     )
 
@@ -49,4 +45,11 @@ if __name__ == "__main__":
     )
 
     for name, layer in layers.items():
-        layer.to_file(filename=norm_profiles_output_path, driver="GPKG", layer=name)
+        layer.to_file(filename=output_path, driver="GPKG", layer=name)
+
+
+if __name__ == "__main__":
+    # set paths
+    branches_path = r"D:\Work\Project\P1414\GIS\Uitgesneden watergangen\HHSK_v4_test.shp"
+    norm_profiles_output_path = r"D:\Work\Project\P1414\GIS\HDSR\norm_profielen_test.gpkg"
+    hhsk_norm_profiles(input_path=branches_path, output_path=norm_profiles_output_path)

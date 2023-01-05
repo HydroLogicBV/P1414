@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import List
 
-import data_functions as daf
+# import data_functions as daf
+import geopandas as gpd
 import numpy as np
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
@@ -82,12 +83,13 @@ def add_culverts(gpkg_path: str, hydamo: HyDAMO, max_snap_dist: float = 5) -> Hy
             length=culvert.lengte,
             inletlosscoeff=culvert.intreeverlies,
             outletlosscoeff=culvert.uittreeverlies,
-            crosssection=daf.get_crosssection_culvert_AGV(
-                shape=culvert.vormkoker,
-                height=culvert.hoogteopening,
-                width=culvert.breedteopening,
-                closed=1,
-            ),
+            # crosssection=daf.get_crosssection_culvert_AGV(
+            #     shape=culvert.vormkoker,
+            #     height=culvert.hoogteopening,
+            #     width=culvert.breedteopening,
+            #     closed=1,
+            # ),
+            crosssection=eval(culvert.doorstroomopening),
             bedfrictiontype=culvert.typeruwheid,
             bedfriction=culvert.ruwheid,
         )
@@ -202,6 +204,35 @@ def build_1D_model(
     return fm, hydamo
 
 
+def build_2D_model(
+    dx: float,
+    dy: float,
+    extent: gpd.GeoDataFrame,
+    fm: FMModel,
+    elevation_raster_path: str = None,
+    one_d=False,
+) -> FMModel:
+
+    network = fm.geometry.netfile.network
+
+    mesh.mesh2d_add_rectilinear(network=network, polygon=extent.geometry.values[0], dx=dx, dy=dy)
+
+    if elevation_raster_path is not None:
+        mesh.mesh2d_altitude_from_raster(
+            network=network,
+            rasterpath=elevation_raster_path,
+            where="node",  # Face does not work
+            stat="nanmean",
+            fill_option="fill_value",
+            fill_value=-10,
+        )
+
+    if one_d:
+        # mesh.links1d2d_add_links_1d_to_2d(network=network)
+        mesh.links1d2d_add_links_2d_to_1d_embedded(network=network)
+    return fm
+
+
 def simple_fm_model(start_time: int = 20160601, stop_time: int = 2 * 86400) -> FMModel:
     fm = FMModel()
     fm.time.refdate = start_time
@@ -210,18 +241,19 @@ def simple_fm_model(start_time: int = 20160601, stop_time: int = 2 * 86400) -> F
     return fm
 
 
-def write_model(fm: FMModel, hydamo: HyDAMO, output_folder: str):
-    models = Df2HydrolibModel(hydamo)
-    # Export to DIMR configuration
-    fm.geometry.structurefile = [StructureModel(structure=models.structures)]
-    fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
-    fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
+def write_model(fm: FMModel, hydamo: HyDAMO, output_folder: str, one_d=True):
+    if one_d:
+        models = Df2HydrolibModel(hydamo)
+        # Export to DIMR configuration
+        fm.geometry.structurefile = [StructureModel(structure=models.structures)]
+        fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
+        fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
 
-    fm.geometry.frictfile = []
-    for i, fric_def in enumerate(models.friction_defs):
-        fric_model = FrictionModel(global_=fric_def)
-        fric_model.filepath = f"roughness_{i}.ini"
-        fm.geometry.frictfile.append(fric_model)
+        fm.geometry.frictfile = []
+        for i, fric_def in enumerate(models.friction_defs):
+            fric_model = FrictionModel(global_=fric_def)
+            fric_model.filepath = f"roughness_{i}.ini"
+            fm.geometry.frictfile.append(fric_model)
 
     # fm.output.obsfile = [ObservationPointModel(observationpoint=models.obspoints)]
 
