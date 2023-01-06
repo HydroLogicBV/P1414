@@ -27,6 +27,7 @@ dependencies:
     - ipympl
     - isort
     - matplotlib_scalebar
+    - meshkernel>=2.0
     - tqdm
     - ugrid
   

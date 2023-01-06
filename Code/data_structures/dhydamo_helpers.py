@@ -228,8 +228,8 @@ def build_2D_model(
         )
 
     if one_d:
-        # mesh.links1d2d_add_links_1d_to_2d(network=network)
-        mesh.links1d2d_add_links_2d_to_1d_embedded(network=network)
+        mesh.links1d2d_add_links_1d_to_2d(network=network)
+        # mesh.links1d2d_add_links_2d_to_1d_embedded(network=network)
     return fm
 
 
