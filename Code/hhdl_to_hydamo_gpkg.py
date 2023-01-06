@@ -25,7 +25,7 @@ roughness_list = [
     "White Colebrook",
 ]
 #### WATERGANGEN ####
-filename = r"D:\work\P1414_ROI\GIS\Uitgesneden watergangen\HHD.shp"
+filename = r"D:\work\P1414_ROI\GIS\Uitgesneden watergangen\HHD_v4_test.shp"
 #filename = r"D:\work\P1414_ROI\GIS\HHRijnland\Legger\Watergang\Watergang_as.shp"
 hydroobject = gpd.read_file(filename)
 
@@ -37,6 +37,7 @@ hydroobjectsub['code'] = daf.getuniquecode('HHDL_watergang_',len(hydroobjectsub[
 hydroobjectsub['ruwheid'] = 23.
 hydroobjectsub['typeruwheid'] = 4
 
+hydroobjectsub = hydroobjectsub.to_crs("epsg:28992")
 #### BRUGGEN ####
 
 # Tot nu toe geen bruggen gevonden in de legger van HHDL: niet meegenomen
@@ -92,6 +93,7 @@ culvert_total['globalid'] = daf.getuniquecode('HHRL_duiker_', len(culvert_total[
 if type(culvert_total.vormkoker.iloc[0]) == str:
     culvert_total.vormkoker = daf.vormkoker_str2int(culvert_total.vormkoker)
 
+culvert_total = culvert_total.to_crs("epsg:28992")
 #### STUWEN ####
 filename = "\Ondersteunende kunstwerken\Stuw.shp"
 weirs = gpd.read_file(folder_data+filename)
@@ -102,6 +104,7 @@ weirssub = weirssub.rename(columns={'CODE':'code',
 weirssub['afvoercoefficient'] = 1
 weirssub['soortstuw'] = 'overlaat'
 weirssub['globalid'] = daf.getuniquecode('HHDL_stuw_',len(weirssub['geometry']))
+weirssub = weirssub.to_crs("epsg:28992")
 
 opening = weirs[['DOORSTROOM','LAAGSTEDOO','HOOGSTEDOO','geometry']]
 opening = opening.rename(columns={'GlobalID':'stuwid',
@@ -128,12 +131,15 @@ pumpingstations = gpd.read_file(folder_data+filename)
 pumpingstationssub = pumpingstations[['CODE','geometry']]
 pumpingstationssub = pumpingstationssub.rename(columns={'CODE':'code',})
 pumpingstationssub['globalid'] = daf.getuniquecode('HHDL_gemaal_',len(pumpingstationssub['geometry']))
+pumpingstationssub = pumpingstationssub.to_crs("epsg:28992")
 
 pumps = pumpingstations[['MAXCAPACIT','geometry']]
 pumps = pumps.rename(columns={'MAXCAPACIT':'maximalecapaciteit'})
 pumps['gemaalid'] = pumpingstationssub['globalid']
 pumps['code'] = daf.getuniquecode('HHDL_pomp_',len(pumps['geometry']))
 pumps['globalid'] = daf.getuniquecode('HHDL_pomp_globid_',len(pumps['geometry']))
+pumps['maximalecapaciteit'] = pumps['maximalecapaciteit'].astype(float)
+pumps = pumps.to_crs("epsg:28992")
 
 sturing = pumpingstations[['streefpeil','geometry']]
 sturing = sturing.rename(columns={ 'streefpeil':'streefwaarde'})
@@ -143,7 +149,7 @@ sturing['bovengrens'] = sturing['streefwaarde'] + 0.05
 sturing['doelvariabele'] = 'waterstand'
 sturing['code'] = daf.getuniquecode('HHDL_sturing_', len(sturing['pompid']))
 sturing['globalid'] = daf.getuniquecode('HHDL_sturing_glob_',len(sturing['pompid']))
-
+sturing = sturing.to_crs("epsg:28992")
 # Sla de verschillende kunstwerken en watergangen op in een geopackage per waterschap
 file_gpkg = "D:\work\P1414_ROI\GIS\HHDelfland\HHDL_hydamo.gpkg"
 

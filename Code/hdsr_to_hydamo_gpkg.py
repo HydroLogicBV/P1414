@@ -10,6 +10,7 @@ import uuid
 from copy import copy
 
 import geopandas as gpd
+import numpy as np
 
 from HDSR_norm_profiles import hdsr_norm_profiles
 
@@ -72,7 +73,7 @@ bridgessub = bridgessub.rename(
     columns={"OBJECTID": "globalid", "CODE": "code", "WS_DOORVAA": "lengte"}
 )
 bridgessub["globalid"] = [str(uuid.uuid4()) for _ in range(bridgessub.shape[0])]
-bridgessub["typeruwheid"] = 4
+bridgessub["typeruwheid"] = "StricklerKn"
 bridgessub["ruwheid"] = 75.0
 bridgessub["intreeverlies"] = 0.5
 bridgessub["uittreeverlies"] = 0.7
@@ -83,6 +84,7 @@ bridgessub = bridgessub.to_crs("epsg:28992")
 
 #### DUIKERS ####
 culverts = gpd.read_file(culvert_path)
+
 culvertssub = copy(
     culverts[
         [
@@ -110,8 +112,12 @@ culvertssub = culvertssub.rename(
         "LENGTE": "lengte",
     }
 )
+culvertssub.replace(to_replace=-999, value=np.nan, inplace=True)
+culvertssub["breedteopening"] = culvertssub["breedteopening"].replace(to_replace=0, value=np.nan)
+culvertssub["hoogteopening"] = culvertssub["hoogteopening"].replace(to_replace=0, value=np.nan)
+
 culvertssub["globalid"] = [str(uuid.uuid4()) for _ in range(culvertssub.shape[0])]
-culvertssub["typeruwheid"] = 4
+culvertssub["typeruwheid"] = "StricklerKn"
 culvertssub["ruwheid"] = 75.0
 culvertssub["intreeverlies"] = 0.6
 culvertssub["uittreeverlies"] = 0.8
