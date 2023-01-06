@@ -1,5 +1,8 @@
 ## Branches
 class Branches:
+    bodembreedte = 5
+    bodemhoogte_benedenstrooms = 5
+    bodemhoogte_bovenstrooms = 5
     ruwheidhoog = 23
     ruwheidlaag = 23
     typeruwheid = "Bos en Bijkerk"

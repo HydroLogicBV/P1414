@@ -399,7 +399,7 @@ def fill_empty_columns(
                 if hasattr(default_values, key):
                     gdf[value] = gdf[value].replace(
                         to_replace=[0, -999, np.nan],
-                        value=getattr(default_values, key),
+                        value=getattr(default_values, key.replace(" ", "_")),
                     )
                 # print number of 0, -998 and nan if no default value is present
                 else:
