@@ -17,8 +17,8 @@ from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 
 def add_branches(features: List[str], gpkg_path: str, hydamo: HyDAMO) -> HyDAMO:
     hydamo.branches.read_gpkg_layer(gpkg_path, layer_name="waterloop", index_col="code")
-    # Check for circular features in branches
 
+    # Check for circular features in branches
     hydamo.branches_popped = hydamo.branches.copy()
     for _, branch in hydamo.branches.iterrows():
 

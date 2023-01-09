@@ -1,23 +1,18 @@
 from typing import Optional
 
+import geopandas as gpd
 import pandera as pa
 from pandera.typing import DataFrame, Series
 from pandera.typing.geopandas import GeoSeries
 from pydantic import BaseModel
+from shapely.geometry import LineString, MultiPoint, Point
 
-roughness_mapping = {
-    "Chezy": "Chezy",
-    "Manning": "Manning",
-    "StricklerKn": "StricklerNikuradse",
-    "StricklerKs": "Strickler",
-    "White Colebrook": "WhiteColebrook",
-    "Bos en Bijkerk": "deBosBijkerk",
-    "Onbekend": "Strickler",
-    "Overig": "Strickler",
-}
-ROUGHNESS_LIST = list(roughness_mapping)
-HYDAMO_SHAPE_NUMS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 98, 99]
-HYDAMO_WEIR_TYPES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 25, 26, 98, 99]
+from data_structures.hydamo_globals import (
+    HYDAMO_SHAPE_NUMS,
+    HYDAMO_WEIR_TYPES,
+    ROUGHNESS_MAPPING_LIST,
+)
+
 ## TODO: gemeten dwarsprofielen
 
 
@@ -37,12 +32,27 @@ class GPDBasicShema(BasicSchema):
     globalid: Series[str]
     geometry: GeoSeries
 
+    # check if geometry is a point or linestring
+    @pa.check("geometry", element_wise=True, name="geometry type check")
+    def geometry_check(cls, geometry: gpd.GeoSeries):
+        # Allow points and linestrings
+        if isinstance(geometry, Point) or isinstance(geometry, LineString):
+            return True
+        # Verify that multipoints are infact normal points
+        elif isinstance(geometry, MultiPoint):
+            if len(geometry.geoms) == 1:
+                return True
+            else:
+                return False
+        else:
+            return False
+
 
 class BrugSchema(GPDBasicShema):
     intreeverlies: Series[float] = pa.Field(ge=0, le=1)
     lengte: Series[float] = pa.Field(gt=0)
     ruwheid: Series[float] = pa.Field(gt=0)
-    typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_LIST)
+    typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)
     uittreeverlies: Series[float] = pa.Field(ge=0, le=1)
 
 

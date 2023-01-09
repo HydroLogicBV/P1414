@@ -97,7 +97,7 @@ class RawData:
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogstedoorstroombreedte", None),
+            ("hoogstedoorstroombreedte", "DOORSTROOM"),
             ("hoogstedoorstroomhoogte", "HOOGSTEDOO"),
             ("laagstedoorstroombreedte", "DOORSTROOM"),
             ("laagstedoorstroomhoogte", "LAAGSTEDOO"),

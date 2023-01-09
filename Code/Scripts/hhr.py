@@ -5,10 +5,10 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\HDSR_selection.gpkg"
-output_folder = folder + r"\Models\HDSR\V8"
+gpkg_file = folder + r"\GIS\HYDAMO\HHR_selection.gpkg"
+output_folder = folder + r"\Models\HHR\V1"
 
-config = r"hdsr_config"
+config = r"hhr_config"
 defaults = r"defaults"
 
 # 1. initialize an instance of DHydamoData

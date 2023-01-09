@@ -5,24 +5,17 @@ from typing import List, Tuple
 
 import geopandas as gpd
 import numpy as np
+from shapely.geometry import LineString
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
-
-# constants
-roughness_mapping = {
-    "Chezy": "Chezy",
-    "Manning": "Manning",
-    "StricklerKn": "StricklerNikuradse",
-    "StricklerKs": "Strickler",
-    "White Colebrook": "WhiteColebrook",
-    "Bos en Bijkerk": "deBosBijkerk",
-    "Onbekend": "Strickler",
-    "Overig": "Strickler",
-}
-ROUGHNESS_MAPPING = list(roughness_mapping)
+from data_structures.hydamo_globals import (
+    MANAGEMENT_DEVICE_TYPES,
+    ROUGHNESS_MAPPING_LIST,
+    WEIR_MAPPING,
+)
 
 
-def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAPPING):
+def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAPPING_LIST):
     """ """
     type_ruwheid = structure["typeruwheid"]
     if isinstance(type_ruwheid, int) or isinstance(type_ruwheid, float):
@@ -41,16 +34,41 @@ def create_bridge_data(bridge_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 def create_culvert_data(culvert_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """ """
     culvert_gdf["doorstroomopening"] = None
-    culvert_gdf["hoogteopening"] = culvert_gdf["hoogteopening"].replace(0, np.nan)
+
+    # check that numerical dtypes are correct
+    if (not isinstance(culvert_gdf["breedteopening"], int)) | (
+        not isinstance(culvert_gdf["breedteopening"], float)
+    ):
+        culvert_gdf["breedteopening"] = culvert_gdf["breedteopening"].astype(float)
+    if (not isinstance(culvert_gdf["hoogteopening"], int)) | (
+        not isinstance(culvert_gdf["hoogteopening"], float)
+    ):
+        culvert_gdf["hoogteopening"] = culvert_gdf["hoogteopening"].astype(float)
+
     culvert_gdf["breedteopening"] = culvert_gdf["breedteopening"].replace(0, np.nan)
+    culvert_gdf["hoogteopening"] = culvert_gdf["hoogteopening"].replace(0, np.nan)
     _culvert_gdf = copy(culvert_gdf)
+
     for ix, culvert in culvert_gdf.iterrows():
         if np.isnan(culvert["breedteopening"]) or np.isnan(culvert["hoogteopening"]):
             shape = "circle"
-        elif int(culvert["vormkoker"]) == 3:
-            shape = "rectangle"
+
+        # elif (culvert["vormkoker"].dtype == "int64") or (culvert["vormkoker"].dtype == "float64"):
+        elif isinstance(culvert["vormkoker"], int) | isinstance(culvert["vormkoker"], float):
+            if int(culvert["vormkoker"]) == 3:
+                shape = "rectangle"
+            else:
+                shape = "circle"
+
+        elif isinstance(culvert["vormkoker"], str):  # dtype not a number, so assuming string
+            if str(culvert["vormkoker"]).lower() == "rechthoekig":
+                shape = "rectangle"
+                _culvert_gdf.loc[ix, "vormkoker"] = 3
+            else:
+                shape = "circle"
+                _culvert_gdf.loc[ix, "vormkoker"] = 1
         else:
-            shape = "circle"
+            raise ValueError("wrong datatype: {}".format(type(culvert["vormkoker"])))
 
         if shape == "rectangle":
             crosssection = {
@@ -121,6 +139,15 @@ def create_norm_parm_profiles_v2(
         # turn numerical roughnes types to strings
         type_ruwheid = check_roughness(branch)
         branches_out_gdf.loc[ix_1, "typeruwheid"] = type_ruwheid
+
+        # check if linestring
+        assert isinstance(branch.geometry, LineString)
+
+        # Delete z-dimensison of linestring if it exists
+        if np.array(branch.geometry.coords).shape[1] > 2:
+            branches_out_gdf.loc[ix_1, "geometry"] = LineString(
+                [xy[0:2] for xy in list(branch.geometry.coords)]
+            )
 
         # Check if width and depth parameters are available, if not, skip
         # Also skip if no width is available
@@ -522,16 +549,35 @@ def create_weir_data(weir_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
         weir_gdf["laagstedoorstroomhoogte"] + 10, inplace=True
     )
     for ix, weir in weir_gdf.iterrows():
+        if isinstance(weir["soortstuw"], str):
+            try:
+                soort_stuw = WEIR_MAPPING[weir["soortstuw"].lower()]
+            except KeyError as e:
+                print(e)
+                print("choosing overlaat")
+                soort_stuw = 11
+
+        else:
+            soort_stuw = weir["soortstuw"]
         _weir = dict(
             [
                 ("afvoercoefficient", weir["afvoercoefficient_stuw"]),
                 ("code", weir["code"]),
                 ("geometry", weir["geometry"]),
                 ("globalid", weir["globalid"]),
-                ("soortstuw", weir["soortstuw"]),
+                ("soortstuw", soort_stuw),
             ]
         )
         weir_list.append(_weir)
+
+        if isinstance(weir["vormopening"], int) | isinstance(weir["vormopening"], float):
+            shape = weir["vormopening"]
+
+        elif isinstance(weir["vormopening"], str):  # dtype not a number, so assuming string
+            if str(weir["vormopening"]).lower() == "rechthoekig":
+                shape = 3
+            else:
+                shape = 1
 
         opening_gid = str(uuid.uuid4())
         opening = dict(
@@ -544,10 +590,23 @@ def create_weir_data(weir_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
                 ("laagstedoorstroombreedte", weir["laagstedoorstroombreedte"]),
                 ("laagstedoorstroomhoogte", weir["laagstedoorstroomhoogte"]),
                 ("stuwid", weir["globalid"]),
-                ("vormopening", weir["vormopening"]),
+                ("vormopening", shape),
             ]
         )
         opening_list.append(opening)
+
+        if isinstance(weir["soortregelbaarheid"], int) | isinstance(
+            weir["soortregelbaarheid"], float
+        ):
+            management = weir["soortregelbaarheid"]
+
+        elif isinstance(weir["soortregelbaarheid"], str):  # dtype not a number, so assuming string
+            try:
+                management = MANAGEMENT_DEVICE_TYPES[weir["soortregelbaarheid"]]
+            except KeyError as e:
+                print(e)
+                print("choosing niet regelbaar")
+                management = 1
 
         management_device = dict(
             [
@@ -556,7 +615,7 @@ def create_weir_data(weir_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
                 ("globalid", weir["globalid"]),
                 ("kunstwerkopeningid", opening_gid),
                 ("overlaatonderlaat", weir["overlaatonderlaat"]),
-                ("soortregelbaarheid", weir["soortregelbaarheid"]),
+                ("soortregelbaarheid", management),
                 ("stuwid", weir["globalid"]),
             ]
         )
@@ -590,7 +649,10 @@ def fill_empty_columns(
             _gdf[key] = gdf[value]
 
             # if it is in shapefile, but contains missing values, fill them as well
-            if (_gdf[key].dtype == "int64") or (_gdf[key].dtype == "float64"):
+            if _gdf[key].dtype == "geometry":
+                pass
+
+            elif (_gdf[key].dtype == "int64") or (_gdf[key].dtype == "float64"):
                 if hasattr(defaults, _key):
                     _gdf[key] = _gdf[key].replace(
                         to_replace=[0, -999, np.nan],
@@ -601,12 +663,21 @@ def fill_empty_columns(
                     n_zero = _gdf[key][_gdf[key] == 0].count()
                     n_nnn = _gdf[key][_gdf[key] == -999].count()
                     n_nan = _gdf[key].isna().sum()
-                    # print(
-                    #     "{}: number of zeros: {}, number of -999: {}, number of nan: {}".format(
-                    #         key, n_zero, n_nnn, n_nan
-                    #     )
-                    # )
+
                     print("{}: entries with missing data: {}".format(key, n_zero + n_nnn + n_nan))
+
+            elif (_gdf[key].dtype == "string") or (_gdf[key].dtype == "object"):
+                if hasattr(defaults, _key):
+                    _gdf[key] = _gdf[key].replace(
+                        to_replace=[None],
+                        value=getattr(defaults, _key),
+                    )
+                else:
+                    n_nan = _gdf[key].isna().sum()
+                    print("{}: entries with missing data: {}".format(key, n_nan))
+            else:
+                raise ValueError("type not yet implemented: {}".format(_gdf[key].dtype))
+
     return _gdf, _index_mapping
 
 

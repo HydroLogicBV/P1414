@@ -14,11 +14,10 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v4_test.shp"
-    bridges_path = p_folder + r"\HHRijnland\Legger\Brug\brug.shp"
-    culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
-    pump_path = p_folder + r"\HHRijnland\Legger\Gemalen_peil\gemaal_peil.shp"
-    weir_path = p_folder + r"\HHRijnland\Legger\Stuw\stuw.shp"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v4_test.shp"
+    culvert_path = p_folder + r"\HHSK\Legger\Duiker.shp"
+    # pump_path = p_folder + r"\HHRijnland\Legger\Gemalen_peil\gemaal_peil.shp"
+    weir_path = p_folder + r"\HHSK\Legger\Stuw.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
@@ -33,46 +32,46 @@ class RawData:
             ("globalid", "globalid"),
             ("hoogte insteek linkerzijde", None),
             ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", "TALUDHELLI"),
-            ("taludhelling rechterzijde", "TALUDHEL_1"),
-            ("typeruwheid", "TYPERUWHEI"),
-            ("ruwheidhoog", "RUWHEIDSWA"),
-            ("ruwheidlaag", "RUWHEIDSWA"),
-            ("water_width_index", "BREEDTE"),
+            ("taludhelling linkerzijde", "TALUDLINKS"),
+            ("taludhelling rechterzijde", "TALUDRECHT"),
+            ("typeruwheid", None),
+            ("ruwheidhoog", None),
+            ("ruwheidlaag", None),
+            ("water_width_index", "WATERBREED"),
         ]
     )
 
-    ## Bridges
-    bridge_index_mapping = dict(
-        [
-            ("code", "CODE"),
-            ("geometry", "geometry"),
-            ("globalid", "globalid"),
-            ("intreeverlies", None),
-            ("typeruwheid", None),
-            ("ruwheid", None),
-            ("uittreeverlies", None),
-            ("lengte", "DOORSTRO_1"),
-        ]
-    )
+    # ## Bridges
+    # bridge_index_mapping = dict(
+    #     [
+    #         ("code", "CODE"),
+    #         ("geometry", "geometry"),
+    #         ("globalid", "globalid"),
+    #         ("intreeverlies", None),
+    #         ("typeruwheid", None),
+    #         ("ruwheid", None),
+    #         ("uittreeverlies", None),
+    #         ("lengte", "DOORSTRO_1"),
+    #     ]
+    # )
 
     ## Culverts
     culvert_index_mapping = dict(
         [
-            ("breedteopening", "BREEDTEOPE"),
+            ("breedteopening", "BREEDTE"),
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("gesloten", None),
             ("globalid", "globalid"),
-            ("hoogtebinnenonderkantbene", "HOOGTEBINN"),
-            ("hoogtebinnenonderkantbov", "HOOGTEBI_1"),
-            ("hoogteopening", "HOOGTEOPEN"),
+            ("hoogtebinnenonderkantbene", "HOOGTEBOK"),
+            ("hoogtebinnenonderkantbov", "HOOGTEBOK"),
+            ("hoogteopening", "HOOGTE"),
             ("intreeverlies", None),
             ("lengte", "LENGTE"),
             ("typeruwheid", None),
             ("ruwheid", None),
             ("uittreeverlies", None),
-            ("vormkoker", "VORMKOKER"),
+            ("vormkoker", "VORM"),
         ]
     )
 
@@ -83,7 +82,7 @@ class RawData:
             ("doelvariabele", None),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("maximalecapaciteit", "MAXIMALECA"),
+            ("maximalecapaciteit", "CAPACITEIT"),
             ("streefwaarde", "streefpeil"),
             ("peil_marge", None),
         ]
@@ -97,13 +96,13 @@ class RawData:
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogstedoorstroombreedte", "DOORSTROOM"),
-            ("hoogstedoorstroomhoogte", "HOOGTECONS"),
-            ("laagstedoorstroombreedte", "DOORSTROOM"),
-            ("laagstedoorstroomhoogte", "LAAGSTEDOO"),
+            ("hoogstedoorstroombreedte", "KRUINBREED"),
+            ("hoogstedoorstroomhoogte", "KRUINHOOGT"),
+            ("laagstedoorstroombreedte", "KRUINBREED"),
+            ("laagstedoorstroomhoogte", "KRUINHOOGT"),
             ("overlaatonderlaat", None),
-            ("soortregelbaarheid", "SOORTREGEL"),
-            ("soortstuw", "SOORTSTUW"),
-            ("vormopening", "KRUINVORM"),
+            ("soortregelbaarheid", None),
+            ("soortstuw", None),
+            ("vormopening", None),
         ]
     )

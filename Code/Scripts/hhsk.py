@@ -5,10 +5,10 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\HDSR_selection.gpkg"
-output_folder = folder + r"\Models\HDSR\V8"
+gpkg_file = folder + r"\GIS\HYDAMO\HHSK_selection.gpkg"
+output_folder = folder + r"\Models\HHSK\V1"
 
-config = r"hdsr_config"
+config = r"hhsk_config"
 defaults = r"defaults"
 
 # 1. initialize an instance of DHydamoData
@@ -24,4 +24,4 @@ dhd.from_raw_data(defaults=defaults, config=config)
 dhd.to_dhydamo_gpkg(output_gpkg=gpkg_file)
 
 # # 4. save as dhydro model
-# dhd.to_dhydro(config=config, output_folder=output_folder)
+dhd.to_dhydro(config=config, output_folder=output_folder)
