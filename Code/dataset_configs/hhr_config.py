@@ -14,31 +14,31 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v4_test.shp"
-    bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
-    culvert_path = p_folder + r"\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen_edited.shp"
-    pump_path = p_folder + r"\HDSR\Legger\Gemalen\Gemalen_peil.shp"
-    weir_path = p_folder + r"\HDSR\Legger\Stuwen\BR_Stuwen.shp"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v4_test.shp"
+    bridges_path = p_folder + r"\HHRijnland\Legger\Brug\brug.shp"
+    culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
+    pump_path = p_folder + r"\HHRijnland\Legger\Gemaal\gemaal.shp"
+    weir_path = p_folder + r"\HHRijnland\Legger\Stuw\stuw.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
     branch_index_mapping = dict(
         [
-            ("bodembreedte", "IWS_W_BODB"),
-            ("bodemhoogte benedenstrooms", "IWS_W_BODH"),
-            ("bodemhoogte bovenstrooms", "IWS_W_BODH"),
+            ("bodembreedte", "BODEMBREED"),
+            ("bodemhoogte benedenstrooms", None),
+            ("bodemhoogte bovenstrooms", None),
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", "IWS_W_INST"),
-            ("hoogte insteek rechterzijde", "IWS_W_IN_1"),
-            ("taludhelling linkerzijde", "IWS_W_TALU"),
-            ("taludhelling rechterzijde", "IWS_W_TA_1"),
-            ("typeruwheid", None),
-            ("ruwheidhoog", None),
+            ("hoogte insteek linkerzijde", None),
+            ("hoogte insteek rechterzijde", None),
+            ("taludhelling linkerzijde", "TALUDHELLI"),
+            ("taludhelling rechterzijde", "TALUDHEL_1"),
+            ("typeruwheid", "TYPERUWHEI"),
+            ("ruwheidhoog", "RUWHEIDSWA"),
             ("ruwheidlaag", None),
-            ("water_width_index", "IWS_W_WATB"),
+            ("water_width_index", "BREEDTE"),
         ]
     )
 
@@ -52,7 +52,7 @@ class RawData:
             ("typeruwheid", None),
             ("ruwheid", None),
             ("uittreeverlies", None),
-            ("lengte", "WS_DOORVAA"),
+            ("lengte", "DOORSTRO_1"),
         ]
     )
 
@@ -64,8 +64,8 @@ class RawData:
             ("geometry", "geometry"),
             ("gesloten", None),
             ("globalid", "globalid"),
-            ("hoogtebinnenonderkantbene", "HOOGTEBOKB"),
-            ("hoogtebinnenonderkantbov", "HOOGTEBO_1"),
+            ("hoogtebinnenonderkantbene", "HOOGTEBINN"),
+            ("hoogtebinnenonderkantbov", "HOOGTEBI_1"),
             ("hoogteopening", "HOOGTEOPEN"),
             ("intreeverlies", None),
             ("lengte", "LENGTE"),
@@ -79,7 +79,7 @@ class RawData:
     ## Pumps
     pump_index_mapping = dict(
         [
-            ("code", "GEMAALID"),
+            ("code", "CODE"),
             ("doelvariabele", None),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
@@ -98,12 +98,12 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogstedoorstroombreedte", None),
-            ("hoogstedoorstroomhoogte", "HOOGSTEDOO"),
+            ("hoogstedoorstroomhoogte", "HOOGTECONS"),
             ("laagstedoorstroombreedte", "DOORSTROOM"),
             ("laagstedoorstroomhoogte", "LAAGSTEDOO"),
             ("overlaatonderlaat", None),
             ("soortregelbaarheid", "SOORTREGEL"),
             ("soortstuw", "SOORTSTUW"),
-            ("vormopening", None),
+            ("vormopening", "KRUINVORM"),
         ]
     )

@@ -5,7 +5,7 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\HDSR_hydamo_test.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\HDSR_selection.gpkg"
 output_folder = folder + r"\Models\HDSR\V8"
 
 config = r"hdsr_config"
