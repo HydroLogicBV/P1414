@@ -17,7 +17,7 @@ class RawData:
     branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v4_test.shp"
     bridges_path = p_folder + r"\HHRijnland\Legger\Brug\brug.shp"
     culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
-    pump_path = p_folder + r"\HHRijnland\Legger\Gemalen_peil\gemaal_peil.shp"
+    pump_path = p_folder + r"\HHRijnland\Niet legger\gemaal_peil.shp"
     weir_path = p_folder + r"\HHRijnland\Legger\Stuw\stuw.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"

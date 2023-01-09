@@ -7,7 +7,10 @@ class Branches:
     hoogte_insteek_rechterzijde = 0
     ruwheidhoog = 23
     ruwheidlaag = 23
+    taludhelling_linkerzijde = 0
+    taludhelling_rechterzijde = 0
     typeruwheid = "Bos en Bijkerk"
+    water_width_index = bodembreedte
 
 
 ## Bridges

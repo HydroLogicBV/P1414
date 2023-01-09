@@ -16,8 +16,8 @@ class RawData:
     p_folder = r"D:\Work\Project\P1414\GIS"
     branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v4_test.shp"
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
-    culvert_path = p_folder + r"\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen_edited.shp"
-    pump_path = p_folder + r"\HDSR\Legger\Gemalen\Gemalen_peil.shp"
+    culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
+    pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"
     weir_path = p_folder + r"\HDSR\Legger\Stuwen\BR_Stuwen.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"

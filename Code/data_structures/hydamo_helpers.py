@@ -15,6 +15,12 @@ from data_structures.hydamo_globals import (
 )
 
 
+def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    if (not isinstance(gdf, int)) | (not isinstance(gdf, float)):
+        gdf = gdf.astype(float)
+    return gdf
+
+
 def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAPPING_LIST):
     """ """
     type_ruwheid = structure["typeruwheid"]
@@ -36,14 +42,16 @@ def create_culvert_data(culvert_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     culvert_gdf["doorstroomopening"] = None
 
     # check that numerical dtypes are correct
-    if (not isinstance(culvert_gdf["breedteopening"], int)) | (
-        not isinstance(culvert_gdf["breedteopening"], float)
-    ):
-        culvert_gdf["breedteopening"] = culvert_gdf["breedteopening"].astype(float)
-    if (not isinstance(culvert_gdf["hoogteopening"], int)) | (
-        not isinstance(culvert_gdf["hoogteopening"], float)
-    ):
-        culvert_gdf["hoogteopening"] = culvert_gdf["hoogteopening"].astype(float)
+    # if (not isinstance(culvert_gdf["breedteopening"], int)) | (
+    #     not isinstance(culvert_gdf["breedteopening"], float)
+    # ):
+    #     culvert_gdf["breedteopening"] = culvert_gdf["breedteopening"].astype(float)
+    # if (not isinstance(culvert_gdf["hoogteopening"], int)) | (
+    #     not isinstance(culvert_gdf["hoogteopening"], float)
+    # ):
+    #     culvert_gdf["hoogteopening"] = culvert_gdf["hoogteopening"].astype(float)
+    culvert_gdf["breedteopening"] = check_column_is_numerical(gdf=culvert_gdf["breedteopening"])
+    culvert_gdf["hoogteopening"] = check_column_is_numerical(gdf=culvert_gdf["hoogteopening"])
 
     culvert_gdf["breedteopening"] = culvert_gdf["breedteopening"].replace(0, np.nan)
     culvert_gdf["hoogteopening"] = culvert_gdf["hoogteopening"].replace(0, np.nan)
@@ -489,6 +497,10 @@ def create_pump_data(pump_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
     pump_list = []
     management_list = []
 
+    # if not isinstance(pump_gdf["maximalecapaciteit"], float):
+    #     pump_gdf["maximalecapaciteit"] = pump_gdf["maximalecapaciteit"].astype(float)
+    pump_gdf["maximalecapaciteit"] = check_column_is_numerical(gdf=pump_gdf["maximalecapaciteit"])
+
     for ix, pump in pump_gdf.iterrows():
         pump_station = dict(
             [
@@ -543,6 +555,14 @@ def create_weir_data(weir_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
 
     # if not "hoogstedoorstroomhoogte" in weir_gdf.columns:
     #     weir_gdf["hoogstedoorstroomhoogte"] = weir_gdf["laagstedoorstroomhoogte"] + 10
+    clist = [
+        "hoogstedoorstroombreedte",
+        "hoogstedoorstroomhoogte",
+        "laagstedoorstroombreedte",
+        "laagstedoorstroomhoogte",
+    ]
+    for column in clist:
+        weir_gdf[column] = check_column_is_numerical(gdf=weir_gdf[column])
 
     weir_gdf["hoogstedoorstroombreedte"].fillna(weir_gdf["laagstedoorstroombreedte"], inplace=True)
     weir_gdf["hoogstedoorstroomhoogte"].fillna(

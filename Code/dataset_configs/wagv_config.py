@@ -14,11 +14,11 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\WAGV\hydrovak\hydrovak_combined.gpkg"
+    branches_path = p_folder + r"\WAGV\Niet legger\hydrovak_combined.gpkg"
     bridges_path = p_folder + r"\WAGV\brug_v13\brug_v13_clipped.shp"
     culvert_path = p_folder + r"\WAGV\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp"
-    pump_path = p_folder + r"\WAGV\pomp_gemaal_v13\pomp_gemaal_v13_clipped_streefpeil.shp"
-    weir_path = p_folder + r"\WAGV\stuw_v13\stuw_v13_clipped_with_do.shp"
+    pump_path = p_folder + r"\WAGV\Niet legger\pomp_gemaal_v13_clipped_streefpeil.shp"
+    weir_path = p_folder + r"\WAGV\Niet legger\stuw_v13_clipped_with_do.shp"
 
     ## Branches
     branch_index_mapping = dict(

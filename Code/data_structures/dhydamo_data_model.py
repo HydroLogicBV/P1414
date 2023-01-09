@@ -113,7 +113,9 @@ class RegelmiddelSchema(PDBasicShema):
     code: Series[str]  # addition to confluence
     kunstwerkopeningid: Series[str]
     overlaatonderlaat: Series[str]
-    soortregelbaarheid: Series[int] = pa.Field(isin=[1, 2, 3, 4, 98, 99], coerce=True)
+    soortregelbaarheid: Series[int] = pa.Field(
+        isin=[1, 2, 3, 4, 98, 99], coerce=True
+    )  # TODO: put this in hydamo globals
     stuwid: Series[str]
 
 
@@ -135,7 +137,6 @@ class StuwSchema(GPDBasicShema):
 
 
 class WaterloopSchema(GPDBasicShema):
-    # ruwheid: Series[float]  # addition to confluence
     typeruwheid: Series[str]  # addition to confluence
 
 
