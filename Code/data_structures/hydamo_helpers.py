@@ -22,6 +22,22 @@ roughness_mapping = {
 ROUGHNESS_MAPPING = list(roughness_mapping)
 
 
+def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAPPING):
+    """ """
+    type_ruwheid = structure["typeruwheid"]
+    if isinstance(type_ruwheid, int) or isinstance(type_ruwheid, float):
+        type_ruwheid = rougness_map[int(type_ruwheid) - 1]
+    return type_ruwheid
+
+
+def create_bridge_data(bridge_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """ """
+    _bridge_gdf = copy(bridge_gdf)
+    for ix, bridge in bridge_gdf.iterrows():
+        # turn numerical roughnes types to strings
+        _bridge_gdf.loc[ix, "typeruwheid"] = check_roughness(bridge)
+
+
 def create_culvert_data(culvert_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """ """
     culvert_gdf["doorstroomopening"] = None
@@ -57,6 +73,9 @@ def create_culvert_data(culvert_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
             }
         _culvert_gdf.loc[ix, "doorstroomopening"] = str(crosssection)
 
+        # turn numerical roughnes types to strings
+        _culvert_gdf.loc[ix, "typeruwheid"] = check_roughness(culvert)
+
     _culvert_gdf = _culvert_gdf.drop(columns="gesloten")
     return _culvert_gdf
 
@@ -90,22 +109,18 @@ def create_norm_parm_profiles(
         index_mapping["water_width_index"],
     ] = np.nan
 
+    branches_out_gdf = copy(branches_gdf)
+
     # for ix_1, branch in tqdm(branches_gdf.iterrows(), total=branches_gdf.shape[0]):
     for ix_1, branch in branches_gdf.iterrows():
         # Create unique ident for branch and add to branch
         branch_gid = str(uuid.uuid4())
-        branches_gdf.loc[ix_1, "globalid"] = branch_gid
-        branches_gdf.loc[ix_1, "code"] = branch_gid
+        branches_out_gdf.loc[ix_1, "globalid"] = branch_gid
+        branches_out_gdf.loc[ix_1, "code"] = branch_gid
 
-        # change width of zero to nan
-        # branches_gdf[index_mapping["bodembreedte"]] = branches_gdf[
-        #     index_mapping["bodembreedte"]
-        # ].replace(0, np.nan)
-        # branches_gdf[index_mapping["water_width_index"]] = branches_gdf[
-        #     index_mapping["water_width_index"]
-        # ].replace(0, np.nan)
-
-        ## also under 0.03
+        # turn numerical roughnes types to strings
+        type_ruwheid = check_roughness(branch)
+        branches_out_gdf.loc[ix_1, "typeruwheid"] = type_ruwheid
 
         # Check if width and depth parameters are available, if not, skip
         # Also skip if no width is available
@@ -231,11 +246,6 @@ def create_norm_parm_profiles(
                     params["bodemhoogte bovenstrooms"],
                 )
 
-        # turn numerical roughnes types to strings
-        type_ruwheid = branch[index_mapping["typeruwheid"]]
-        if isinstance(type_ruwheid, int) or isinstance(type_ruwheid, float):
-            type_ruwheid = ROUGHNESS_MAPPING[int(type_ruwheid) - 1]
-
         # loop over parameters to add to ngp_list
         for ix_2, (key, value) in enumerate(params.items()):
 
@@ -259,7 +269,7 @@ def create_norm_parm_profiles(
     normgeparamprofielwaarde = gpd.GeoDataFrame(ngp_list, geometry="geometry", crs=28992)
 
     return (
-        branches_gdf[["code", "globalid", "geometry", "typeruwheid"]],
+        branches_out_gdf[["code", "globalid", "geometry", "typeruwheid"]],
         hydroobject_normgp,
         normgeparamprofielwaarde,
     )
@@ -396,7 +406,7 @@ def fill_empty_columns(
         else:
             # if it is in shapefile, but contains missing values, fill them as well
             if (gdf[value].dtype == "int64") or (gdf[value].dtype == "float64"):
-                if hasattr(default_values, key):
+                if hasattr(default_values, key.replace(" ", "_")):
                     gdf[value] = gdf[value].replace(
                         to_replace=[0, -999, np.nan],
                         value=getattr(default_values, key.replace(" ", "_")),
@@ -420,6 +430,19 @@ def fix_geometry(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf.dropna(axis=0, inplace=True, subset=["geometry"])
     gdf = gdf.to_crs("epsg:28992")
     return gdf
+
+
+def load_geo_file(file_path: str, layer: str = None):
+    """ """
+    if file_path.endswith(r".shp"):
+        return gpd.read_file(file_path)
+    elif file_path.endswith(r".gpkg"):
+        if layer is not None:
+            return gpd.read_file(file_path, layer=layer)
+        else:
+            raise ValueError("provide a layer when loading a gpkg")
+    else:
+        raise ValueError("filetype not implemented")
 
 
 def map_columns(defaults, gdf: gpd.GeoDataFrame, index_mapping: dict) -> gpd.GeoDataFrame:
@@ -448,11 +471,10 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
     ddm = DHydamoDataModel()
     defaults = importlib.import_module("dataset_configs." + defaults)
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
-    features = []
 
     if hasattr(data_config, "branches_path"):
         ## Branches
-        branches_gdf = gpd.read_file(data_config.branches_path)
+        branches_gdf = load_geo_file(data_config.branches_path, layer="waterloop")
 
         branches_gdf, index_mapping = fill_empty_columns(
             default_values=defaults.Branches,
@@ -468,24 +490,25 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
     if hasattr(data_config, "bridges_path"):
         ## Bridges
-        ddm.brug = map_columns(
+        bridges_gdf = map_columns(
             defaults=defaults.Bridges,
-            gdf=gpd.read_file(data_config.bridges_path),
+            gdf=load_geo_file(data_config.bridges_path, layer="brug"),
             index_mapping=data_config.bridge_index_mapping,
         )
+        ddm.brug = create_bridge_data(bridge_gdf=bridges_gdf)
 
     if hasattr(data_config, "culvert_path"):
         ## Culverts
         culvert_gdf = map_columns(
             defaults=defaults.Culverts,
-            gdf=gpd.read_file(data_config.culvert_path),
+            gdf=load_geo_file(data_config.culvert_path, layer="duiker"),
             index_mapping=data_config.culvert_index_mapping,
         )
         ddm.duiker = create_culvert_data(culvert_gdf=culvert_gdf)
 
     if hasattr(data_config, "pump_path"):
         ## Pumps
-        pump_gdf = gpd.read_file(data_config.pump_path)
+        pump_gdf = load_geo_file(data_config.pump_path, layer="gemaal")
         pump_gdf = map_columns(
             defaults=defaults.Pumps,
             gdf=pump_gdf,
@@ -496,7 +519,7 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
     if hasattr(data_config, "weir_path"):
         ## Weirs
-        weir_gdf = gpd.read_file(data_config.weir_path)
+        weir_gdf = load_geo_file(data_config.weir_path, layer="stuw")
         weir_gdf = map_columns(
             defaults=defaults.Weirs, gdf=weir_gdf, index_mapping=data_config.weir_index_mapping
         )

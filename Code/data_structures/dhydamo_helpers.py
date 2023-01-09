@@ -269,7 +269,7 @@ def write_model(fm: FMModel, hydamo: HyDAMO, output_folder: str, one_d=True):
     #     )
     # Now we write the file structure:
     output_path = Path(output_folder)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(exist_ok=True, parents=True)
     fm.filepath = Path(output_folder) / "fm" / "test.mdu"
     dimr = DIMR()
     dimr.component.append(

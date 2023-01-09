@@ -3,12 +3,16 @@ from copy import copy
 import geopandas as gpd
 import numpy as np
 
-from utils_hydamo_profiles import convert_pp_to_hydamo
+from data_structures.hydamo_helpers import \
+    create_norm_parm_profiles as convert_pp_to_hydamo
 
 if __name__ == "__main__":
     # prepare AGV data for function
     branches_path = r"D:\Work\Project\P1414\GIS\Uitgesneden watergangen\AGV.shp"
     hydrovak_path = r"D:\Work\Project\P1414\GIS\WAGV\hydrovak\hydrovak.shp"
+    hydrovak_combined_output_path = (
+        r"D:\Work\Project\P1414\GIS\WAGV\hydrovak\hydrovak_combined.gpkg"
+    )
     norm_profiles_output_path = r"D:\Work\Project\P1414\GIS\WAGV\norm_profielen_test.gpkg"
 
     branches_gdf = gpd.read_file(branches_path)
@@ -23,6 +27,9 @@ if __name__ == "__main__":
     branches_gdf_new = branches_gdf_new.merge(
         hydrovak_gdf.drop(columns="geometry"), how="left", left_on="code", right_on="OVKIDENT"
     ).set_geometry("geometry")
+    branches_gdf_new.rename(columns={"ruwheidsty": "typeruwheid"}, inplace=True)
+
+    branches_gdf_new.to_file(hydrovak_combined_output_path, layer="waterloop")
 
     # set column mapping
     index_mapping = dict(
@@ -34,7 +41,7 @@ if __name__ == "__main__":
             ("hoogte insteek rechterzijde", "IWS_W_WATP"),
             ("taludhelling linkerzijde", "AVVTALUL"),
             ("taludhelling rechterzijde", "AVVTALUR"),
-            ("typeruwheid", "ruwheidsty"),
+            ("typeruwheid", "typeruwheid"),
             ("ruwheidhoog", "ruwheidhoo"),
             ("ruwheidlaag", "ruwheidlaa"),
             ("water_width_index", "IWS_W_WATB"),
@@ -55,7 +62,7 @@ if __name__ == "__main__":
         [
             (
                 "hydroobject",
-                out_branches_gdf[["code", "globalid", "ruwheidsty", "geometry"]],
+                out_branches_gdf[["code", "globalid", "typeruwheid", "geometry"]],
             ),
             ("hydroobject_normgp", hydroobject_normgp),
             ("normgeparamprofielwaarde", normgeparamprofielwaarde),

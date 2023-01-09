@@ -5,20 +5,20 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HDSR\HDSR_hydamo_test.gpkg"
-output_folder = folder + r"\Models\HDSR\V6"
+gpkg_file = folder + r"\GIS\HYDAMO\WAGV_selection.gpkg"
+output_folder = folder + r"\Models\WAGV\V1"
 
-config = r"hdsr_config"
+config = r"wagv_config"
 defaults = r"defaults"
 
 # 1. initialize an instance of DHydamoData
 dhd = DHydamoData()
 
 # 2. convert raw data to hydamo data
-# dhd.from_raw_data(defaults=defaults, config=config)
+dhd.from_raw_data(defaults=defaults, config=config)
 
 # # 2. load data
-dhd.from_dhydamo_gpkg(gpkg_file)
+# dhd.from_dhydamo_gpkg(gpkg_file)
 
 # 3. save data to gpkg
 dhd.to_dhydamo_gpkg(output_gpkg=gpkg_file)

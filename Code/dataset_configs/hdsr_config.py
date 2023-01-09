@@ -20,7 +20,7 @@ class RawData:
     pump_path = p_folder + r"\HDSR\Legger\Gemalen\Gemalen_peil.shp"
     weir_path = p_folder + r"\HDSR\Legger\Stuwen\BR_Stuwen.shp"
 
-    output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
+    # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
     branch_index_mapping = dict(
