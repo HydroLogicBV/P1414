@@ -37,6 +37,10 @@ class Culverts:
     vormkoker = 1
 
 
+class MeasuredProfiles:
+    pass
+
+
 ## Pumps
 class Pumps:
     doelvariabele = "waterstand"

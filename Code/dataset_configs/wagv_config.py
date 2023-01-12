@@ -1,14 +1,21 @@
 class Models:
     class FM:
-        dx = 100
-        dy = 100
-        elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-        max_snap_dist = 1
-        one_d = True
+        one_d_bool = True
+        two_d_bool = False
         start_time = 20160601
         stop_time = 2 * 86400
-        two_d = True
-        two_d_buffer = 100
+
+        class one_d:
+            max_dist_to_struct = 3
+            max_snap_dist = 0.1
+            node_distance = 100
+
+        class two_d:
+            coupling_type = "2Dto1D"
+            dx = 100
+            dy = 100
+            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            two_d_buffer = 100
 
 
 class RawData:
@@ -17,6 +24,9 @@ class RawData:
     branches_path = p_folder + r"\WAGV\Niet legger\hydrovak_combined.gpkg"
     bridges_path = p_folder + r"\WAGV\brug_v13\brug_v13_clipped.shp"
     culvert_path = p_folder + r"\WAGV\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp"
+    measured_profile_path = (
+        p_folder + r"\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped_rm.shp"
+    )
     pump_path = p_folder + r"\WAGV\Niet legger\pomp_gemaal_v13_clipped_streefpeil.shp"
     weir_path = p_folder + r"\WAGV\Niet legger\stuw_v13_clipped_with_do.shp"
 
@@ -31,11 +41,11 @@ class RawData:
             ("globalid", "globalid"),
             ("hoogte insteek linkerzijde", "IWS_W_WATP"),
             ("hoogte insteek rechterzijde", "IWS_W_WATP"),
+            ("ruwheidhoog", "ruwheidhoo"),
+            ("ruwheidlaag", "ruwheidlaa"),
             ("taludhelling linkerzijde", "AVVTALUL"),
             ("taludhelling rechterzijde", "AVVTALUR"),
             ("typeruwheid", "typeruwheid"),  # changed in hydrovak_combined
-            ("ruwheidhoog", "ruwheidhoo"),
-            ("ruwheidlaag", "ruwheidlaa"),
             ("water_width_index", "IWS_W_WATB"),
         ]
     )
@@ -47,8 +57,8 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("intreeverlies", "intreeverl"),
-            ("typeruwheid", "ruwheidsty"),
             ("ruwheid", "ruwheid"),
+            ("typeruwheid", "ruwheidsty"),
             ("uittreeverlies", "uittreever"),
             ("lengte", "lengte"),
         ]
@@ -67,10 +77,25 @@ class RawData:
             ("hoogteopening", "hoogteopen"),
             ("intreeverlies", "intreeverl"),
             ("lengte", "lengte"),
-            ("typeruwheid", "ruwheidsty"),
             ("ruwheid", "ruwheid"),
+            ("typeruwheid", "ruwheidsty"),
             ("uittreeverlies", "uittreever"),
             ("vormkoker", "vormkokeri"),
+        ]
+    )
+
+    ## Measured profiles
+    measured_profile_index_mapping = dict(
+        [
+            ("code", "code"),
+            ("codevolgnummer", "codevolgnu"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("profiel nummer", "metingprof"),
+            ("ruwheidhoog", "ruwheidswa"),
+            ("ruwheidlaag", "ruwheidsw0"),
+            ("type meting", "typebodemi"),
+            ("typeruwheid", "ruwheidsty"),
         ]
     )
 
@@ -82,8 +107,8 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("maximalecapaciteit", "maximaleca"),
-            ("streefwaarde", "peil1"),
             ("peil_marge", None),
+            ("streefwaarde", "peil1"),
         ]
     )
 

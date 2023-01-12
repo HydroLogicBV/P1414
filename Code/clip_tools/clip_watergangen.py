@@ -1,5 +1,4 @@
 # %% Init
-print("Initializing")
 import uuid
 from copy import copy
 from typing import List, Tuple
@@ -8,35 +7,6 @@ import geopandas as gpd
 import numpy as np
 from scipy.spatial import KDTree
 from tqdm import tqdm
-
-# BUFFER_DIST = 10
-EPSG = 28992
-
-p_folder = r"D:\work\P1414_ROI\GIS"
-old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited.shp"
-
-agv_branches_path = p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"
-clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_v4_test.shp"
-
-HDSR_branches_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
-clipped_HDSR_branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v4_test.shp"
-
-HHD_branches_path = (
-    p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
-)
-clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v4_test.shp"
-
-HHR_branches_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as.shp"
-clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v4_test.shp"
-
-HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
-clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v4_test.shp"
-
-AGV = True
-HDSR = True
-HHD = True
-HHR = True
-HHSK = True
 
 
 def clip_branches(
@@ -273,7 +243,9 @@ def skip_branches_con(
     return out_branches
 
 
-def read_rm_branches(rm_branches_path: str) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+def read_rm_branches(
+    rm_branches_path: str, epsg: int = 28992
+) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     """
     function to read old RM-model branches and skip underpasses (marked by "OND")
 
@@ -285,7 +257,7 @@ def read_rm_branches(rm_branches_path: str) -> tuple[gpd.GeoDataFrame, gpd.GeoDa
         onderdoorgangen (gpd.GeoDataFrame): GeoDataFrame containing underpasses
     """
 
-    rm_branches = gpd.read_file(rm_branches_path, geometry="geometry").to_crs(crs=EPSG)
+    rm_branches = gpd.read_file(rm_branches_path, geometry="geometry").to_crs(crs=epsg)
     ondd_bool = (rm_branches["Source"].str.contains("OND")) | (
         rm_branches["Target"].str.contains("OND")
     )
@@ -293,6 +265,34 @@ def read_rm_branches(rm_branches_path: str) -> tuple[gpd.GeoDataFrame, gpd.GeoDa
     rm_branches = rm_branches.loc[~ondd_bool, :]
     return rm_branches, onderdoorgangen
 
+
+# %% Initialize
+print("initialize")
+p_folder = r"D:\work\P1414_ROI\GIS"
+old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited.shp"
+
+agv_branches_path = p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"
+clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_v4_test.shp"
+
+HDSR_branches_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
+clipped_HDSR_branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v4_test.shp"
+
+HHD_branches_path = (
+    p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
+)
+clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v4_test.shp"
+
+HHR_branches_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as.shp"
+clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v4_test.shp"
+
+HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
+clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v4_test.shp"
+
+AGV = True
+HDSR = True
+HHD = True
+HHR = True
+HHSK = True
 
 # %% AGV
 if AGV:

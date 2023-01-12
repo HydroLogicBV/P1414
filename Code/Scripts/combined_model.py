@@ -10,7 +10,7 @@ from data_structures.dhydamo_data import DHydamoData
 folder = r"D:\Work\Project\P1414"
 gpkg_file = folder + r"\GIS\HYDAMO\combined_test.gpkg"
 
-output_folder = folder + r"\Models\Combined\V1"
+output_folder = folder + r"\Models\Combined\V3"
 
 config_dhydro = r"hdsr_config"
 config_list = [r"hdsr_config", r"hhd_config", r"hhr_config", r"hhsk_config", r"wagv_config"]
@@ -19,7 +19,7 @@ defaults = r"defaults"
 build_database = True
 build_model = True
 
-if build_database == True:
+if build_database:
     for ix, config in enumerate(config_list):
         print("\n" + config)
 
@@ -35,16 +35,19 @@ if build_database == True:
         else:
             for key, value in _dhd.ddm.__dict__.items():
                 if value is not None:
-                    new_gdf = gpd.GeoDataFrame(
-                        pd.concat(
-                            [getattr(dhd.ddm, key), getattr(_dhd.ddm, key)], ignore_index=True
+                    if getattr(dhd.ddm, key) is None:
+                        setattr(dhd.ddm, key, getattr(_dhd.ddm, key))
+                    else:
+                        new_gdf = gpd.GeoDataFrame(
+                            pd.concat(
+                                [getattr(dhd.ddm, key), getattr(_dhd.ddm, key)], ignore_index=True
+                            )
                         )
-                    )
-                    setattr(dhd.ddm, key, new_gdf)
-
+                        setattr(dhd.ddm, key, new_gdf)
+    dhd.clip_structures_by_branches()
     dhd.to_dhydamo_gpkg(output_gpkg=gpkg_file)
 
-if build_model == True:
+if build_model:
     dhd = DHydamoData()
     dhd.from_dhydamo_gpkg(gpkg_file)
     dhd.to_dhydro(config=config_dhydro, output_folder=output_folder)

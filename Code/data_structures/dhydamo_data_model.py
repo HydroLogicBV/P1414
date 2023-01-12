@@ -1,19 +1,17 @@
 from typing import Optional
 
-import geopandas as gpd
 import pandera as pa
 from pandera.typing import DataFrame, Series
 from pandera.typing.geopandas import GeoSeries
 from pydantic import BaseModel
-from shapely.geometry import LineString, MultiPoint, Point
 
-from data_structures.hydamo_globals import (
-    HYDAMO_SHAPE_NUMS,
-    HYDAMO_WEIR_TYPES,
-    ROUGHNESS_MAPPING_LIST,
-)
-
-## TODO: gemeten dwarsprofielen
+from data_structures.dhydamo_data_model_checks import (geometry_check,
+                                                       globalid_check,
+                                                       none_geometry_check)
+from data_structures.hydamo_globals import (HYDAMO_SHAPE_NUMS,
+                                            HYDAMO_WEIR_TYPES,
+                                            MANAGEMENT_DEVICE_TYPES,
+                                            ROUGHNESS_MAPPING_LIST)
 
 
 class BasicSchema(pa.SchemaModel):
@@ -23,32 +21,33 @@ class BasicSchema(pa.SchemaModel):
 
 
 class PDBasicShema(BasicSchema):
-    globalid: Series[str]
-    geometry: GeoSeries = pa.Field(nullable=True)  # by design, to add to gpkg
+    globalid: Series[str] = pa.Field(unique=True)
+    geometry: GeoSeries = pa.Field(nullable=True)
+
+    @pa.check("globalid", element_wise=True, name="globalidcheck")
+    def _globalid_check(cls, globalid: str) -> bool:
+        return globalid_check(globalid=globalid)
+
+    @pa.check("geometry", element_wise=True, name="None geometry check")
+    def _none_geometry_check(cls, geometry: None) -> bool:
+        return none_geometry_check(geometry=geometry)
 
 
 class GPDBasicShema(BasicSchema):
-    code: Series[str] = pa.Field(coerce=True)
-    globalid: Series[str]
+    globalid: Series[str] = pa.Field(unique=True)
     geometry: GeoSeries
 
-    # check if geometry is a point or linestring
-    @pa.check("geometry", element_wise=True, name="geometry type check")
-    def geometry_check(cls, geometry: gpd.GeoSeries):
-        # Allow points and linestrings
-        if isinstance(geometry, Point) or isinstance(geometry, LineString):
-            return True
-        # Verify that multipoints are infact normal points
-        elif isinstance(geometry, MultiPoint):
-            if len(geometry.geoms) == 1:
-                return True
-            else:
-                return False
-        else:
-            return False
+    @pa.check("globalid", element_wise=True, name="globalidcheck")
+    def _globalid_check(cls, globalid: str) -> bool:
+        return globalid_check(globalid=globalid)
+
+    @pa.check("geometry", element_wise=True, name="Point or line geometry check")
+    def _geometry_check(cls, geometry: None) -> bool:
+        return geometry_check(geometry=geometry)
 
 
 class BrugSchema(GPDBasicShema):
+    code: Series[str] = pa.Field(coerce=True)
     intreeverlies: Series[float] = pa.Field(ge=0, le=1)
     lengte: Series[float] = pa.Field(gt=0)
     ruwheid: Series[float] = pa.Field(gt=0)
@@ -58,6 +57,7 @@ class BrugSchema(GPDBasicShema):
 
 class DuikerSchema(GPDBasicShema):
     breedteopening: Series[float] = pa.Field(gt=0)
+    code: Series[str] = pa.Field(coerce=True)
     doorstroomopening: Series[str]
     hoogtebinnenonderkantbene: Series[float]
     hoogtebinnenonderkantbov: Series[float]
@@ -65,7 +65,7 @@ class DuikerSchema(GPDBasicShema):
     intreeverlies: Series[float] = pa.Field(ge=0, le=1)
     lengte: Series[float] = pa.Field(gt=0)
     ruwheid: Series[float]
-    typeruwheid: Series[str]
+    typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)
     uittreeverlies: Series[float] = pa.Field(ge=0, le=1)
     vormkoker: Series[int] = pa.Field(
         isin=HYDAMO_SHAPE_NUMS, coerce=True
@@ -73,12 +73,12 @@ class DuikerSchema(GPDBasicShema):
 
 
 class GemaalSchema(GPDBasicShema):
-    pass
+    code: Series[str] = pa.Field(coerce=True)
 
 
 class Hydroobject_normgpSchema(PDBasicShema):
-    hydroobjectid: Series[str]
-    normgeparamprofielid: Series[str]
+    hydroobjectid: Series[str] = pa.Field(unique=True)
+    normgeparamprofielid: Series[str] = pa.Field(unique=True)
 
 
 class KunstwerkopeningSchema(PDBasicShema):
@@ -87,7 +87,7 @@ class KunstwerkopeningSchema(PDBasicShema):
     hoogstedoorstroomhoogte: Series[float]
     laagstedoorstroombreedte: Series[float] = pa.Field(gt=0)
     laagstedoorstroomhoogte: Series[float]
-    stuwid: Series[str]
+    stuwid: Series[str] = pa.Field(unique=True)
     vormopening: Series[int] = pa.Field(
         isin=HYDAMO_SHAPE_NUMS, coerce=True
     )  # accepteer enkel waarden volgend hydamo standaard
@@ -99,24 +99,48 @@ class NormgeparamprofielwaardeSchema(BasicSchema):
     ruwheidhoog: Series[float] = pa.Field(gt=0, coerce=True)
     ruwheidlaag: Series[float] = pa.Field(gt=0, coerce=True)
     soortparameter: Series[str]
-    typeruwheid: Series[str]
+    typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)
     waarde: Series[float]
 
 
 class PompSchema(PDBasicShema):
     code: Series[str] = pa.Field(coerce=True)  # addition to confluence
-    gemaalid: Series[str]
+    gemaalid: Series[str] = pa.Field(unique=True)
     maximalecapaciteit: Series[float] = pa.Field(ge=0)
 
 
-class RegelmiddelSchema(PDBasicShema):
+class ProfielgroepSchema(PDBasicShema):
+    brugid: Optional[Series[str]] = pa.Field(nullable=True)
+    stuwid: Optional[Series[str]] = pa.Field(nullable=True)
+
+
+class ProfiellijnSchema(GPDBasicShema):
+    profielgroepid: Series[str] = pa.Field(coerce=True, unique=True)
+
+
+class ProfielpuntSchema(GPDBasicShema):
+    code: Series[str] = pa.Field(coerce=True)
+    profiellijnid: Series[str] = pa.Field(coerce=True)
+    codevolgnummer: Series[int] = pa.Field(coerce=True)
+
+
+class RegelmiddelSchema(GPDBasicShema):
     code: Series[str]  # addition to confluence
-    kunstwerkopeningid: Series[str]
+    kunstwerkopeningid: Series[str] = pa.Field(unique=True)
     overlaatonderlaat: Series[str]
     soortregelbaarheid: Series[int] = pa.Field(
-        isin=[1, 2, 3, 4, 98, 99], coerce=True
-    )  # TODO: put this in hydamo globals
-    stuwid: Series[str]
+        isin=list(MANAGEMENT_DEVICE_TYPES.values()), coerce=True
+    )
+    stuwid: Series[str] = pa.Field(unique=True)
+
+
+class RuwheidsprofielSchema(BasicSchema):
+    code: Series[str]  # addition to confluence
+    geometry: GeoSeries = pa.Field(nullable=True)  # by design, to add to gpkg
+    profielpuntid: Series[str] = pa.Field(coerce=True, unique=True)
+    ruwheidhoog: Series[float] = pa.Field(gt=0, coerce=True)
+    ruwheidlaag: Series[float] = pa.Field(gt=0, coerce=True)
+    typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)
 
 
 class SturingSchema(PDBasicShema):
@@ -124,20 +148,21 @@ class SturingSchema(PDBasicShema):
     code: Series[str] = pa.Field(coerce=True)  # addition to confluence
     doelvariabele: Series[str]  # addition to confluence
     ondergrens: Series[float] = pa.Field(nullable=True)
-    pompid: Series[str]
+    pompid: Series[str] = pa.Field(unique=True)
     streefwaarde: Series[float] = pa.Field(nullable=True)
 
 
 class StuwSchema(GPDBasicShema):
     afvoercoefficient: Series[float] = pa.Field(coerce=True)
-    code: Series[str]
+    code: Series[str] = pa.Field(coerce=True)
     soortstuw: Series[float] = pa.Field(
         isin=HYDAMO_WEIR_TYPES, coerce=True
     )  # addition to confluence
 
 
 class WaterloopSchema(GPDBasicShema):
-    typeruwheid: Series[str]  # addition to confluence
+    code: Series[str] = pa.Field(coerce=True)
+    typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)  # addition to confluence
 
 
 class DHydamoDataModel(BaseModel):
@@ -148,7 +173,11 @@ class DHydamoDataModel(BaseModel):
     kunstwerkopening: Optional[DataFrame[KunstwerkopeningSchema]]
     normgeparamprofielwaarde: Optional[DataFrame[NormgeparamprofielwaardeSchema]]
     pomp: Optional[DataFrame[PompSchema]]
+    profielgroep: Optional[DataFrame[ProfielgroepSchema]]
+    profiellijn: Optional[DataFrame[ProfiellijnSchema]]
+    profielpunt: Optional[DataFrame[ProfielpuntSchema]]
     regelmiddel: Optional[DataFrame[RegelmiddelSchema]]
+    ruwheidsprofiel: Optional[DataFrame[RuwheidsprofielSchema]]
     sturing: Optional[DataFrame[SturingSchema]]
     stuw: Optional[DataFrame[StuwSchema]]
     waterloop: Optional[DataFrame[WaterloopSchema]]

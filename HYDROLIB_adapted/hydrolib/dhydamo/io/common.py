@@ -7,10 +7,11 @@ from typing import Union
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from hydrolib.dhydamo.geometry import spatial
 from osgeo import ogr
 from shapely import wkb
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
+
+from hydrolib.dhydamo.geometry import spatial
 
 logger = logging.getLogger()
 
@@ -648,7 +649,7 @@ class ExtendedDataFrame(pd.DataFrame):
             self.iloc[:, 0] = np.nan
             self.dropna(inplace=True)
 
-    def set_data(self, df, index_col):
+    def set_data(self, df, index_col=None):
 
         if not self.empty:
             self.delete_all()

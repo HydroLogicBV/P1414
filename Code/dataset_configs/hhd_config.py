@@ -1,14 +1,21 @@
 class Models:
     class FM:
-        dx = 100
-        dy = 100
-        elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-        max_snap_dist = 1
-        one_d = True
+        one_d_bool = True
+        two_d_bool = True
         start_time = 20160601
         stop_time = 2 * 86400
-        two_d = True
-        two_d_buffer = 100
+
+        class one_d:
+            max_dist_to_struct = 3
+            max_snap_dist = 0.1
+            node_distance = 100
+
+        class two_d:
+            coupling_type = "2Dto1D"
+            dx = 100
+            dy = 100
+            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            two_d_buffer = 100
 
 
 class RawData:

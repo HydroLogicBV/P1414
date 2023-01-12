@@ -5,14 +5,12 @@ from typing import List, Tuple
 
 import geopandas as gpd
 import numpy as np
-from shapely.geometry import LineString
+from shapely.geometry import LineString, MultiPoint, Point
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
-from data_structures.hydamo_globals import (
-    MANAGEMENT_DEVICE_TYPES,
-    ROUGHNESS_MAPPING_LIST,
-    WEIR_MAPPING,
-)
+from data_structures.hydamo_globals import (MANAGEMENT_DEVICE_TYPES,
+                                            ROUGHNESS_MAPPING_LIST,
+                                            WEIR_MAPPING)
 
 
 def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -35,21 +33,13 @@ def create_bridge_data(bridge_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     for ix, bridge in bridge_gdf.iterrows():
         # turn numerical roughnes types to strings
         _bridge_gdf.loc[ix, "typeruwheid"] = check_roughness(bridge)
+    return _bridge_gdf
 
 
 def create_culvert_data(culvert_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """ """
     culvert_gdf["doorstroomopening"] = None
 
-    # check that numerical dtypes are correct
-    # if (not isinstance(culvert_gdf["breedteopening"], int)) | (
-    #     not isinstance(culvert_gdf["breedteopening"], float)
-    # ):
-    #     culvert_gdf["breedteopening"] = culvert_gdf["breedteopening"].astype(float)
-    # if (not isinstance(culvert_gdf["hoogteopening"], int)) | (
-    #     not isinstance(culvert_gdf["hoogteopening"], float)
-    # ):
-    #     culvert_gdf["hoogteopening"] = culvert_gdf["hoogteopening"].astype(float)
     culvert_gdf["breedteopening"] = check_column_is_numerical(gdf=culvert_gdf["breedteopening"])
     culvert_gdf["hoogteopening"] = check_column_is_numerical(gdf=culvert_gdf["hoogteopening"])
 
@@ -104,6 +94,134 @@ def create_culvert_data(culvert_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     _culvert_gdf = _culvert_gdf.drop(columns="gesloten")
     return _culvert_gdf
+
+
+def create_measured_profile_data(
+    profile_points_gdf: gpd.GeoDataFrame,
+    dist_tol: float = 0.25,
+    roughness_mapping: List = ROUGHNESS_MAPPING_LIST,
+) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
+
+    # Load shapefile with profile points & group them by metingprof attribute
+    # profile_points = gpd.read_file(profile_points_path)
+    grouped_points = profile_points_gdf.groupby(by="profiel nummer")
+
+    # initialize empty lists
+    profile_groups = []
+    profile_lines = []
+    profile_points = []
+    roughnes_profiles = []
+
+    # Loop over the grouped profile points to create a line from the points
+    count = 0
+    for name, group in grouped_points:
+        # sort points based on codevolg number
+        sorted_group = group.sort_values("codevolgnummer")
+
+        # if both bottom and sludge measurements are present, select the first
+        if (
+            sorted_group["type meting"].isin([1]).any()
+            and sorted_group["type meting"].isin([2]).any()
+        ):
+            sorted_group.drop(sorted_group[sorted_group["type meting"] == 2].index, inplace=True)
+
+        # skip 'line' if it only has one point
+        if sorted_group.shape[0] < 5:
+            continue
+
+        # Initialize name and list of points
+        profile_group_id = str(uuid.uuid4())
+        profile_line_id = str(uuid.uuid4())
+        #
+
+        list_of_points = []
+
+        # Add info to profile_group table
+        _profile_group = dict(
+            [
+                ("globalid", profile_group_id),
+                ("brugid", None),
+                ("stuwid", None),
+                ("geometry", None),
+            ]
+        )
+        # _profile_group = dict([("globalid", profile_line_id), ("geometry", None)])
+        profile_groups.append(_profile_group)
+
+        code_volg_nr = 0
+        # add points to line
+        for ix, row in sorted_group.iterrows():
+            if type(row.geometry) == Point:
+                l_points = [row.geometry]
+            elif type(row.geometry) == MultiPoint:
+                l_points = row.geometry.geoms
+
+            for point in l_points:
+                # Check if profile points are too close together, and skip if that is the case
+                # if ix < sorted_group.shape[0]:
+                if code_volg_nr > 0:
+                    p_0 = list_of_points[code_volg_nr - 1]
+                    p_1 = point
+                    p_dist = p_0.distance(p_1)
+
+                    if p_dist < dist_tol:
+                        continue
+
+                # Because sorted_group has been sorted on codevolgnr, we can assume sequentiallity
+                code_volg_nr += 1
+
+                # append point to list for line generation
+                list_of_points.append(point)
+
+                # create entry for point shape and append
+                # point_id = "AGV_" + str(row["code"])
+                point_code = profile_line_id + r"_" + str(code_volg_nr)
+                point_id = str(uuid.uuid4())
+                _point = dict(
+                    [
+                        ("code", point_code),
+                        ("globalid", point_id),
+                        ("profiellijnid", profile_line_id),
+                        # ("codevolgnummer", row["codevolgnu"]),
+                        ("codevolgnummer", code_volg_nr),
+                        ("geometry", point),
+                    ]
+                )
+                profile_points.append(_point)
+
+                # create roughness table entry
+                _roughness_profile = dict(
+                    [
+                        ("code", point_code),
+                        ("profielpuntid", point_id),
+                        ("typeruwheid", roughness_mapping[int(row["typeruwheid"]) - 1]),
+                        ("ruwheidhoog", float(row["ruwheidhoog"])),
+                        ("ruwheidlaag", float(row["ruwheidlaag"])),
+                        ("geometry", None),
+                    ]
+                )
+                roughnes_profiles.append(_roughness_profile)
+
+        # Convert points to line
+        profile_line = LineString(list_of_points)
+
+        # add line to list
+        _profile_line = dict(
+            [
+                ("globalid", profile_line_id),
+                ("profielgroepid", profile_group_id),
+                ("geometry", profile_line),
+            ]
+        )
+        profile_lines.append(_profile_line)
+
+    # Create GeoDataFrame from list of dicts
+    profile_groups = gpd.GeoDataFrame(profile_groups, geometry="geometry", crs=28992)
+    profile_lines = gpd.GeoDataFrame(profile_lines, geometry="geometry", crs=28992)
+    profile_points = gpd.GeoDataFrame(profile_points, geometry="geometry", crs=28992)
+    roughnes_profiles = gpd.GeoDataFrame(roughnes_profiles, geometry="geometry", crs=28992)
+
+    return profile_groups, profile_lines, profile_points, roughnes_profiles
 
 
 def create_norm_parm_profiles_v2(
@@ -603,7 +721,7 @@ def create_weir_data(weir_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
         opening = dict(
             [
                 ("afvoercoefficient", weir["afvoercoefficient_opening"]),
-                ("geometry", weir["geometry"]),
+                ("geometry", None),
                 ("globalid", opening_gid),
                 ("hoogstedoorstroombreedte", weir["hoogstedoorstroombreedte"]),
                 ("hoogstedoorstroomhoogte", weir["hoogstedoorstroomhoogte"]),
@@ -711,14 +829,21 @@ def fix_geometry(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 def load_geo_file(file_path: str, layer: str = None):
     """ """
     if file_path.endswith(r".shp"):
-        return gpd.read_file(file_path)
+        gdf = gpd.read_file(file_path)
     elif file_path.endswith(r".gpkg"):
         if layer is not None:
-            return gpd.read_file(file_path, layer=layer)
+            gdf = gpd.read_file(file_path, layer=layer)
         else:
             raise ValueError("provide a layer when loading a gpkg")
     else:
         raise ValueError("filetype not implemented")
+
+    mls_struct_bool = (gdf.geometry.type == "MultiLineString") | (gdf.geometry.type == "MultiPoint")
+
+    if np.sum(mls_struct_bool) > 0:
+        gdf = gdf.explode(ignore_index=True, index_parts=False)
+
+    return gdf
 
 
 def map_columns(defaults, gdf: gpd.GeoDataFrame, index_mapping: dict) -> gpd.GeoDataFrame:
@@ -734,10 +859,6 @@ def map_columns(defaults, gdf: gpd.GeoDataFrame, index_mapping: dict) -> gpd.Geo
         index_mapping=index_mapping,
     )
 
-    # # rename columns to keys of dictionary inde_mapping
-    # inv_map = {v: k for k, v in index_mapping.items()}
-    # gdf.rename(columns=inv_map, inplace=True)
-
     # return only columns that are in that dict
     return gdf[list(index_mapping.keys())], index_mapping
 
@@ -749,58 +870,81 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
 
     if hasattr(data_config, "branches_path"):
-        ## Branches
-        branches_gdf = load_geo_file(data_config.branches_path, layer="waterloop")
+        if data_config.branches_path is not None:
+            ## Branches
+            branches_gdf = load_geo_file(data_config.branches_path, layer="waterloop")
 
-        branches_gdf, index_mapping = map_columns(
-            defaults=defaults.Branches,
-            gdf=branches_gdf,
-            index_mapping=data_config.branch_index_mapping,
-        )
+            branches_gdf, index_mapping = map_columns(
+                defaults=defaults.Branches,
+                gdf=branches_gdf,
+                index_mapping=data_config.branch_index_mapping,
+            )
 
-        (
-            ddm.waterloop,
-            ddm.hydroobject_normgp,
-            ddm.normgeparamprofielwaarde,
-        ) = create_norm_parm_profiles_v2(branches_gdf=branches_gdf)
+            (
+                ddm.waterloop,
+                ddm.hydroobject_normgp,
+                ddm.normgeparamprofielwaarde,
+            ) = create_norm_parm_profiles_v2(branches_gdf=branches_gdf)
 
     if hasattr(data_config, "bridges_path"):
-        ## Bridges
-        bridges_gdf, _ = map_columns(
-            defaults=defaults.Bridges,
-            gdf=load_geo_file(data_config.bridges_path, layer="brug"),
-            index_mapping=data_config.bridge_index_mapping,
-        )
-        ddm.brug = create_bridge_data(bridge_gdf=bridges_gdf)
+        if data_config.bridges_path is not None:
+            ## Bridges
+            bridges_gdf, _ = map_columns(
+                defaults=defaults.Bridges,
+                gdf=load_geo_file(data_config.bridges_path, layer="brug"),
+                index_mapping=data_config.bridge_index_mapping,
+            )
+            ddm.brug = create_bridge_data(bridge_gdf=bridges_gdf)
 
     if hasattr(data_config, "culvert_path"):
-        ## Culverts
-        culvert_gdf, _ = map_columns(
-            defaults=defaults.Culverts,
-            gdf=load_geo_file(data_config.culvert_path, layer="duiker"),
-            index_mapping=data_config.culvert_index_mapping,
-        )
-        ddm.duiker = create_culvert_data(culvert_gdf=culvert_gdf)
+        if data_config.culvert_path is not None:
+            ## Culverts
+            culvert_gdf, _ = map_columns(
+                defaults=defaults.Culverts,
+                gdf=load_geo_file(data_config.culvert_path, layer="duiker"),
+                index_mapping=data_config.culvert_index_mapping,
+            )
+            ddm.duiker = create_culvert_data(culvert_gdf=culvert_gdf)
+
+    if hasattr(data_config, "measured_profile_path"):
+        if data_config.measured_profile_path is not None:
+            measure_profile_gdf = load_geo_file(
+                data_config.measured_profile_path,
+                layer="metingprofielpunt",
+            )
+            measure_profile_gdf, _ = map_columns(
+                defaults=defaults.MeasuredProfiles,
+                gdf=measure_profile_gdf,
+                index_mapping=data_config.measured_profile_index_mapping,
+            )
+            (
+                ddm.profielgroep,
+                ddm.profiellijn,
+                ddm.profielpunt,
+                ddm.ruwheidsprofiel,
+            ) = create_measured_profile_data(profile_points_gdf=measure_profile_gdf)
 
     if hasattr(data_config, "pump_path"):
-        ## Pumps
-        pump_gdf = load_geo_file(data_config.pump_path, layer="gemaal")
-        pump_gdf, _ = map_columns(
-            defaults=defaults.Pumps,
-            gdf=pump_gdf,
-            index_mapping=data_config.pump_index_mapping,
-        )
+        if data_config.pump_path is not None:
+            ## Pumps
+            pump_gdf = load_geo_file(data_config.pump_path, layer="gemaal")
+            pump_gdf, _ = map_columns(
+                defaults=defaults.Pumps,
+                gdf=pump_gdf,
+                index_mapping=data_config.pump_index_mapping,
+            )
 
-        ddm.gemaal, ddm.pomp, ddm.sturing = create_pump_data(pump_gdf=pump_gdf)
+            ddm.gemaal, ddm.pomp, ddm.sturing = create_pump_data(pump_gdf=pump_gdf)
 
     if hasattr(data_config, "weir_path"):
-        ## Weirs
-        weir_gdf = load_geo_file(data_config.weir_path, layer="stuw")
-        weir_gdf, _ = map_columns(
-            defaults=defaults.Weirs, gdf=weir_gdf, index_mapping=data_config.weir_index_mapping
-        )
+        if data_config.weir_path is not None:
+            ## Weirs
+            weir_gdf = load_geo_file(data_config.weir_path, layer="stuw")
+            weir_gdf, _ = map_columns(
+                defaults=defaults.Weirs, gdf=weir_gdf, index_mapping=data_config.weir_index_mapping
+            )
 
-        ddm.stuw, ddm.kunstwerkopening, ddm.regelmiddel = create_weir_data(weir_gdf=weir_gdf)
+            ddm.stuw, ddm.kunstwerkopening, ddm.regelmiddel = create_weir_data(weir_gdf=weir_gdf)
 
     return ddm
 

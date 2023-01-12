@@ -15,9 +15,13 @@ from hydrolib.dhydamo.geometry import mesh
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 from shapely.geometry import Polygon
 
+from data_structures.dhydamo_data_model import DHydamoDataModel
 
-def add_branches(features: List[str], gpkg_path: str, hydamo: HyDAMO) -> HyDAMO:
-    hydamo.branches.read_gpkg_layer(gpkg_path, layer_name="waterloop", index_col="code")
+
+def add_branches(
+    ddm: DHydamoDataModel, features: List[str], gpkg_path: str, hydamo: HyDAMO
+) -> HyDAMO:
+    hydamo.branches.set_data(ddm.waterloop, index_col="code")
 
     # Check for circular features in branches
     hydamo.branches_popped = hydamo.branches.copy()
@@ -46,33 +50,31 @@ def add_branches(features: List[str], gpkg_path: str, hydamo: HyDAMO) -> HyDAMO:
         )
 
         # Snap profiles to branch
-        hydamo.profile_roughness.read_gpkg_layer(gpkg_path, layer_name="ruwheidsprofiel")
+        # hydamo.profile_roughness.read_gpkg_layer(gpkg_path, layer_name="ruwheidsprofiel")
+        hydamo.profile_roughness.set_data(ddm.ruwheidsprofiel)
         hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
         hydamo.profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
-        hydamo.profile_line.read_gpkg_layer(gpkg_path, layer_name="profiellijn")
-        hydamo.profile_group.read_gpkg_layer(gpkg_path, layer_name="profielgroep")
+        # hydamo.profile_line.read_gpkg_layer(gpkg_path, layer_name="profiellijn")
+        # hydamo.profile_group.read_gpkg_layer(gpkg_path, layer_name="profielgroep")
+        hydamo.profile_line.set_data(ddm.profiellijn)
+        hydamo.profile_group.set_data(ddm.profielgroep)
 
         hydamo.profile.drop("code", axis=1, inplace=True)
         hydamo.profile["code"] = hydamo.profile["profiellijnid"]
 
     if ("hydroobject_normgp" in features) and ("normgeparamprofielwaarde" in features):
-        hydamo.param_profile.read_gpkg_layer(
-            gpkg_path,
-            layer_name="hydroobject_normgp",
-            index_col="globalid",
-        )
-        hydamo.param_profile_values.read_gpkg_layer(
-            gpkg_path,
-            layer_name="normgeparamprofielwaarde",
-            index_col="normgeparamprofielid",
+        hydamo.param_profile.set_data(ddm.hydroobject_normgp, index_col="globalid")
+        hydamo.param_profile_values.set_data(
+            ddm.normgeparamprofielwaarde, index_col="normgeparamprofielid"
         )
     return hydamo
 
 
 def add_bridges(
-    gpkg_path: str, hydamo: HyDAMO, default_height=10, max_snap_dist: float = 5
+    ddm: DHydamoDataModel, hydamo: HyDAMO, default_height=10, max_snap_dist: float = 5
 ) -> HyDAMO:
-    hydamo.bridges.read_gpkg_layer(gpkg_path, layer_name="brug", index_col="code")
+
+    hydamo.bridges.set_data(ddm.brug, index_col="code")
     hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=max_snap_dist)
     hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
     for i, bridge in hydamo.bridges.iterrows():
@@ -93,27 +95,8 @@ def add_bridges(
     return hydamo
 
 
-def add_culverts(gpkg_path: str, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
-    hydamo.culverts.read_gpkg_layer(gpkg_path, layer_name="duiker")
-
-    # Only keep culverts that allign with a branch
-    # branches_gdf = gpd.read_file(gpkg_path, layer="waterloop")
-    # culvert_gdf = gpd.read_file(gpkg_path, layer="duiker")
-
-    # buffered_branches = gpd.GeoDataFrame(
-    #     branches_gdf.dissolve(by=None).buffer(0.1),
-    #     columns=["geometry"],
-    #     crs=branches_gdf.crs,
-    #     geometry="geometry",
-    # )
-    # correct_culverts = culvert_gdf.overlay(
-    #     buffered_branches, how="intersection", keep_geom_type=True
-    # )
-    # print(correct_culverts)
-    # hydamo.culverts.set_data(
-    #     culvert_gdf[culvert_gdf["globalid"].isin(correct_culverts["globalid"])]
-    # )
-
+def add_culverts(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+    hydamo.culverts.set_data(ddm.duiker)
     hydamo.culverts.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=max_snap_dist)
     hydamo.culverts.dropna(axis=0, inplace=True, subset=["branch_offset"])
     for i, culvert in hydamo.culverts.iterrows():
@@ -137,20 +120,16 @@ def add_culverts(gpkg_path: str, hydamo: HyDAMO, max_snap_dist: float = 5) -> Hy
     return hydamo
 
 
-def add_pumps(gpkg_path: str, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
-    hydamo.pumpstations.read_gpkg_layer(gpkg_path, layer_name="gemaal")
-    hydamo.pumps.read_gpkg_layer(gpkg_path, layer_name="pomp")
-    hydamo.management.read_gpkg_layer(gpkg_path, layer_name="sturing")
-
+def add_pumps(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+    hydamo.pumpstations.set_data(ddm.gemaal)
+    # hydamo.pumps.set_data(ddm.pomp)
     hydamo.pumpstations.snap_to_branch(
         hydamo.branches, snap_method="overal", maxdist=max_snap_dist
     )
-    hydamo.pumps.drop(
-        axis=0,
-        index=hydamo.pumpstations[np.isnan(hydamo.pumpstations.branch_offset)].index,
-        inplace=True,
-    )
     hydamo.pumpstations.dropna(axis=0, inplace=True, subset=["branch_offset"])
+
+    hydamo.pumps.set_data(ddm.pomp[ddm.pomp["gemaalid"].isin(hydamo.pumpstations["globalid"])])
+    hydamo.management.set_data(ddm.sturing)
 
     hydamo.structures.convert.pumps(
         hydamo.pumpstations, pumps=hydamo.pumps, management=hydamo.management
@@ -159,10 +138,10 @@ def add_pumps(gpkg_path: str, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAM
     return hydamo
 
 
-def add_weirs(gpkg_path: str, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
-    hydamo.weirs.read_gpkg_layer(gpkg_path, layer_name="stuw")
-    hydamo.opening.read_gpkg_layer(gpkg_path, layer_name="kunstwerkopening")
-    hydamo.management_device.read_gpkg_layer(gpkg_path, layer_name="regelmiddel")
+def add_weirs(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+    hydamo.weirs.set_data(ddm.stuw)
+    hydamo.opening.set_data(ddm.kunstwerkopening)
+    hydamo.management_device.set_data(ddm.regelmiddel)
 
     hydamo.weirs.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=max_snap_dist)
     hydamo.weirs.dropna(axis=0, inplace=True, subset=["branch_offset"])
@@ -294,11 +273,7 @@ def to_dhydro(
 ):
     """ """
     # check if data has been loaded and correct attributes are set
-    if (
-        (not hasattr(self, "ddm"))
-        | (not hasattr(self, "gpkg_path"))
-        | (not hasattr(self, "features"))
-    ):
+    if (not hasattr(self, "ddm")) | (not hasattr(self, "features")):
         raise AttributeError("Modeldatabase not loaded")
 
     # load configuration file
@@ -321,7 +296,7 @@ def to_dhydro(
             # add branches, profiles and norm profiles
             print("\nworking on 1D branches\n")
             self.hydamo = add_branches(
-                features=self.features, gpkg_path=self.gpkg_path, hydamo=self.hydamo
+                ddm=self.ddm, features=self.features, gpkg_path=self.gpkg_path, hydamo=self.hydamo
             )
             # Loop over structures and add when present in the data
             struct_functions = {
@@ -335,7 +310,7 @@ def to_dhydro(
                 if structure in self.features:
                     print("\nworking on {}\n".format(structure))
                     self.hydamo = function(
-                        gpkg_path=self.gpkg_path,
+                        ddm=self.ddm,
                         hydamo=self.hydamo,
                         max_snap_dist=model_config.FM.one_d.max_snap_dist,
                     )
