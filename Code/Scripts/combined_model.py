@@ -10,7 +10,7 @@ from data_structures.dhydamo_data import DHydamoData
 folder = r"D:\Work\Project\P1414"
 gpkg_file = folder + r"\GIS\HYDAMO\combined_test.gpkg"
 
-output_folder = folder + r"\Models\Combined\V3"
+output_folder = folder + r"\Models\Combined\V4"
 
 config_dhydro = r"hdsr_config"
 config_list = [r"hdsr_config", r"hhd_config", r"hhr_config", r"hhsk_config", r"wagv_config"]
@@ -44,6 +44,7 @@ if build_database:
                             )
                         )
                         setattr(dhd.ddm, key, new_gdf)
+
     dhd.clip_structures_by_branches()
     dhd.to_dhydamo_gpkg(output_gpkg=gpkg_file)
 

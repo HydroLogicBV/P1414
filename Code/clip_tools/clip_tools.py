@@ -16,7 +16,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
     )
 
     for feature in self.features:
-        if feature == "waterloop":
+        if (feature == "waterloop") or (feature == "profiellijn") or (feature == "profielpunt"):
             continue
 
         ddm_feature = getattr(self.ddm, feature)

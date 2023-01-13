@@ -16,6 +16,7 @@ from data_structures.hydamo_globals import (HYDAMO_SHAPE_NUMS,
 
 class BasicSchema(pa.SchemaModel):
     class Config:
+        coerce = True # allow datatype conversion
         name = "BasicSchema"
         strict = True  # no additional columns allowed
 
@@ -166,6 +167,29 @@ class WaterloopSchema(GPDBasicShema):
 
 
 class DHydamoDataModel(BaseModel):
+    """
+    Datamodel that validates attributes using pydantic and pandera, using pandera SchemaModels.
+    The former only checks for type (i.e. DataFrame), the latter checks the content of the DataFrames
+    Ensures that data is compatible with DHydamo
+
+    Attributes:
+        brug (gpd.GeoDataFrame): geodataframe containing bridge data
+        duiker (gpd.GeoDataFrame): geodataframe containing culvert data
+        gemaal (gpd.GeoDataFrame): geodataframe containing pump station data
+        hydroobject_normgp (gpd.GeoDataFrame): geodataframe containing norm profile id data
+        kunstwerkopening (gpd.GeoDataFrame): geodataframe containing weir opening data
+        normgeparamprofielwaarde (gpd.GeoDataFrame): geodataframe containing norm profile data
+        pomp (gpd.GeoDataFrame): geodataframe containing pump data
+        profielgroep (gpd.GeoDataFrame): geodataframe containing measured profile groups
+        profiellijn (gpd.GeoDataFrame): geodataframe containing measured profile lines
+        profielpunt (gpd.GeoDataFrame): geodataframe containing measured profile points
+        regelmiddel (gpd.GeoDataFrame): geodataframe containing management device data for weirs
+        ruwheidsprofiel (gpd.GeoDataFrame): geodataframe containing roughness data for measured profiles
+        sturing (gpd.GeoDataFrame): geodataframe containing management data for pumps
+        stuw (gpd.GeoDataFrame): geodataframe containing weir data
+        waterloop (gpd.GeoDataFrame): geodataframe containing branch data
+    """
+
     brug: Optional[DataFrame[BrugSchema]]
     duiker: Optional[DataFrame[DuikerSchema]]
     gemaal: Optional[DataFrame[GemaalSchema]]
@@ -186,7 +210,15 @@ class DHydamoDataModel(BaseModel):
         validate_assignment = True  # validates new attributes that are assigned
 
     def to_gpkg(self, output_gpkg: str) -> None:
-        """save fields that are not None to gpkg"""
+        """
+        Class method that saves fields that are not None to gpkg
+
+        Args:
+            output_gpkg (str): file location to write geopackge to
+
+        Returns:
+            None
+        """
         for key, value in self.__dict__.items():
             if value is not None:
                 getattr(self, key).to_file(output_gpkg, layer=key, driver="GPKG")

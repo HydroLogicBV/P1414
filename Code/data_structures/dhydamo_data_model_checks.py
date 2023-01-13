@@ -5,6 +5,15 @@ from shapely.geometry import LineString, MultiPoint, Point
 
 
 def geometry_check(geometry: gpd.GeoSeries) -> bool:
+    """
+    Function that checks if provided geometry is a shapely Point or LineString
+
+    Args:
+        geometry(gpd.GeoSeries): input geometry to check
+
+    Returns:
+        results (bool): True, if geometry is a Point or LineString; False if not
+    """
     # Allow points and linestrings
     if isinstance(geometry, Point) or isinstance(geometry, LineString):
         return True
@@ -19,6 +28,15 @@ def geometry_check(geometry: gpd.GeoSeries) -> bool:
 
 
 def globalid_check(globalid: str) -> bool:
+    """
+    Function that checks if provided globaid is a UUID
+
+    Args:
+        globalid (str): globalid to check
+
+    Returns:
+        results (bool): True, if globalid is a UUID; False if not
+    """
     try:
         uuid_obj = uuid.UUID(globalid)
         return True
@@ -27,6 +45,15 @@ def globalid_check(globalid: str) -> bool:
 
 
 def none_geometry_check(geometry: gpd.GeoSeries) -> bool:
+    """
+    Function that checks if provided geometry is None
+
+    Args:
+        geometry(gpd.GeoSeries): input geometry to check
+
+    Returns:
+        results (bool): True, if geometry is None; False if not
+    """
     # Allow only None types
     if geometry is None:
         return True

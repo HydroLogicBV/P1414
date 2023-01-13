@@ -257,6 +257,8 @@ def build_2D_model(
             mesh.links1d2d_add_links_1d_to_2d(network=network)
         elif coupling == "2Dto1D":
             mesh.links1d2d_add_links_2d_to_1d_embedded(network=network)
+        else:
+            print("No 1D to 2D links have been set")
     return fm
 
 
@@ -350,7 +352,10 @@ def to_dhydro(
     write_model(self.fm, self.hydamo, output_folder=output_folder, one_d=model_config.FM.one_d)
 
 
-def write_model(fm: FMModel, hydamo: HyDAMO, output_folder: str, one_d=True):
+def write_model(fm: FMModel, hydamo: HyDAMO, output_folder: str, one_d=True, use_caching=True):
+    if use_caching:
+        fm.geometry.usecaching = 1
+
     if one_d:
         models = Df2HydrolibModel(hydamo)
         # Export to DIMR configuration

@@ -9,117 +9,8 @@ from scipy.spatial import KDTree
 from tqdm import tqdm
 
 
-def clip_branches(
-    in_branches_path: str,
-    overlay_branches_path: str,
-    buffer_dist=10,
-    min_overlap: float = 0.25,
-    max_distance: float = 0.5,
-    min_connectivity: int = 2,
-) -> gpd.GeoDataFrame:
-    """
-    Wrapper function that performs all actions required to clip branches using an overlay polygon
-    and drops branches that are not sufficiently overlaid or not connected to at least two other branches
-
-    Args:
-        in_branches_path (str): path where input branches shape is stored
-        overlay_branches_path (str): path where overlay shape is stored
-        buffer_dist (float): distance around lines where buffer is applied
-        min_overlap (float): fraction (0-1) of branch that should be overlaped by buffer
-        max_distance (float): max_distance that start and end of branch are allowed to lay apart
-                              used to check how many branches are connected in one point
-        min_connectivity (int): number indicating how many branches should connect in one point in order to keep a branch
-                                default 2 means 1 other branch should connect
-
-    Returns:
-        out_branches (gpd.GeoDataFrame): GeoDataFrame contianing the clipped branches that fullfill two criterion
-                                         1. fraction of branch that is covered by overlay branches is >= min_overlap
-                                         2. at least 1 other branch connects to both ends of a branch
-
-    """
-
-    # Load input branches, explode multilinestrings, and assign unique ids.
-    # Also load overlay branches
-    overlay_branches, _ = read_rm_branches(overlay_branches_path)
-    in_branches = (
-        gpd.read_file(in_branches_path, geometry="geometry")
-        .to_crs(overlay_branches.crs)
-        .explode(index_parts=False)
-    )
-    in_branches["new_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
-
-    # compute extend of input branches and clip overlay branches to it
-    convex_hull = in_branches.dissolve(by=None).convex_hull
-    overlay_branches_clipped = overlay_branches.clip(convex_hull)
-
-    pbar = tqdm(total=5)
-    pbar.set_description("Clipping overlay branches")
-    pbar.update(1)
-
-    # buffer overlay branches
-    pbar.set_description("Buffering overlay branches")
-    buffered_branches = gpd.GeoDataFrame(
-        geometry=overlay_branches_clipped.buffer(distance=buffer_dist)
-    ).dissolve(by=None)
-
-    pbar.update(1)
-
-    # clip branches using utility function
-    pbar.set_description("Clipping input branches with overlay branches")
-    out_branches = _clip_branches(in_branches=in_branches, buffered_branches=buffered_branches)
-
-    pbar.update(1)
-
-    # skip branches with an overlap of less than min_overlap
-    pbar.set_description("Droping branches with insufficient overlap")
-    out_branches, stats = check_branch_overlap(
-        new_branches=out_branches, old_branches=in_branches, min_overlap=min_overlap
-    )
-
-    pbar.update(1)
-
-    # skip branches that are not connected to at least two other branches
-    pbar.set_description("Droping branches with too little connectivity")
-    out_branches = skip_branches_con(
-        in_branches=out_branches, max_distance=max_distance, min_connectivity=min_connectivity
-    )
-
-    pbar.update(1)
-
-    return out_branches
-
-
-def _clip_branches(
-    in_branches: gpd.GeoDataFrame,
-    buffered_branches: gpd.GeoDataFrame,
-) -> gpd.GeoDataFrame:
-    """
-    Utility function that clippes the linestrings in in_branches using polygon buffered_branches.
-
-    Args:
-        in_branches (gpd.GeoDataFrame): input GeoDataFrame with branches as linestrings
-        buffered_branches (gpd.GeoDataFrame): GeoDataFrame containing one polygon to use as overlay mask
-
-    Returns:
-        out_branches (gpd.GeoDataFrame): output GeoDataFrame with branches as linestrings
-    """
-    if buffered_branches.shape[0] > 1:
-        raise ValueError(
-            "Clipping with more than one polygon might result in duplications in the results\nplease use only one polygon for clipping"
-        )
-
-    # print("Intersecting buffered branches with input branches")
-    # intersect branches with buffered branches from old model
-    out_branches = gpd.overlay(
-        in_branches, buffered_branches, how="intersection", keep_geom_type=True
-    )
-
-    # return out_branches
-    return out_branches
-
-
 def check_branch_overlap(
-    new_branches: gpd.GeoDataFrame, old_branches: gpd.GeoDataFrame, min_overlap: float = 0.25
+    new_branches: gpd.GeoDataFrame, old_branches: gpd.GeoDataFrame, min_overlap: float = 0.5
 ) -> Tuple[gpd.GeoDataFrame, List[float]]:
     """
     Computes overlap between unclipped and clipped branches.
@@ -190,6 +81,144 @@ def check_branch_overlap(
     return out_branches, [n_split_branches_init, n_split_branches, n_replaced, n_dropped]
 
 
+def clip_branches(
+    in_branches_path: str,
+    overlay_branches_path: str,
+    buffer_dist=2.5,
+    min_overlap: float = 0.75,
+    max_distance: float = 0.5,
+    min_connectivity: int = 2,
+) -> gpd.GeoDataFrame:
+    """
+    Wrapper function that performs all actions required to clip branches using an overlay polygon
+    and drops branches that are not sufficiently overlaid or not connected to at least two other branches
+
+    Args:
+        in_branches_path (str): path where input branches shape is stored
+        overlay_branches_path (str): path where overlay shape is stored
+        buffer_dist (float): distance around lines where buffer is applied
+        min_overlap (float): fraction (0-1) of branch that should be overlaped by buffer
+        max_distance (float): max_distance that start and end of branch are allowed to lay apart
+                              used to check how many branches are connected in one point
+        min_connectivity (int): number indicating how many branches should connect in one point in order to keep a branch
+                                default 2 means 1 other branch should connect
+
+    Returns:
+        out_branches (gpd.GeoDataFrame): GeoDataFrame contianing the clipped branches that fullfill two criterion
+                                         1. fraction of branch that is covered by overlay branches is >= min_overlap
+                                         2. at least 1 other branch connects to both ends of a branch
+
+    """
+
+    # Load input branches, explode multilinestrings, and assign unique ids.
+    # Also load overlay branches
+    overlay_branches, _ = read_rm_branches(overlay_branches_path)
+    in_branches = (
+        gpd.read_file(in_branches_path, geometry="geometry")
+        .to_crs(overlay_branches.crs)
+        .explode(index_parts=False)
+    )
+    in_branches["new_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
+
+    # compute extend of input branches and clip overlay branches to it
+    convex_hull = in_branches.dissolve(by=None).convex_hull
+    overlay_branches_clipped = overlay_branches.clip(convex_hull)
+
+    pbar = tqdm(total=6)
+    pbar.set_description("Clipping overlay branches")
+    pbar.update(1)
+
+    # buffer overlay branches
+    pbar.set_description("Buffering overlay branches")
+    buffered_branches = gpd.GeoDataFrame(
+        geometry=overlay_branches_clipped.buffer(distance=buffer_dist)
+    ).dissolve(by=None)
+
+    pbar.update(1)
+
+    # clip branches using utility function
+    pbar.set_description("Clipping input branches with overlay branches")
+    out_branches = _clip_branches(in_branches=in_branches, buffered_branches=buffered_branches)
+
+    pbar.update(1)
+
+    # skip branches with an overlap of less than min_overlap
+    pbar.set_description("Droping branches with insufficient overlap")
+    out_branches, stats = check_branch_overlap(
+        new_branches=out_branches, old_branches=in_branches, min_overlap=min_overlap
+    )
+
+    pbar.update(1)
+
+    # Validate network toplogy
+    pbar.set_description("Validating network toplogy")
+    out_branches = validate_network_topology(branches_gdf=out_branches)
+
+    pbar.update(1)
+
+    # skip branches that are not connected to at least two other branches
+    pbar.set_description("Droping branches with too little connectivity")
+    out_branches = skip_branches_con(
+        in_branches=out_branches, max_distance=max_distance, min_connectivity=min_connectivity
+    )
+
+    pbar.update(1)
+
+    return out_branches
+
+
+def _clip_branches(
+    in_branches: gpd.GeoDataFrame,
+    buffered_branches: gpd.GeoDataFrame,
+) -> gpd.GeoDataFrame:
+    """
+    Utility function that clippes the linestrings in in_branches using polygon buffered_branches.
+
+    Args:
+        in_branches (gpd.GeoDataFrame): input GeoDataFrame with branches as linestrings
+        buffered_branches (gpd.GeoDataFrame): GeoDataFrame containing one polygon to use as overlay mask
+
+    Returns:
+        out_branches (gpd.GeoDataFrame): output GeoDataFrame with branches as linestrings
+    """
+    if buffered_branches.shape[0] > 1:
+        raise ValueError(
+            "Clipping with more than one polygon might result in duplications in the results\nplease use only one polygon for clipping"
+        )
+
+    # print("Intersecting buffered branches with input branches")
+    # intersect branches with buffered branches from old model
+    out_branches = gpd.overlay(
+        in_branches, buffered_branches, how="intersection", keep_geom_type=True
+    )
+
+    # return out_branches
+    return out_branches
+
+
+def read_rm_branches(
+    rm_branches_path: str, epsg: int = 28992
+) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    """
+    function to read old RM-model branches and skip underpasses (marked by "OND")
+
+    Args:
+        rm_branches_path (str): path of shape file containing the old branches
+
+    Returns:
+        rm_branches (gpd.GeoDataFrame): GeoDataFrame containing the branches
+        onderdoorgangen (gpd.GeoDataFrame): GeoDataFrame containing underpasses
+    """
+
+    rm_branches = gpd.read_file(rm_branches_path, geometry="geometry").to_crs(crs=epsg)
+    ondd_bool = (rm_branches["Source"].str.contains("OND")) | (
+        rm_branches["Target"].str.contains("OND")
+    )
+    onderdoorgangen = rm_branches.loc[ondd_bool, :]
+    rm_branches = rm_branches.loc[~ondd_bool, :]
+    return rm_branches, onderdoorgangen
+
+
 def skip_branches_con(
     in_branches: gpd.GeoDataFrame, max_distance: float = 0.5, min_connectivity: int = 2
 ) -> gpd.GeoDataFrame:
@@ -243,56 +272,67 @@ def skip_branches_con(
     return out_branches
 
 
-def read_rm_branches(
-    rm_branches_path: str, epsg: int = 28992
-) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+def validate_network_topology(branches_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
-    function to read old RM-model branches and skip underpasses (marked by "OND")
+    Function to validate the toplogy of the network.
+    Specifically, this function ensures all connections between branches are valid
+    and that each branch connects to another at the end of a branch.
 
     Args:
-        rm_branches_path (str): path of shape file containing the old branches
+        branches_gdf (gpd.GeoDataFrame): input geodataframe with branches (geometry should be linestrings)
 
     Returns:
-        rm_branches (gpd.GeoDataFrame): GeoDataFrame containing the branches
-        onderdoorgangen (gpd.GeoDataFrame): GeoDataFrame containing underpasses
+        branches_gdf (gpd.GeoDataFrame): output geodataframe with branches that properly connect to one another
     """
 
-    rm_branches = gpd.read_file(rm_branches_path, geometry="geometry").to_crs(crs=epsg)
-    ondd_bool = (rm_branches["Source"].str.contains("OND")) | (
-        rm_branches["Target"].str.contains("OND")
-    )
-    onderdoorgangen = rm_branches.loc[ondd_bool, :]
-    rm_branches = rm_branches.loc[~ondd_bool, :]
-    return rm_branches, onderdoorgangen
+    MLS_branches_bool = branches_gdf.geometry.type == "MultiLineString"
+    if np.sum(MLS_branches_bool) > 0:
+        print("warning: found multilinestrings")
+        branches_gdf = branches_gdf.explode(ignore_index=True, index_parts=False)
+
+    # First ensure that line-segments dont extend past connection points
+    # this is done using shapely function unary_union
+    union_result = branches_gdf.geometry.unary_union
+
+    # Secondly, add the correct data from the origingal gdf to the new branches
+    # this is done by adding data from old buffered branches to all new branches that fall within each polygon
+    buffered_branches = copy(branches_gdf)
+    buffered_branches.geometry = buffered_branches.geometry.buffer(1)
+    gdf = gpd.GeoDataFrame(union_result, columns=["geometry"], geometry="geometry", crs=28992)
+    # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
+    intersected_gdf = gdf.sjoin(buffered_branches, how="left", predicate="within")
+
+    return intersected_gdf
 
 
 # %% Initialize
 print("initialize")
-p_folder = r"D:\work\P1414_ROI\GIS"
-old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited.shp"
+# p_folder = r"D:\work\P1414_ROI\GIS"
+p_folder = r"D:\work\Project\P1414\GIS"
+old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited_v10.shp"
 
 agv_branches_path = p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"
-clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_v4_test.shp"
+clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_v5_test.shp"
 
 HDSR_branches_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
-clipped_HDSR_branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v4_test.shp"
+clipped_HDSR_branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v5_test.shp"
 
 HHD_branches_path = (
     p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
 )
-clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v4_test.shp"
+clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v5_test.shp"
 
 HHR_branches_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as.shp"
-clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v4_test.shp"
+clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v6_test.shp"
 
 HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
-clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v4_test.shp"
+clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v5_test.shp"
 
-AGV = True
-HDSR = True
-HHD = True
+AGV = False
+HDSR = False
+HHD = False
 HHR = True
-HHSK = True
+HHSK = False
 
 # %% AGV
 if AGV:
@@ -301,7 +341,6 @@ if AGV:
     intersected_branches = clip_branches(
         in_branches_path=agv_branches_path,
         overlay_branches_path=old_rm_branches_path,
-        buffer_dist=20,
     )
     intersected_branches.to_file(clipped_agv_branches_path)
 
@@ -312,7 +351,6 @@ if HDSR:
     intersected_branches = clip_branches(
         in_branches_path=HDSR_branches_path,
         overlay_branches_path=old_rm_branches_path,
-        min_overlap=0.25,
     )
     intersected_branches.to_file(clipped_HDSR_branches_path)
 
@@ -341,7 +379,5 @@ if HHSK:
     intersected_branches = clip_branches(
         in_branches_path=HHSK_branches_path,
         overlay_branches_path=old_rm_branches_path,
-        buffer_dist=50,
-        min_overlap=0.25,
     )
     intersected_branches.to_file(clipped_HHSK_branches_path)

@@ -1,9 +1,9 @@
 class Models:
     class FM:
         one_d_bool = True
-        two_d_bool = False
+        two_d_bool = True
         start_time = 20160601
-        stop_time = 2 * 86400
+        stop_time = 86400
 
         class one_d:
             max_dist_to_struct = 3
@@ -11,9 +11,9 @@ class Models:
             node_distance = 100
 
         class two_d:
-            coupling_type = "2Dto1D"
-            dx = 100
-            dy = 100
+            coupling_type = None  # "1Dto2D"
+            dx = 500
+            dy = 500
             elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
@@ -21,7 +21,7 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v4_test.shp"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v5_test.shp"
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
     pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"
