@@ -11,7 +11,7 @@ class Models:
             node_distance = 100
 
         class two_d:
-            coupling_type = None  # "1Dto2D"
+            coupling_type = "1Dto2D"
             dx = 500
             dy = 500
             elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
@@ -21,7 +21,7 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v5_test.shp"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v7_test.shp"
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
     pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"

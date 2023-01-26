@@ -375,7 +375,10 @@ def to_dhydro(
     write_model(self.fm, self.hydamo, output_folder=output_folder, one_d=model_config.FM.one_d)
 
 
-def write_model(fm: FMModel, hydamo: HyDAMO, output_folder: str, one_d=True):
+def write_model(fm: FMModel, hydamo: HyDAMO, output_folder: str, one_d=True, use_caching=True):
+    if use_caching:
+        fm.geometry.usecaching = 1
+
     if one_d:
         models = Df2HydrolibModel(hydamo)
         # Export to DIMR configuration

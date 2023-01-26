@@ -11,7 +11,7 @@ class Models:
             node_distance = 100
 
         class two_d:
-            coupling_type = None  # "1Dto2D"
+            coupling_type = "2Dto1D"
             dx = 500
             dy = 500
             elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
@@ -21,7 +21,7 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\WAGV\Niet legger\hydrovak_combined_v5.shp"
+    branches_path = p_folder + r"\WAGV\Niet legger\hydrovak_combined_v7.shp"
     bridges_path = p_folder + r"\WAGV\brug_v13\brug_v13_clipped.shp"
     culvert_path = p_folder + r"\WAGV\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp"
     measured_profile_path = (

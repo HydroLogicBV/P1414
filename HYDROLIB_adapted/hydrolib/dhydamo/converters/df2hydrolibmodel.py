@@ -11,6 +11,7 @@ from hydrolib.core.io.crosssection.models import (
     RectangleCrsDef,
     YZCrsDef,
     ZWCrsDef,
+    ZWRiverCrsDef,
 )
 from hydrolib.core.io.ext.models import Boundary, Lateral
 from hydrolib.core.io.friction.models import FrictGlobal
@@ -191,6 +192,12 @@ class Df2HydrolibModel:
         # ZW, added HL
         cs_zw = _get_cstype_part_of_dict("zw")
         cs = [ZWCrsDef(**cs) for cs in cs_zw.values()]
+        self._clear_comments(cs)
+        self.crossdefs += cs
+
+        # ZW river, added HL
+        cs_zw_river = _get_cstype_part_of_dict("zwRiver")
+        cs = [ZWRiverCrsDef(**cs) for cs in cs_zw_river.values()]
         self._clear_comments(cs)
         self.crossdefs += cs
 

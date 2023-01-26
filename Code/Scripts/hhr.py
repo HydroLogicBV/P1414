@@ -25,8 +25,8 @@ if build_database:
     dhd.to_dhydamo_gpkg(output_gpkg=gpkg_file)
 
 if build_model:
-    # # 2. load data
+    # 2. load data
     dhd.from_dhydamo_gpkg(gpkg_file)
 
-    # # 4. save as dhydro model
+    # 3. save as dhydro model
     dhd.to_dhydro(config=config, output_folder=output_folder)

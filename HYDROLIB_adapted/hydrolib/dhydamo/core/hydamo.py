@@ -906,6 +906,72 @@ class CrossSections:
 
         return name
 
+    def add_zw_river_definition(
+        self,
+        name,
+        numLevels,
+        levels,
+        flowWidths,
+        totalWidths,
+        thalweg=0.0,
+        leveecrestLevel=None,
+        leveebaselevel=None,
+        leveeflowarea=None,
+        leveetotalarea=None,
+        mainwidth=None,
+        fp1width=None,
+        fp2width=None,
+        frictionids=None,
+        frictiontypes=None,
+        frictionvalues=None,
+    ):
+        """
+        ADDED HL
+        Add zw cross section. The cross section name is derived from the shape and roughness,
+        so similar cross sections will result in a single definition.
+        """
+
+        # Add to dictionary
+        self.crosssection_def[name] = {
+            "id": name,
+            "type": "zwRiver",
+            "thalweg": thalweg,
+            "numlevels": int(numLevels),
+            "levels": levels,
+            "flowwidths": flowWidths,
+            "totalwidths": totalWidths,
+            # "leveecrestLevel": leveecrestLevel,
+            # "leveebaselevel": leveebaselevel,
+            # "leveeflowarea": leveeflowarea,
+            # "leveetotalarea": leveetotalarea,
+            # "mainwidth": mainwidth,
+            # "fp1width": fp1width,
+            # "fp2width": fp2width,
+            # "frictionids": frictionids,
+            # "frictiontypes": frictiontypes,
+            # "frictionvalues": frictionvalues,
+        }
+
+        optional_variable_list = [
+            "leveecrestLevel",
+            "leveebaselevel",
+            "leveeflowarea",
+            "leveetotalarea",
+            "mainwidth",
+            "fp1width",
+            "fp2width",
+            "frictionids",
+            "frictiontypes",
+            "frictionvalues",
+        ]
+
+        for variable in optional_variable_list:
+            value = eval(variable)
+            if value is not None:
+                self.crosssection_def[name][variable] = value
+
+        return name
+
     def add_crosssection_location(self, branchid, chainage, definition, minz=np.nan, shift=0.0):
 
         descr = f"{branchid}_{chainage:.1f}"

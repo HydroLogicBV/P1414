@@ -1,22 +1,26 @@
-from typing import Optional
+from typing import Any, Optional
 
 import pandera as pa
 from pandera.typing import DataFrame, Series
 from pandera.typing.geopandas import GeoSeries
 from pydantic import BaseModel
 
-from data_structures.dhydamo_data_model_checks import (geometry_check,
-                                                       globalid_check,
-                                                       none_geometry_check)
-from data_structures.hydamo_globals import (HYDAMO_SHAPE_NUMS,
-                                            HYDAMO_WEIR_TYPES,
-                                            MANAGEMENT_DEVICE_TYPES,
-                                            ROUGHNESS_MAPPING_LIST)
+from data_structures.dhydamo_data_model_checks import (
+    geometry_check,
+    globalid_check,
+    none_geometry_check,
+)
+from data_structures.hydamo_globals import (
+    HYDAMO_SHAPE_NUMS,
+    HYDAMO_WEIR_TYPES,
+    MANAGEMENT_DEVICE_TYPES,
+    ROUGHNESS_MAPPING_LIST,
+)
 
 
 class BasicSchema(pa.SchemaModel):
     class Config:
-        coerce = True # allow datatype conversion
+        coerce = True  # allow datatype conversion
         name = "BasicSchema"
         strict = True  # no additional columns allowed
 
@@ -162,7 +166,7 @@ class StuwSchema(GPDBasicShema):
 
 
 class WaterloopSchema(GPDBasicShema):
-    code: Series[str] = pa.Field(coerce=True)
+    code: Series[str] = pa.Field(coerce=True, unique=True)
     typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)  # addition to confluence
 
 
@@ -201,6 +205,9 @@ class DHydamoDataModel(BaseModel):
     profiellijn: Optional[DataFrame[ProfiellijnSchema]]
     profielpunt: Optional[DataFrame[ProfielpuntSchema]]
     regelmiddel: Optional[DataFrame[RegelmiddelSchema]]
+    rivier_profielen: Optional[Any]
+    rivier_profielen_data: Optional[Any]
+    rivier_profielen_ruwheid: Optional[Any]
     ruwheidsprofiel: Optional[DataFrame[RuwheidsprofielSchema]]
     sturing: Optional[DataFrame[SturingSchema]]
     stuw: Optional[DataFrame[StuwSchema]]
@@ -221,4 +228,7 @@ class DHydamoDataModel(BaseModel):
         """
         for key, value in self.__dict__.items():
             if value is not None:
-                getattr(self, key).to_file(output_gpkg, layer=key, driver="GPKG")
+                try:
+                    getattr(self, key).to_file(output_gpkg, layer=key, driver="GPKG")
+                except:
+                    print("\nfailed to save {}\n".format(key))

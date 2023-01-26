@@ -1,14 +1,14 @@
 import sys
 
 sys.path.append("D:\Work\git\GIS_tools\Code")
-import geopandas as gpd
+
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\WAGV_clipped.gpkg"
-output_folder = folder + r"\Models\WAGV\V2"
+gpkg_file = folder + r"\GIS\HYDAMO\Rijntakken.gpkg"
+output_folder = folder + r"\Models\Rijntakken\V0"
 
-config = r"wagv_config"
+config = r"rijntakken_config"
 defaults = r"defaults"
 
 build_database = True

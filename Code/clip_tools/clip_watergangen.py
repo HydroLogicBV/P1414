@@ -6,6 +6,7 @@ from typing import List, Tuple
 import geopandas as gpd
 import numpy as np
 from scipy.spatial import KDTree
+from shapely.geometry import LineString, MultiPoint, Point
 from tqdm import tqdm
 
 
@@ -84,7 +85,7 @@ def check_branch_overlap(
 def clip_branches(
     in_branches_path: str,
     overlay_branches_path: str,
-    buffer_dist=2.5,
+    buffer_dist=5,
     min_overlap: float = 0.75,
     max_distance: float = 0.5,
     min_connectivity: int = 2,
@@ -152,7 +153,7 @@ def clip_branches(
 
     # Validate network toplogy
     pbar.set_description("Validating network toplogy")
-    out_branches = validate_network_topology(branches_gdf=out_branches)
+    out_branches = validate_network_topology(branches_gdf=out_branches, snap_distance=buffer_dist)
 
     pbar.update(1)
 
@@ -194,6 +195,62 @@ def _clip_branches(
 
     # return out_branches
     return out_branches
+
+
+def delete_branches(gdf: gpd.GeoDataFrame, snap_distance: float) -> gpd.GeoDataFrame:
+    _gdf = gdf.loc[gdf.geometry.length > snap_distance, :]
+
+    short_branches_ix = np.where(gdf.geometry.length <= snap_distance)[0]
+    print(gdf.shape[0], _gdf.shape[0], short_branches_ix)
+    boundaries = []
+    for branch_ix in short_branches_ix:
+        branch = gdf.iloc[branch_ix, :]
+        boundary = branch.geometry.boundary
+        if boundary not in boundaries:
+            boundaries.append(boundary)
+
+    l_points = []
+    r_points = []
+    for ix, boundary in enumerate(boundaries):
+        l_point = Point(boundary.geoms[0].x, boundary.geoms[0].y)
+        r_point = Point(boundary.geoms[1].x, boundary.geoms[1].y)
+
+        l_points.append(l_point)
+        r_points.append(r_point)
+
+    l_mpoints = MultiPoint(l_points)
+    # r_mpoints = MultiPoint(r_points)
+
+    # # print(*boundaries)
+    gdf = copy(_gdf)
+    for ix, (name, branch) in enumerate(_gdf.iterrows()):
+        # Delete z-dimensison of linestring if it exists
+        if np.array(branch.geometry.coords).shape[1] > 2:
+            geometry = [Point(x, y) for x, y, _ in branch.geometry.coords]
+            try:
+                gdf.geometry.iloc[ix] = LineString(geometry)
+            except ValueError:
+                print("oepsie")
+        else:
+            geometry = [Point(x, y) for x, y in branch.geometry.coords]
+
+        boundary = branch.geometry.boundary
+
+        if l_mpoints.contains(geometry[0]):
+            jx = l_points.index(geometry[0])
+            _branch = copy(branch)
+            geometry[0] = r_points[jx]
+            _branch.geometry = LineString(geometry)
+            gdf.iloc[ix] = _branch
+
+        if l_mpoints.contains(geometry[-1]):
+            jx = l_points.index(geometry[-1])
+            _branch = copy(branch)
+            geometry[-1] = r_points[jx]
+            _branch.geometry = LineString(geometry)
+            gdf.iloc[ix] = _branch
+
+    return gdf
 
 
 def read_rm_branches(
@@ -272,7 +329,9 @@ def skip_branches_con(
     return out_branches
 
 
-def validate_network_topology(branches_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def validate_network_topology(
+    branches_gdf: gpd.GeoDataFrame, snap_distance: float = None
+) -> gpd.GeoDataFrame:
     """
     Function to validate the toplogy of the network.
     Specifically, this function ensures all connections between branches are valid
@@ -299,8 +358,15 @@ def validate_network_topology(branches_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFram
     buffered_branches = copy(branches_gdf)
     buffered_branches.geometry = buffered_branches.geometry.buffer(1)
     gdf = gpd.GeoDataFrame(union_result, columns=["geometry"], geometry="geometry", crs=28992)
+
     # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
     intersected_gdf = gdf.sjoin(buffered_branches, how="left", predicate="within")
+
+    if snap_distance is not None:
+        if snap_distance > 0:
+            intersected_gdf = delete_branches(gdf=intersected_gdf, snap_distance=snap_distance)
+        else:
+            raise ValueError("snap_distance should be > 0")
 
     return intersected_gdf
 
@@ -308,31 +374,39 @@ def validate_network_topology(branches_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFram
 # %% Initialize
 print("initialize")
 # p_folder = r"D:\work\P1414_ROI\GIS"
+version = "v7"
 p_folder = r"D:\work\Project\P1414\GIS"
 old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited_v10.shp"
 
 agv_branches_path = p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"
-clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_v5_test.shp"
+clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_{}_test.shp".format(version)
 
 HDSR_branches_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
-clipped_HDSR_branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v5_test.shp"
+clipped_HDSR_branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_{}_test.shp".format(
+    version
+)
 
 HHD_branches_path = (
     p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
 )
-clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v5_test.shp"
+clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_{}_test.shp".format(version)
 
 HHR_branches_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as.shp"
-clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v6_test.shp"
+clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_{}_test.shp".format(version)
 
 HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
-clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v5_test.shp"
+clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_{}_test.shp".format(
+    version
+)
+RMM_branches_path = p_folder + r"\Rijn Maasmonding\RMM_Branches_edited.shp"
+fixed_RMM_branches_path = p_folder + r"\Uitgesneden watergangen\RMM_branches.shp"
 
 AGV = False
 HDSR = False
 HHD = False
-HHR = True
+HHR = False
 HHSK = False
+RMM = True
 
 # %% AGV
 if AGV:
@@ -381,3 +455,12 @@ if HHSK:
         overlay_branches_path=old_rm_branches_path,
     )
     intersected_branches.to_file(clipped_HHSK_branches_path)
+
+if RMM:
+    print("RMM")
+    in_branches = gpd.read_file(RMM_branches_path, geometry="geometry", crs=28992).explode(
+        index_parts=False
+    )
+    in_branches["new_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
+    out_branches = validate_network_topology(branches_gdf=in_branches, snap_distance=0.5)
+    out_branches.to_file(fixed_RMM_branches_path)

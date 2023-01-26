@@ -5,12 +5,15 @@ from typing import List, Tuple
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 from shapely.geometry import LineString, MultiPoint, Point
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
-from data_structures.hydamo_globals import (MANAGEMENT_DEVICE_TYPES,
-                                            ROUGHNESS_MAPPING_LIST,
-                                            WEIR_MAPPING)
+from data_structures.hydamo_globals import (
+    MANAGEMENT_DEVICE_TYPES,
+    ROUGHNESS_MAPPING_LIST,
+    WEIR_MAPPING,
+)
 
 
 def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -255,12 +258,19 @@ def create_norm_parm_profiles_v2(
 
     branches_out_gdf = copy(branches_gdf)
 
+    # Check for duplicate codes, if there are, they are replaced in the following loop
+    duplicates = branches_gdf.duplicated(subset=["code"])
+
     # for ix_1, branch in tqdm(branches_gdf.iterrows(), total=branches_gdf.shape[0]):
-    for ix_1, branch in branches_gdf.iterrows():
+    for jx, (ix_1, branch) in enumerate(branches_gdf.iterrows()):
         # Create unique ident for branch and add to branch
         branch_gid = str(uuid.uuid4())
         branches_out_gdf.loc[ix_1, "globalid"] = branch_gid
-        branches_out_gdf.loc[ix_1, "code"] = branch_gid
+
+        # replace duplicate codes by addinng a uniqure number
+        if duplicates[jx]:
+            branches_out_gdf.loc[ix_1, "code"] = branches_out_gdf.loc[ix_1, "code"] + str(jx)
+        # branches_out_gdf.loc[ix_1, "code"] = branch_gid
 
         # turn numerical roughnes types to strings
         type_ruwheid = check_roughness(branch)
@@ -662,6 +672,94 @@ def create_pump_data(pump_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
     return pump_station_gdf, _pump_gdf, management_gdf
 
 
+def create_river_profiles(riv_prof_df: pd.DataFrame) -> gpd.GeoDataFrame:
+    ## TODO build list of dicts
+    riv_prof_df["id"] = riv_prof_df["id"].astype(str)
+    unique_ids = riv_prof_df["id"].unique()
+    geom_df = pd.DataFrame(
+        columns=[
+            "name",
+            "ix",
+            "levels",
+            "flowWidths",
+            "totalWidths",
+            "geometry",
+        ]
+    )
+    meta_df = pd.DataFrame(
+        columns=[
+            "name",
+            "thalweg",
+            "leveecrestLevel",
+            "leveebaselevel",
+            "leveeflowarea",
+            "leveetotalarea",
+            "mainwidth",
+            "fp1width",
+            "fp2width",
+            "branchid",
+            "chainage",
+            "geometry",
+        ]
+    )
+
+    meta_df["chainage"] = meta_df["chainage"].astype(float)
+    geom_df["levels"] = geom_df["levels"].astype(float)
+    geom_df["flowWidths"] = geom_df["flowWidths"].astype(float)
+    geom_df["totalWidths"] = geom_df["totalWidths"].astype(float)
+
+    g_ix = 0
+    for u_id in unique_ids:
+        slice = riv_prof_df[riv_prof_df["id"] == u_id]
+        meta_data = slice[slice["Data_type"] == "meta"]
+        geom_data = slice[slice["Data_type"] == "geom"]
+        # print(meta_data.dropna(axis=1))
+        # print(geom_data.dropna(axis=1))
+        for ix in range(geom_data.shape[0]):
+            geom_df.at[g_ix, "name"] = u_id
+            geom_df.at[g_ix, "ix"] = ix
+            geom_df.at[g_ix, "levels"] = geom_data["level"].values[ix]
+            geom_df.at[g_ix, "flowWidths"] = geom_data["Flow width"].values[ix]
+            geom_df.at[g_ix, "totalWidths"] = geom_data["Total width"].values[ix]
+            geom_df.at[g_ix, "geometry"] = None
+            g_ix += 1
+
+        meta_df.at[u_id, "numLevels"] = geom_data.shape[0]
+        meta_df.at[u_id, "name"] = u_id
+        meta_df.at[u_id, "thalweg"] = 0
+        meta_df.at[u_id, "leveecrestLevel"] = meta_data["Crest level summerdike"].values[0]
+
+        meta_df.at[u_id, "leveebaselevel"] = meta_data[
+            "Floodplain baselevel behind summerdike"
+        ].values[0]
+        meta_df.at[u_id, "leveeflowarea"] = meta_data["Flow area behind summerdike"].values[0]
+        meta_df.at[u_id, "leveetotalarea"] = meta_data["Total area behind summerdike"].values[0]
+        meta_df.at[u_id, "mainwidth"] = meta_data["width main channel"].values[0]
+        meta_df.at[u_id, "fp1width"] = meta_data["width floodplain 1"].values[0]
+        meta_df.at[u_id, "fp2width"] = meta_data["width floodplain 2"].values[0]
+        meta_df.at[u_id, "branchid"] = meta_data["branch"].values[0]
+        meta_df.at[u_id, "chainage"] = meta_data["chainage"].values[0]
+        meta_df.at[u_id, "geometry"] = None
+
+        total_width = (
+            meta_df.at[u_id, "mainwidth"]
+            + meta_df.at[u_id, "fp1width"]
+            + meta_df.at[u_id, "fp2width"]
+        )
+        max_width = geom_df.loc[geom_df["name"] == u_id, "flowWidths"].max()
+        if total_width > max_width:
+            diff = total_width - max_width
+
+            max_ix = geom_df.loc[geom_df["name"] == u_id, "flowWidths"].idxmax()
+            geom_df.at[max_ix, "flowWidths"] = geom_df.at[max_ix, "flowWidths"] + diff
+            if geom_df.at[max_ix, "flowWidths"] > geom_df.at[max_ix, "totalWidths"]:
+                geom_df.at[max_ix, "totalWidths"] = geom_df.at[max_ix, "flowWidths"]
+
+    geom_gdf = gpd.GeoDataFrame(geom_df, geometry="geometry", crs="epsg:28992")
+    meta_gdf = gpd.GeoDataFrame(meta_df, geometry="geometry", crs="epsg:28992")
+    return geom_gdf, meta_gdf
+
+
 def create_weir_data(weir_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
 
     weir_list = []
@@ -822,7 +920,10 @@ def fill_empty_columns(
 def fix_geometry(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """drops values without geometry and sets corrects crs"""
     gdf.dropna(axis=0, inplace=True, subset=["geometry"])
-    gdf = gdf.to_crs("epsg:28992")
+    try:
+        gdf = gdf.to_crs("epsg:28992")
+    except ValueError:
+        gdf = gdf.set_crs("epsg:28992").to_crs("epsg:28992")
     return gdf
 
 
@@ -838,7 +939,9 @@ def load_geo_file(file_path: str, layer: str = None):
     else:
         raise ValueError("filetype not implemented")
 
-    mls_struct_bool = (gdf.geometry.type == "MultiLineString") | (gdf.geometry.type == "MultiPoint")
+    mls_struct_bool = (gdf.geometry.type == "MultiLineString") | (
+        gdf.geometry.type == "MultiPoint"
+    )
 
     if np.sum(mls_struct_bool) > 0:
         gdf = gdf.explode(ignore_index=True, index_parts=False)
@@ -935,6 +1038,13 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             )
 
             ddm.gemaal, ddm.pomp, ddm.sturing = create_pump_data(pump_gdf=pump_gdf)
+
+    if hasattr(data_config, "river_profile_path"):
+        if data_config.river_profile_path is not None:
+            riv_prof_df = pd.read_csv(data_config.river_profile_path)
+            ddm.rivier_profielen, ddm.rivier_profielen_data = create_river_profiles(
+                riv_prof_df=riv_prof_df
+            )
 
     if hasattr(data_config, "weir_path"):
         if data_config.weir_path is not None:

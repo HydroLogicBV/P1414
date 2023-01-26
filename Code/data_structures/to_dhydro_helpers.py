@@ -120,6 +120,40 @@ def add_culverts(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5
     return hydamo
 
 
+def add_profiles_river(ddm: DHydamoDataModel, hydamo: HyDAMO) -> HyDAMO:
+
+    for name, prof in ddm.rivier_profielen_data.iterrows():
+        profile = ddm.rivier_profielen[ddm.rivier_profielen["name"] == prof["name"]]
+        profile = profile.sort_values(by="levels", ascending=True)
+        hydamo.crosssections.add_zw_river_definition(
+            name=prof["name"],
+            numLevels=prof["numLevels"],
+            levels=profile["levels"].values.tolist(),
+            flowWidths=profile["flowWidths"].values.tolist(),
+            totalWidths=profile["totalWidths"].values.tolist(),
+            thalweg=prof["thalweg"],
+            leveecrestLevel=prof["leveecrestLevel"],
+            leveebaselevel=prof["leveebaselevel"],
+            leveeflowarea=prof["leveeflowarea"],
+            leveetotalarea=prof["leveetotalarea"],
+            mainwidth=prof["mainwidth"],
+            fp1width=prof["fp1width"],
+            fp2width=prof["fp2width"],
+            frictionids=None,
+            frictiontypes=None,
+            frictionvalues=None,
+        )
+        hydamo.crosssections.add_crosssection_location(
+            branchid=prof["branchid"], chainage=prof["chainage"], definition=prof["name"]
+        )
+
+        # TODO add friction
+        # requires id and new function in df2hydrolibmodel.py (similar to friction_definitions_to_dhydro)
+        # but for non-global frictions
+
+    return hydamo
+
+
 def add_pumps(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
     hydamo.pumpstations.set_data(ddm.gemaal)
     # hydamo.pumps.set_data(ddm.pomp)
@@ -300,6 +334,13 @@ def to_dhydro(
             self.hydamo = add_branches(
                 ddm=self.ddm, features=self.features, gpkg_path=self.gpkg_path, hydamo=self.hydamo
             )
+
+            if ("rivier_profielen_data" in self.features) and (
+                "rivier_profielen" in self.features
+            ):
+                print("\nworking on river profiles\n")
+                self.hydamo = add_profiles_river(ddm=self.ddm, hydamo=self.hydamo)
+
             # Loop over structures and add when present in the data
             struct_functions = {
                 "brug": add_bridges,
