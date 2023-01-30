@@ -5,7 +5,7 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\HHR_clipped.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\HHR_clipped_wnp.gpkg"
 output_folder = folder + r"\Models\HHR\V1"
 
 config = r"hhr_config"

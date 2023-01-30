@@ -11,7 +11,7 @@ class Models:
             node_distance = 100
 
         class two_d:
-            coupling_type = "1Dto2D"
+            coupling_type = "2Dto1D"
             dx = 500
             dy = 500
             elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"

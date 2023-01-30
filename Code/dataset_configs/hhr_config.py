@@ -24,6 +24,7 @@ class RawData:
     branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v7_test.shp"
     bridges_path = p_folder + r"\HHRijnland\Niet legger\brug_edited.shp"
     culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
+    peil_gebieden_path = p_folder + r"\HHRijnland\Legger\Peilvakken\peilvakken.shp"
     pump_path = p_folder + r"\HHRijnland\Niet legger\gemaal_peil.shp"
     weir_path = p_folder + r"\HHRijnland\Legger\Stuw\stuw.shp"
 
@@ -36,6 +37,7 @@ class RawData:
             ("bodemhoogte benedenstrooms", None),
             ("bodemhoogte bovenstrooms", None),
             ("code", "CODE"),
+            ("diepte", "WATERDIEPT"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogte insteek linkerzijde", None),
@@ -80,6 +82,16 @@ class RawData:
             ("ruwheid", None),
             ("uittreeverlies", None),
             ("vormkoker", "VORMKOKER"),
+        ]
+    )
+
+    ## Peil gebied
+    peil_index_mapping = dict(
+        [
+            ("boven peil", "ZOMERPEIL"),
+            ("geometry", "geometry"),
+            ("onder peil", "WINTERPEIL"),
+            ("vast peil", "VASTPEIL"),
         ]
     )
 

@@ -132,7 +132,10 @@ class Df2HydrolibModel:
         branchids = set(
             [dct["branchid"] for dct in self.hydamo.crosssections.crosssection_loc.values()]
         )
-        missing = self.hydamo.branches.index[~self.hydamo.branches["code"].isin(branchids)]
+        # missing = self.hydamo.branches.index[~self.hydamo.branches["code"].isin(branchids)]
+        missing = self.hydamo.branches.index[
+            ~self.hydamo.branches.index.isin(branchids)
+        ]  # changed HL
 
         # If any are missing, check if a default cross section definition has been defined
         if len(missing) > 0:

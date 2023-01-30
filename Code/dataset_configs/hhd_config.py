@@ -1,7 +1,7 @@
 class Models:
     class FM:
         one_d_bool = True
-        two_d_bool = True
+        two_d_bool = False
         start_time = 20160601
         stop_time = 86400
 
@@ -11,7 +11,7 @@ class Models:
             node_distance = 100
 
         class two_d:
-            coupling_type = None  # "1Dto2D"
+            coupling_type = "2Dto1D"  # "1Dto2D"
             dx = 500
             dy = 500
             elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
@@ -24,7 +24,12 @@ class RawData:
     branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v7_test.shp"
     # bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     # culvert_path = p_folder + r"\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen_edited.shp"
+    peil_gebieden_path = p_folder + r"\HHDelfland\Peilbesluiten.shp\PeilgebiedPraktijk.shp"
     pump_path = p_folder + r"\HHDelfland\Niet legger\Gemaal_peil.shp"
+    watervlak_path = (
+        p_folder
+        + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Watervoerend deel.shp"
+    )
     weir_path = p_folder + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Stuw.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
@@ -36,6 +41,7 @@ class RawData:
             ("bodemhoogte benedenstrooms", None),
             ("bodemhoogte bovenstrooms", None),
             ("code", "CODE"),
+            ("diepte", "LEGDIEPNUM"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogte insteek linkerzijde", None),
@@ -82,6 +88,16 @@ class RawData:
     #         ("vormkoker", "VORMKOKER"),
     #     ]
     # )
+
+    ## Peil gebied
+    peil_index_mapping = dict(
+        [
+            ("boven peil", "WS_HOOGPEI"),
+            ("geometry", "geometry"),
+            ("onder peil", "WS_LAAGPEI"),
+            ("vast peil", None),
+        ]
+    )
 
     ## Pumps
     pump_index_mapping = dict(

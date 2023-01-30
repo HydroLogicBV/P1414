@@ -8,13 +8,12 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\Combined.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\rhine_combined_test.gpkg"
 
-output_folder = folder + r"\Models\Combined\V5"
+output_folder = folder + r"\Models\Combined\rijn_V0"
 
-config_dhydro = r"hdsr_config"
-config_list = [r"hdsr_config", r"hhd_config", r"hhr_config", r"hhsk_config", r"wagv_config"]
-
+config_dhydro = r"rijntakken_config"
+config_list = [r"rijntakken_config", r"rijnmaasmonding_config"]
 defaults = r"defaults"
 
 build_database = True

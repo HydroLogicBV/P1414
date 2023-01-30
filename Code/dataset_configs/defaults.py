@@ -1,10 +1,10 @@
 ## Branches
 class Branches:
-    bodembreedte = 5
-    bodemhoogte_benedenstrooms = 0
-    bodemhoogte_bovenstrooms = 0
-    hoogte_insteek_linkerzijde = 0
-    hoogte_insteek_rechterzijde = 0
+    bodembreedte = None
+    bodemhoogte_benedenstrooms = None  # 0
+    bodemhoogte_bovenstrooms = None  # 0
+    hoogte_insteek_linkerzijde = None
+    hoogte_insteek_rechterzijde = None
     ruwheidhoog = 23
     ruwheidlaag = 23
     taludhelling_linkerzijde = 0
@@ -39,6 +39,10 @@ class Culverts:
 
 class MeasuredProfiles:
     pass
+
+
+class Peil:
+    vast_peil = None
 
 
 ## Pumps

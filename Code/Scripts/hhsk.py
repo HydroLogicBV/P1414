@@ -5,13 +5,13 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\HHSK_clipped.gpkg"
-output_folder = folder + r"\Models\HHSK\V1"
+gpkg_file = folder + r"\GIS\HYDAMO\HHSK_clipped_wnp.gpkg"
+output_folder = folder + r"\Models\HHSK\V0"
 
 config = r"hhsk_config"
 defaults = r"defaults"
 
-build_database = True
+build_database = False
 build_model = True
 
 # 1. initialize an instance of DHydamoData

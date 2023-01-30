@@ -11,7 +11,7 @@ class Models:
             node_distance = 100
 
         class two_d:
-            coupling_type = None  # "1Dto2D"
+            coupling_type = "2Dto1D"  # "1Dto2D"
             dx = 500
             dy = 500
             elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
@@ -23,6 +23,7 @@ class RawData:
     p_folder = r"D:\Work\Project\P1414\GIS"
     branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v7_test.shp"
     culvert_path = p_folder + r"\HHSK\Legger\Duiker.shp"
+    peil_gebieden_path = p_folder + r"\HHSK\Legger\Peilvakken.shp"
     pump_path = p_folder + r"\HHSK\Niet legger\Gemaal_peil.shp"
     weir_path = p_folder + r"\HHSK\Legger\Stuw.shp"
 
@@ -35,6 +36,7 @@ class RawData:
             ("bodemhoogte benedenstrooms", None),
             ("bodemhoogte bovenstrooms", None),
             ("code", "CODE"),
+            ("diepte", ["DIEPTE", "MAXIMALEWA"]),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogte insteek linkerzijde", None),
@@ -79,6 +81,16 @@ class RawData:
             ("ruwheid", None),
             ("uittreeverlies", None),
             ("vormkoker", "VORM"),
+        ]
+    )
+
+    ## Peil gebied
+    peil_index_mapping = dict(
+        [
+            ("boven peil", "BOVENPEIL"),
+            ("geometry", "geometry"),
+            ("onder peil", "ONDERPEIL"),
+            ("vast peil", "VASTPEIL"),
         ]
     )
 
