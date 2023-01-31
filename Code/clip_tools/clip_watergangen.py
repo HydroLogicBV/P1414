@@ -86,7 +86,7 @@ def clip_branches(
     in_branches_path: str,
     overlay_branches_path: str,
     buffer_dist=5,
-    min_overlap: float = 0.75,
+    min_overlap: float = 0.5,
     max_distance: float = 0.5,
     min_connectivity: int = 2,
 ) -> gpd.GeoDataFrame:
@@ -356,7 +356,7 @@ def validate_network_topology(
     # Secondly, add the correct data from the origingal gdf to the new branches
     # this is done by adding data from old buffered branches to all new branches that fall within each polygon
     buffered_branches = copy(branches_gdf)
-    buffered_branches.geometry = buffered_branches.geometry.buffer(1)
+    buffered_branches.geometry = buffered_branches.geometry.buffer(0.1)
     gdf = gpd.GeoDataFrame(union_result, columns=["geometry"], geometry="geometry", crs=28992)
 
     # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
@@ -373,10 +373,10 @@ def validate_network_topology(
 
 # %% Initialize
 print("initialize")
-# p_folder = r"D:\work\P1414_ROI\GIS"
-version = "v7"
-p_folder = r"D:\work\Project\P1414\GIS"
-old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited_v10.shp"
+p_folder = r"D:\work\P1414_ROI\GIS"
+version = "v10"
+#p_folder = r"D:\work\Project\P1414\GIS"
+old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited_v12.shp"
 
 agv_branches_path = p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"
 clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_{}_test.shp".format(version)
@@ -391,8 +391,11 @@ HHD_branches_path = (
 )
 clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_{}_test.shp".format(version)
 
-HHR_branches_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as.shp"
+HHR_branches_path = p_folder + r"\HHRijnland\Niet legger\Watergangen_edited_v3.shp"
 clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_{}_test.shp".format(version)
+
+HHR_west_branches_path = p_folder + r"\HHRijnland\Niet legger\Westeinderplassen_cut_v5.shp"
+clipped_HHR_west_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_west_{}_test.shp".format(version)
 
 HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
 clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_{}_test.shp".format(
@@ -406,7 +409,8 @@ HDSR = False
 HHD = False
 HHR = False
 HHSK = False
-RMM = True
+RMM = False
+HHR_westeinder = True
 
 # %% AGV
 if AGV:
@@ -464,3 +468,12 @@ if RMM:
     in_branches["new_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
     out_branches = validate_network_topology(branches_gdf=in_branches, snap_distance=0.5)
     out_branches.to_file(fixed_RMM_branches_path)
+
+# %% HHR Westeinderplassen
+if HHR_westeinder:
+    print("HHR Westeinder")
+
+    intersected_branches = clip_branches(
+        in_branches_path=HHR_west_branches_path, overlay_branches_path=old_rm_branches_path
+    )
+    intersected_branches.to_file(clipped_HHR_west_branches_path)

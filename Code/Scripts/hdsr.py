@@ -1,10 +1,11 @@
 import sys
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
-
+#sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append("D:\work\P1414_ROI\GitHub\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
-folder = r"D:\Work\Project\P1414"
+#folder = r"D:\Work\Project\P1414"
+folder = r"D:\work\P1414_ROI"
 gpkg_file = folder + r"\GIS\HYDAMO\HDSR_clipped.gpkg"
 output_folder = folder + r"\Models\HDSR\V0"
 
@@ -12,7 +13,7 @@ config = r"hdsr_config"
 defaults = r"defaults"
 
 build_database = True
-build_model = True
+build_model = False
 
 # 1. initialize an instance of DHydamoData
 dhd = DHydamoData()

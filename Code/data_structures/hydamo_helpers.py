@@ -1032,8 +1032,32 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 # res = r.get()
                 out_branches_gdf.at[res["id"], "bodembreedte"] = res["width"]
 
+<<<<<<< Updated upstream
             # pool.close()
             # pool.join()
+=======
+def load_geo_file(file_path: str, layer: str = None):
+    """ """
+    if type(file_path) == list:
+        if len(file_path) <= 2:
+            gdf_1 = gpd.read_file(file_path[0])
+            gdf_2 = gpd.read_file(file_path[1])
+
+            gdf_2_buffer = gdf_2.copy()
+            gdf_2_buffer .geometry = gdf_2_buffer.geometry.buffer(1)
+            gdf = gdf_1.sjoin(gdf_2_buffer, how='left',predicate = 'within')
+        else:
+            raise ValueError('Can only join two shapefiles together')
+    elif file_path.endswith(r".shp"):
+        gdf = gpd.read_file(file_path)
+    elif file_path.endswith(r".gpkg"):
+        if layer is not None:
+            gdf = gpd.read_file(file_path, layer=layer)
+        else:
+            raise ValueError("provide a layer when loading a gpkg")
+    else:
+        raise ValueError("filetype not implemented")
+>>>>>>> Stashed changes
 
         return out_branches_gdf
 
