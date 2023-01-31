@@ -22,7 +22,8 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v7_test.shp"
+    p_folder = r"D:\work\P1414_ROI\GIS"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v10_test.shp" #Corrected from V7
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
     pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"

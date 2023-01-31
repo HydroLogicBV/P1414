@@ -83,7 +83,7 @@ class DHydamoData:
                 # print("succesfully loaded {}".format(attribute))
                 data = gpd.read_file(gpkg_path, layer=attribute)
             except ValueError:
-                # print("failed to load {}".format(attribute))
+                print("failed to load {}".format(attribute))
                 continue
 
             setattr(ddm, attribute, data)

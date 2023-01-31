@@ -14,14 +14,16 @@ class Models:
             coupling_type = "2Dto1D"
             dx = 500
             dy = 500
-            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            #elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
 
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v7_test.shp"
+    p_folder = r"D:\work\P1414_ROI\GIS"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v10_test.shp" # From V7
     bridges_path = p_folder + r"\HHRijnland\Niet legger\brug_edited.shp"
     culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
     peil_gebieden_path = p_folder + r"\HHRijnland\Legger\Peilvakken\peilvakken.shp"

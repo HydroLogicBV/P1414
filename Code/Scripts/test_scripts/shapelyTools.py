@@ -369,9 +369,14 @@ def snap_endpoints(base_lines_mls: shapely.geometry.MultiLineString,
         
     Returns:
         A shapely MultiLineString with the original and snapped lines from base_lines_mls
-    """               
-    base_lines = list(base_lines_mls.geoms)
-    snap_to = list(snap_to_mls.geoms)
+    """  
+    if type(base_lines_mls) == shapely.geometry.MultiLineString:
+        base_lines = list(base_lines_mls.geoms)
+        snap_to = list(snap_to_mls.geoms)   
+    if type(base_lines_mls) == list:
+        base_lines = base_lines_mls
+        snap_to = snap_to_mls    
+    
     snapping_points_target = vertices_from_lines(snap_to)
     isolated_endpoints_base = find_isolated_endpoints(base_lines)
 
