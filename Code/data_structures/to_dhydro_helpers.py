@@ -1,4 +1,5 @@
 import importlib
+from copy import copy
 from pathlib import Path
 from typing import List, Union
 
@@ -13,7 +14,7 @@ from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
 from hydrolib.dhydamo.geometry import mesh
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
-from shapely.geometry import Polygon
+from shapely.geometry import LineString, Polygon
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
 
@@ -23,9 +24,7 @@ def to_dhydro(
 ):
     """ """
 
-    def add_branches(
-        ddm: DHydamoDataModel, features: List[str], gpkg_path: str, hydamo: HyDAMO
-    ) -> HyDAMO:
+    def add_branches(ddm: DHydamoDataModel, features: List[str], hydamo: HyDAMO) -> HyDAMO:
         hydamo.branches.set_data(
             ddm.waterloop, index_col="code"
         )  # using globalid leads to errors in D-HYDRO. Probably too long name
@@ -48,13 +47,43 @@ def to_dhydro(
             and ("profiellijn" in features)
             and ("ruwheidsprofiel" in features)
         ):
-            hydamo.profile.read_gpkg_layer(
-                gpkg_path,
-                layer_name="profielpunt",
-                groupby_column="profiellijnid",
-                order_column="codevolgnummer",
-                index_col="code",
+            # hydamo.profile.read_gpkg_layer(
+            #     gpkg_path,
+            #     layer_name="profielpunt",
+            #     groupby_column="profiellijnid",
+            #     order_column="codevolgnummer",
+            #     index_col="code",
+            # )
+
+            # Group profile_points by line_id and create LineStrings
+            profiel_punt_gdf = ddm.profielpunt
+            unique_lines = profiel_punt_gdf["profiellijnid"].unique()
+            profiel_punt_lines = []
+
+            for ix, line in enumerate(unique_lines):
+                profiel_punten = copy(profiel_punt_gdf[profiel_punt_gdf["profiellijnid"] == line])
+                profiel_punten.sort_values(
+                    by="codevolgnummer", axis=0, ascending=True, inplace=True
+                )
+
+                linestring = LineString(profiel_punten.geometry.values)
+
+                profiel_punt_lijn = dict(
+                    [
+                        ("code", line),
+                        ("geometry", linestring),
+                        ("globalid", profiel_punten.iloc[0, :]["globalid"]),
+                        ("profiellijnid", line),
+                        ("codevolgnummer", 1),
+                    ]
+                )
+                profiel_punt_lines.append(profiel_punt_lijn)
+
+            profiel_punt_lines_gdf = gpd.GeoDataFrame(
+                data=profiel_punt_lines, geometry="geometry", crs=profiel_punt_gdf.crs
             )
+
+            hydamo.profile.set_data(profiel_punt_lines_gdf)
 
             # Snap profiles to branch
             # hydamo.profile_roughness.read_gpkg_layer(gpkg_path, layer_name="ruwheidsprofiel")
@@ -198,10 +227,10 @@ def to_dhydro(
         node_distance=20,
         max_dist_to_struct=3,
     ) -> HyDAMO:
-        # Add observation points (empty for now)
-        hydamo.observationpoints.add_points(
-            [], [], locationTypes=["1d", "1d"], snap_distance=max_snap_dist
-        )
+        # # Add observation points (empty for now)
+        # hydamo.observationpoints.add_points(
+        #     [], [], locationTypes=["1d", "1d"], snap_distance=max_snap_dist
+        # )
 
         if "brug" in features:
             bbrug = True
@@ -267,7 +296,6 @@ def to_dhydro(
     def build_2D_model(
         dx: float,
         dy: float,
-        extent: gpd.GeoDataFrame,
         fm: FMModel,
         coupling: str = "1Dto2D",
         elevation_raster_path: str = None,
@@ -288,7 +316,7 @@ def to_dhydro(
                 stat="nanmean",
                 fill_option="fill_value",
                 fill_value=-10,
-                window_size=1000,
+                window_size=int(dx + dy),
             )
 
         if one_d:
@@ -375,9 +403,7 @@ def to_dhydro(
 
             # add branches, profiles and norm profiles
             print("\nworking on 1D branches\n")
-            self.hydamo = add_branches(
-                ddm=self.ddm, features=self.features, gpkg_path=self.gpkg_path, hydamo=self.hydamo
-            )
+            self.hydamo = add_branches(ddm=self.ddm, features=self.features, hydamo=self.hydamo)
 
             if ("rivier_profielen_data" in self.features) and (
                 "rivier_profielen" in self.features
@@ -416,7 +442,11 @@ def to_dhydro(
         if model_config.FM.two_d_bool:
             # compute extent of 1D network
             # Add to gpgk?
-            if extent is None:
+            if hasattr(model_config.FM.two_d, "extent_path") and (
+                model_config.FM.two_d.extent_path is not None
+            ):
+                extent = gpd.read_file(model_config.FM.two_d.extent_path)
+            else:
                 extent = self.ddm.waterloop.dissolve(by=None).convex_hull.buffer(
                     model_config.FM.two_d.two_d_buffer
                 )

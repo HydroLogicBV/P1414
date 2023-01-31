@@ -1,8 +1,8 @@
 ## Branches
 class Branches:
     bodembreedte = None
-    bodemhoogte_benedenstrooms = None  # 0
-    bodemhoogte_bovenstrooms = None  # 0
+    bodemhoogte_benedenstrooms = None
+    bodemhoogte_bovenstrooms = None
     hoogte_insteek_linkerzijde = None
     hoogte_insteek_rechterzijde = None
     ruwheidhoog = 23

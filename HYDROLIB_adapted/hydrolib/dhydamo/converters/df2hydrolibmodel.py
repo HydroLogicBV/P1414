@@ -303,12 +303,13 @@ class Df2HydrolibModel:
 
     def observation_points_to_dhydro(self):
         """Convert dataframe of observationpoints to ObserationPoint-objects"""
-        obspoints = [
-            ObservationPoint(**obs)
-            for obs in self.hydamo.observationpoints.observation_points.to_dict("records")
-        ]
-        self._clear_comments(obspoints)
-        self.obspoints += obspoints
+        if hasattr(self.hydamo.observationpoints, "observation_points"):  # added HL
+            obspoints = [
+                ObservationPoint(**obs)
+                for obs in self.hydamo.observationpoints.observation_points.to_dict("records")
+            ]
+            self._clear_comments(obspoints)
+            self.obspoints += obspoints
 
     def inifields_to_dhydro(self):
         """Convert initial conditions to InitialField objects"""

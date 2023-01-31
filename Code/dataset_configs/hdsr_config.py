@@ -1,6 +1,6 @@
 class Models:
     class FM:
-        one_d_bool = True
+        one_d_bool = False
         two_d_bool = True
         start_time = 20160601
         stop_time = 86400
@@ -12,9 +12,10 @@ class Models:
 
         class two_d:
             coupling_type = "2Dto1D"
-            dx = 500
-            dy = 500
+            dx = 100
+            dy = 100
             elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            extent_path = "D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
             two_d_buffer = 100
 
 

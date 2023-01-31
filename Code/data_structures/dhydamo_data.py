@@ -1,4 +1,5 @@
 import geopandas as gpd
+import pandas as pd
 from clip_tools.clip_tools import _clip_structures_by_branches
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
@@ -52,13 +53,10 @@ class DHydamoData:
             None
         """
         # load features and add to DHydamoDataModel
-        self.ddm = convert_to_dhydamo_data(defaults=defaults, config=config)
+        ddm = convert_to_dhydamo_data(defaults=defaults, config=config)
 
-        # add succesfully loaded features to features list
-        self.features = []
-        for key, value in self.ddm.__dict__.items():
-            if value is not None:
-                self.features.append(key)
+        # set datamodel to self
+        self._set_data(ddm=ddm)
 
     def from_dhydamo_gpkg(self, gpkg_path: str) -> None:
         """
@@ -71,35 +69,27 @@ class DHydamoData:
             None
         """
 
-        self.ddm = DHydamoDataModel()
-        self.gpkg_path = gpkg_path
-        self.features = []
-        attributes = self.ddm.__dict__.keys()
+        # set geopackage path to self
+        # self.gpkg_path = gpkg_path
 
+        # initialize datamodel
+        ddm = DHydamoDataModel()
+
+        # loop over datamodel attributes and check if they are presentin the geopackage
+        # if so, set them to the datamodel
+        attributes = ddm.__dict__.keys()
         for attribute in attributes:
             try:
                 # print("succesfully loaded {}".format(attribute))
-                data = gpd.read_file(self.gpkg_path, layer=attribute)
+                data = gpd.read_file(gpkg_path, layer=attribute)
             except ValueError:
                 # print("failed to load {}".format(attribute))
                 continue
 
-            setattr(self.ddm, attribute, data)
-            self.features.append(attribute)
+            setattr(ddm, attribute, data)
 
-    def to_dhydro(self, config: str, output_folder: str, extent: gpd.GeoDataFrame = None):
-        """
-        Class method that save a DHydamoDataModel to a D-HYDRO Model
-
-        Args:
-            config (str): configuration file to use (should be in ./dataset_configs)
-            output_folder (str): folder to save D-HYDRO model to
-            extent (gpd.GeoDataFrame): optional extent in a one-row geodataframe that is used to create a 2D model domain
-
-        Returns:
-            None
-        """
-        return to_dhydro(self=self, config=config, output_folder=output_folder, extent=extent)
+        # set datamodel to self
+        self._set_data(ddm=ddm)
 
     def to_dhydamo_gpkg(self, output_gpkg: str) -> None:
         """
@@ -111,5 +101,62 @@ class DHydamoData:
         Returns:
             None
         """
-        self.gpkg_path = output_gpkg
+        # self.gpkg_path = output_gpkg
         self.ddm.to_gpkg(output_gpkg=output_gpkg)
+
+    def to_dhydro(self, config: str, output_folder: str):
+        """
+        Class method that save a DHydamoDataModel to a D-HYDRO Model
+
+        Args:
+            config (str): configuration file to use (should be in ./dataset_configs)
+            output_folder (str): folder to save D-HYDRO model to
+
+        Returns:
+            None
+        """
+        return to_dhydro(self=self, config=config, output_folder=output_folder)
+
+    def _set_data(self, ddm: DHydamoDataModel) -> None:
+        """
+        Class method to add a DHydamoDataModel to self while checking for pre-existing data.
+        This method simply assigns the data if there is no pre-existing data.
+        Otherwise, it appends to the pre-existing data
+
+        Args:
+            ddm (DHydamoDataModel): a DHydamoDataModel that is to be added to self.ddm
+
+        Returns:
+            None
+        """
+
+        # check if a datamodel already exists
+        if not hasattr(self, "ddm"):
+            # if not, just assign
+            self.ddm = ddm
+
+            # and fill list of features present
+            self.features = []
+            for key, value in self.ddm.__dict__.items():
+                # check if attribute is not None
+                if value is not None:
+                    self.features.append(key)
+
+        # if it does exist, check per attribute in datamodel if it already exists
+        else:
+            for key, value in ddm.__dict__.items():
+                # check if attribute is not None
+                if value is not None:
+                    # if an attribute does not exist, simply assign and update features list
+                    if getattr(self.ddm, key) is None:
+                        setattr(self.ddm, key, getattr(ddm, key))
+                        self.features.append(key)
+
+                    # else, concatonate the old and new geodataframe and assign to the datamodel
+                    else:
+                        new_gdf = gpd.GeoDataFrame(
+                            pd.concat(
+                                [getattr(self.ddm, key), getattr(ddm, key)], ignore_index=True
+                            )
+                        )
+                        setattr(self.ddm, key, new_gdf)

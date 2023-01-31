@@ -1,7 +1,7 @@
 import importlib
 import uuid
+import warnings
 from copy import copy
-from multiprocessing import Pool
 from typing import List, Tuple
 
 import geopandas as gpd
@@ -14,6 +14,7 @@ from data_structures.hydamo_globals import (MANAGEMENT_DEVICE_TYPES,
                                             ROUGHNESS_MAPPING_LIST,
                                             WEIR_MAPPING)
 
+warnings.filterwarnings(action='ignore', message='Mean of empty slice')
 
 def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     if (not isinstance(gdf, int)) | (not isinstance(gdf, float)):
@@ -454,200 +455,6 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             hydroobject_normgp,
             normgeparamprofielwaarde,
         )
-
-    # def create_norm_parm_profiles(
-    #     branches_gdf: gpd.GeoDataFrame, index_mapping: dict, min_water_width: float = 0.1
-    # ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
-    #     """
-    #     Function that converts parameterized profiles to HYDAMO compliant format.
-
-    #     Args:
-    #         branches_gdf (gpd.GeoDataFrame): input geodataframe containing branches
-    #         index_mapping (dict): dictionary containing a mapping from required keys to values present in branches_gdf
-
-    #     Returns:
-    #         hydroobject (gpd.GeoDataFrame): ouput geodataframe containing branches
-    #         hydroobject_normgp (gpd.GeoDataFrame): output geodataframe containing names of branches and corresponding profiles
-    #         normgeparamprofielwaarde (gpd.GeoDataFrame): output geodataframe containing parameterized profiles
-    #     """
-
-    #     # script
-    #     ho_ngp_list = []
-    #     ngp_list = []
-
-    #     branches_gdf.loc[
-    #         branches_gdf[index_mapping["bodembreedte"]] < min_water_width,
-    #         index_mapping["bodembreedte"],
-    #     ] = np.nan
-    #     branches_gdf.loc[
-    #         branches_gdf[index_mapping["water_width_index"]] < min_water_width,
-    #         index_mapping["water_width_index"],
-    #     ] = np.nan
-
-    #     branches_out_gdf = copy(branches_gdf)
-
-    #     # for ix_1, branch in tqdm(branches_gdf.iterrows(), total=branches_gdf.shape[0]):
-    #     for ix_1, branch in branches_gdf.iterrows():
-    #         # Create unique ident for branch and add to branch
-    #         branch_gid = str(uuid.uuid4())
-    #         branches_out_gdf.loc[ix_1, "globalid"] = branch_gid
-    #         branches_out_gdf.loc[ix_1, "code"] = branch_gid
-
-    #         # turn numerical roughnes types to strings
-    #         type_ruwheid = check_roughness(branch)
-    #         branches_out_gdf.loc[ix_1, "typeruwheid"] = type_ruwheid
-
-    #         # Check if width and depth parameters are available, if not, skip
-    #         # Also skip if no width is available
-    #         if (
-    #             (
-    #                 branch[
-    #                     [index_mapping["bodembreedte"], index_mapping["bodemhoogte benedenstrooms"]]
-    #                 ].empty
-    #             )
-    #             or (
-    #                 branch[
-    #                     [index_mapping["bodembreedte"], index_mapping["bodemhoogte benedenstrooms"]]
-    #                 ]
-    #                 .isna()
-    #                 .values.any()
-    #             )
-    #             or (branch[[index_mapping["bodembreedte"], index_mapping["water_width_index"]]].empty)
-    #             or (branch[[index_mapping["bodembreedte"], index_mapping["water_width_index"]]].empty)
-    #             or (
-    #                 branch[[index_mapping["bodembreedte"], index_mapping["water_width_index"]]]
-    #                 .isna()
-    #                 .values.any()
-    #             )
-    #         ):
-    #             # print("no profile for branch {}".format(branch_gid))
-    #             continue
-
-    #         # add entry to hydroobject_normgp tabel
-    #         ngp_gid = str(uuid.uuid4())
-    #         ngp = dict(
-    #             [
-    #                 ("hydroobjectid", branch_gid),
-    #                 ("normgeparamprofielid", ngp_gid),
-    #                 ("globalid", ngp_gid),
-    #                 ("geometry", None),
-    #             ]
-    #         )
-    #         ho_ngp_list.append(ngp)
-
-    #         # Check if all parameters are present for trapezium profile. If not, use rectangular profile
-    #         width_ix = index_mapping["bodembreedte"]
-    #         if np.isnan(branch[index_mapping["bodembreedte"]]):
-    #             prof_type = "rectangle"
-    #             width_ix = index_mapping["water_width_index"]
-    #         elif (
-    #             np.isnan(branch[index_mapping["hoogte insteek linkerzijde"]])
-    #             | np.isnan(branch[index_mapping["hoogte insteek rechterzijde"]])
-    #             | np.isnan(branch[index_mapping["taludhelling linkerzijde"]])
-    #             | np.isnan(branch[index_mapping["taludhelling rechterzijde"]])
-    #         ):
-    #             prof_type = "rectangle"
-    #         elif (
-    #             (branch[index_mapping["hoogte insteek linkerzijde"]] == 0)
-    #             | (branch[index_mapping["hoogte insteek rechterzijde"]] == 0)
-    #             | (branch[index_mapping["taludhelling linkerzijde"]] == 0)
-    #             | (branch[index_mapping["taludhelling rechterzijde"]] == 0)
-    #         ):
-    #             prof_type = "rectangle"
-    #         else:
-    #             prof_type = "trapezium"
-
-    #         # set required parameters for either rectangle or trapezium profile
-    #         if prof_type == "rectangle":
-    #             params = dict(
-    #                 [
-    #                     ("bodembreedte", branch[width_ix]),
-    #                     (
-    #                         "bodemhoogte benedenstrooms",
-    #                         branch[index_mapping["bodemhoogte benedenstrooms"]],
-    #                     ),
-    #                     (
-    #                         "bodemhoogte bovenstrooms",
-    #                         branch[index_mapping["bodemhoogte bovenstrooms"]],
-    #                     ),
-    #                 ]
-    #             )
-    #         elif prof_type == "trapezium":
-    #             params = dict(
-    #                 [
-    #                     ("bodembreedte", branch[width_ix]),
-    #                     (
-    #                         "bodemhoogte benedenstrooms",
-    #                         branch[index_mapping["bodemhoogte benedenstrooms"]],
-    #                     ),
-    #                     (
-    #                         "bodemhoogte bovenstrooms",
-    #                         branch[index_mapping["bodemhoogte bovenstrooms"]],
-    #                     ),
-    #                     (
-    #                         "hoogte insteek linkerzijde",
-    #                         branch[index_mapping["hoogte insteek linkerzijde"]],
-    #                     ),
-    #                     (
-    #                         "hoogte insteek rechterzijde",
-    #                         branch[index_mapping["hoogte insteek rechterzijde"]],
-    #                     ),
-    #                     (
-    #                         "taludhelling linkerzijde",
-    #                         branch[index_mapping["taludhelling linkerzijde"]],
-    #                     ),
-    #                     (
-    #                         "taludhelling rechterzijde",
-    #                         branch[index_mapping["taludhelling rechterzijde"]],
-    #                     ),
-    #                 ]
-    #             )
-
-    #             # if hoogte insteek is lower than the bottom, swap bottom and hoogte insteek
-    #             if np.amin(
-    #                 [params["hoogte insteek linkerzijde"], params["hoogte insteek rechterzijde"]]
-    #             ) < np.amax(
-    #                 [params["bodemhoogte benedenstrooms"], params["bodemhoogte bovenstrooms"]]
-    #             ):
-    #                 (
-    #                     params["bodemhoogte benedenstrooms"],
-    #                     params["bodemhoogte bovenstrooms"],
-    #                     params["hoogte insteek linkerzijde"],
-    #                     params["hoogte insteek rechterzijde"],
-    #                 ) = (
-    #                     params["hoogte insteek linkerzijde"],
-    #                     params["hoogte insteek rechterzijde"],
-    #                     params["bodemhoogte benedenstrooms"],
-    #                     params["bodemhoogte bovenstrooms"],
-    #                 )
-
-    #         # loop over parameters to add to ngp_list
-    #         for ix_2, (key, value) in enumerate(params.items()):
-
-    #             ngp_values = dict(
-    #                 [
-    #                     ("normgeparamprofielid", ngp_gid),
-    #                     (
-    #                         "typeruwheid",
-    #                         type_ruwheid,
-    #                     ),
-    #                     ("ruwheidhoog", branch[index_mapping["ruwheidhoog"]]),
-    #                     ("ruwheidlaag", branch[index_mapping["ruwheidlaag"]]),
-    #                     ("soortparameter", key),
-    #                     ("waarde", value),
-    #                     ("geometry", None),
-    #                 ]
-    #             )
-    #             ngp_list.append(ngp_values)
-
-    #     hydroobject_normgp = gpd.GeoDataFrame(ho_ngp_list, geometry="geometry", crs=28992)
-    #     normgeparamprofielwaarde = gpd.GeoDataFrame(ngp_list, geometry="geometry", crs=28992)
-
-    #     return (
-    #         branches_out_gdf[["code", "globalid", "geometry", "typeruwheid"]],
-    #         hydroobject_normgp,
-    #         normgeparamprofielwaarde,
-    #     )
 
     def create_pump_data(pump_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
 
@@ -1222,15 +1029,3 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             ddm.stuw, ddm.kunstwerkopening, ddm.regelmiddel = create_weir_data(weir_gdf=weir_gdf)
 
     return ddm
-
-
-# def save_gpkg(
-#     input_gdfs: List[gpd.GeoDataFrame], layers: List[str], output_path: str = None
-# ) -> None:
-#     if len(input_gdfs) != len(layers):
-#         raise ValueError("expected lists of equal lengths")
-
-#     # save hydamo data in geopackage
-#     if output_path is not None:
-#         for name, gdf in zip(layers, input_gdfs):
-#             gdf.to_file(filename=output_path, driver="GPKG", layer=name)

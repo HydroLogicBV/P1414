@@ -17,7 +17,7 @@ config_list = [r"hdsr_config", r"hhd_config", r"hhr_config", r"hhsk_config", r"w
 
 defaults = r"defaults"
 
-build_database = True
+build_database = False
 build_model = True
 
 if build_database:

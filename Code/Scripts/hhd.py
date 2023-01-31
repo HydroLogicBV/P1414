@@ -14,9 +14,11 @@ defaults = r"defaults"
 build_database = True
 build_model = True
 
-# 1. initialize an instance of DHydamoData
-dhd = DHydamoData()
+
 if build_database:
+    # 1. initialize an instance of DHydamoData
+    dhd = DHydamoData()
+
     # 2. convert raw data to hydamo data
     dhd.from_raw_data(defaults=defaults, config=config)
     dhd.clip_structures_by_branches()
@@ -25,6 +27,9 @@ if build_database:
     dhd.to_dhydamo_gpkg(output_gpkg=gpkg_file)
 
 if build_model:
+    # 1. initialize an instance of DHydamoData
+    dhd = DHydamoData()
+
     # 2. load data
     dhd.from_dhydamo_gpkg(gpkg_file)
 
