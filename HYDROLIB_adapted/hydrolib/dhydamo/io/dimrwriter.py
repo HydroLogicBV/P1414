@@ -3,20 +3,19 @@ import os
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Union
+
 from pydantic import validate_arguments
 
-from hydrolib.dhydamo.core.drtc import DRTCModel
-from hydrolib.dhydamo.core.drr import DRRModel
 from hydrolib.core.io.mdu.models import FMModel
+from hydrolib.dhydamo.core.drr import DRRModel
+from hydrolib.dhydamo.core.drtc import DRTCModel
 
 
 class DIMRWriter:
     """Temporary files for DIMR-configuration - to be superseded by Hydrolib-core functionality."""
 
     @validate_arguments
-    def __init__(
-        self, dimr_path: str = None, output_path: Union[str, Path] = None
-    ) -> None:
+    def __init__(self, dimr_path: str = None, output_path: Union[str, Path] = None) -> None:
         """Class initialization for the DIMR writer. This is a temporary fix to include writers for RR and RTC, that are not yet fully included in Hydrolib-core, or have bugs. Eventually, this file should be redundant as this functionality is fully included in Hydrolib-core
 
         Args:
@@ -25,6 +24,8 @@ class DIMRWriter:
         """
         if dimr_path is None:
             self.run_dimr = r"C:\Program Files\Deltares\D-HYDRO Suite 2022.04 1D2D\plugins\DeltaShell.Dimr\kernels\x64\dimr\scripts\run_dimr.bat"
+        else:
+            self.run_dimr = dimr_path
 
         if output_path is None:
             self.output_path = Path(os.path.abspath("."))
@@ -72,7 +73,8 @@ class DIMRWriter:
         # Parsing xml file
         configfile = ET.parse(self.template_dir / "dimr_config.xml")
         myroot = configfile.getroot()
-        myroot[1][1].text = "fm"
+        # myroot[1][1].text = "fm"
+        myroot[1][1].text = fm.filepath.parts[-2]
         myroot[1][2].text = fm.filepath.name
 
         # control blocks
@@ -112,9 +114,7 @@ class DIMRWriter:
             startgrouprr.tail = "\n"
 
             timerr = ET.SubElement(startgrouprr, gn_brackets + "time")
-            timerr.text = (
-                f"{0} {rr_model.d3b_parameters['Timestepsize']} {fm.time.tstop}"
-            )
+            timerr.text = f"{0} {rr_model.d3b_parameters['Timestepsize']} {fm.time.tstop}"
             timerr.tail = "\n"
             couplerrrf = ET.SubElement(startgrouprr, gn_brackets + "coupler")
             couplerrrf.attrib = {"name": "flow_to_rr"}
@@ -237,21 +237,15 @@ class DIMRWriter:
                         if block.attrib["name"].lower().startswith("rtc_to_flow"):
                             for iblock in block:
                                 if ET.tostring(iblock).decode().startswith("<item"):
-                                    item = ET.SubElement(
-                                        couplerrtcfm, gn_brackets + "item"
-                                    )
+                                    item = ET.SubElement(couplerrtcfm, gn_brackets + "item")
                                     item.text = ""
                                     item.tail = "\n"
 
-                                    source = ET.SubElement(
-                                        item, gn_brackets + "sourceName"
-                                    )
+                                    source = ET.SubElement(item, gn_brackets + "sourceName")
                                     source.text = iblock[0].text
                                     source.tail = "\n"
 
-                                    target = ET.SubElement(
-                                        item, gn_brackets + "targetName"
-                                    )
+                                    target = ET.SubElement(item, gn_brackets + "targetName")
                                     target.text = iblock[1].text
                                     target.tail = "\n"
 
@@ -276,15 +270,11 @@ class DIMRWriter:
                 couplerfmrtc.attrib = {"name": "flow_to_rtc"}
                 couplerfmrtc.tail = "\n"
 
-                sourcefmrtc = ET.SubElement(
-                    couplerfmrtc, gn_brackets + "sourceComponent"
-                )
+                sourcefmrtc = ET.SubElement(couplerfmrtc, gn_brackets + "sourceComponent")
                 sourcefmrtc.text = "DFM"
                 sourcefmrtc.tail = "\n"
 
-                targetfmrtc = ET.SubElement(
-                    couplerfmrtc, gn_brackets + "targetComponent"
-                )
+                targetfmrtc = ET.SubElement(couplerfmrtc, gn_brackets + "targetComponent")
                 targetfmrtc.text = "Real_Time_Control"
                 targetfmrtc.tail = "\n"
 
@@ -316,21 +306,15 @@ class DIMRWriter:
                                 coupler_exists = True
                             for iblock in block:
                                 if ET.tostring(iblock).decode().startswith("<item"):
-                                    item = ET.SubElement(
-                                        couplerfmrtc, gn_brackets + "item"
-                                    )
+                                    item = ET.SubElement(couplerfmrtc, gn_brackets + "item")
                                     item.text = ""
                                     item.tail = "\n"
 
-                                    source = ET.SubElement(
-                                        item, gn_brackets + "sourceName"
-                                    )
+                                    source = ET.SubElement(item, gn_brackets + "sourceName")
                                     source.text = iblock[0].text
                                     source.tail = "\n"
 
-                                    target = ET.SubElement(
-                                        item, gn_brackets + "targetName"
-                                    )
+                                    target = ET.SubElement(item, gn_brackets + "targetName")
                                     target.text = iblock[1].text
                                     target.tail = "\n"
             # in any of those two cases, add the controllers and the logger

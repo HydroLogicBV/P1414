@@ -13,7 +13,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Callable, List, Literal, NamedTuple, Optional, Set, Union
 
-from pydantic import Extra
+from pydantic import BaseModel, Extra
 from pydantic.class_validators import root_validator, validator
 from pydantic.fields import Field
 
@@ -56,7 +56,7 @@ class TimeInterpolation(str, Enum):
     block_to = "blockTo"
 
 
-class QuantityUnitPair(NamedTuple):
+class QuantityUnitPair(BaseModel):
     """A .bc file header lines tuple containing a quantity name and its unit."""
 
     quantity: str
@@ -118,9 +118,7 @@ class ForcingBase(DataBlockINIBasedModel):
 
         if isinstance(quantities, list) and isinstance(units, list):
             if len(quantities) != len(units):
-                raise ValueError(
-                    "Number of quantities should be equal to number of units"
-                )
+                raise ValueError("Number of quantities should be equal to number of units")
 
             values[quantityunitpairkey] = [
                 (quantity, unit) for quantity, unit in zip(quantities, units)
@@ -147,10 +145,7 @@ class ForcingBase(DataBlockINIBasedModel):
         # https://github.com/samuelcolvin/pydantic/pull/2336
         if isinstance(v, dict):
             for c in cls.__subclasses__():
-                if (
-                    c.__fields__.get("function").default.lower()
-                    == v.get("function", "").lower()
-                ):
+                if c.__fields__.get("function").default.lower() == v.get("function", "").lower():
                     v = c(**v)
                     break
             else:
@@ -183,9 +178,7 @@ class TimeSeries(ForcingBase):
     offset: float = Field(0.0, alias="offset")
     factor: float = Field(1.0, alias="factor")
 
-    _timeinterpolation_validator = get_enum_validator(
-        "timeinterpolation", enum=TimeInterpolation
-    )
+    _timeinterpolation_validator = get_enum_validator("timeinterpolation", enum=TimeInterpolation)
 
 
 class Harmonic(ForcingBase):
@@ -306,9 +299,7 @@ class ForcingModel(INIModel):
 
     def _serialize(self, _: dict) -> None:
         # We skip the passed dict for a better one.
-        config = SerializerConfig(
-            section_indent=0, property_indent=0, datablock_indent=0
-        )
+        config = SerializerConfig(section_indent=0, property_indent=0, datablock_indent=0)
         write_ini(self._resolved_filepath, self._to_document(), config=config)
 
 

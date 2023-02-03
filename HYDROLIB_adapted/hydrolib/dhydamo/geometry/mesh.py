@@ -407,7 +407,15 @@ def links1d2d_add_links_2d_to_1d_embedded(
     # Check for each of the remaining faces, if it actually crosses the branches
     nodes2d = np.stack([network._mesh2d.mesh2d_node_x, network._mesh2d.mesh2d_node_y], axis=1)
     where = np.where(idx)[0]
-    for i, face_crds in enumerate(nodes2d[network._mesh2d.mesh2d_face_nodes[idx]]):
+    face_nodes = network._mesh2d.mesh2d_face_nodes[idx]  # added HL
+    # for i, face_crds in enumerate(nodes2d[network._mesh2d.mesh2d_face_nodes[idx]]):
+    # if not mls_prep.intersects(LineString(face_crds)):
+    #     idx[where[i]] = False
+    for i in range(face_nodes.shape[0]):  # added HL
+        face_node = face_nodes[i, :]  # added HL
+        # added HL, to prevent non existing nodesfrom being taken into account
+        # when different shapes exist (e.g. with 4 and 6 nodes per face). -inf is fill value so >0 filters them
+        face_crds = nodes2d[face_node[face_node > 0]]
         if not mls_prep.intersects(LineString(face_crds)):
             idx[where[i]] = False
 

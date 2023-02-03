@@ -15,6 +15,7 @@ from shapely.geometry import (
     box,
 )
 from shapely.prepared import prep
+
 from hydrolib.dhydamo.geometry import common
 
 logger = logging.getLogger(__name__)
@@ -61,6 +62,7 @@ def minimum_bounds_fixed_rotation(polygon, angle):
 
     return origin, xsize, ysize
 
+
 def possibly_intersecting(dataframebounds, geometry, buffer=0):
     """
     Finding intersecting profiles for each branch is a slow process in case of large datasets
@@ -75,16 +77,16 @@ def possibly_intersecting(dataframebounds, geometry, buffer=0):
 
     geobounds = geometry.bounds
     idx = (
-        (dataframebounds[0] - buffer < geobounds[2]) &
-        (dataframebounds[2] + buffer > geobounds[0]) &
-        (dataframebounds[1] - buffer < geobounds[3]) &
-        (dataframebounds[3] + buffer > geobounds[1])
+        (dataframebounds[0] - buffer < geobounds[2])
+        & (dataframebounds[2] + buffer > geobounds[0])
+        & (dataframebounds[1] - buffer < geobounds[3])
+        & (dataframebounds[3] + buffer > geobounds[1])
     )
     # Get intersecting profiles
     return idx
 
 
-def find_nearest_branch(branches, geometries, method='overal', maxdist=5):
+def find_nearest_branch(branches, geometries, method="overal", maxdist=5):
     """
     Method to determine nearest branch for each geometry.
     The nearest branch can be found by finding t from both ends (ends) or the nearest branch from the geometry
@@ -104,17 +106,17 @@ def find_nearest_branch(branches, geometries, method='overal', maxdist=5):
         Minimum offset from the end of the corresponding branch in case of method=equal
     """
     # Check if method is in allowed methods
-    allowed_methods = ['intersecting', 'overal', 'centroid', 'ends']
+    allowed_methods = ["intersecting", "overal", "centroid", "ends"]
     if method not in allowed_methods:
         raise NotImplementedError(f'Method "{method}" not implemented.')
 
     # Add columns if not present
-    if 'branch_id' not in geometries.columns:
-        geometries['branch_id'] = ''
-    if 'branch_offset' not in geometries.columns:
-        geometries['branch_offset'] = np.nan
+    if "branch_id" not in geometries.columns:
+        geometries["branch_id"] = ""
+    if "branch_offset" not in geometries.columns:
+        geometries["branch_offset"] = np.nan
 
-    if method == 'intersecting':
+    if method == "intersecting":
         # Determine intersection geometries per branch
         geobounds = geometries.bounds.values.T
         for branch in branches.itertuples():
@@ -124,14 +126,16 @@ def find_nearest_branch(branches, geometries, method='overal', maxdist=5):
             # For each geometrie, determine offset along branch
             for geometry in intersecting.itertuples():
                 # Determine distance of profile line along branch
-                geometries.at[geometry.Index, 'branch_id'] = branch.Index
+                geometries.at[geometry.Index, "branch_id"] = branch.Index
 
                 # Calculate offset
                 branchgeo = branch.geometry
-                mindist = min(0.1, branchgeo.length / 2.)
-                offset = round(branchgeo.project(branchgeo.intersection(geometry.geometry).centroid), 3)
+                mindist = min(0.1, branchgeo.length / 2.0)
+                offset = round(
+                    branchgeo.project(branchgeo.intersection(geometry.geometry).centroid), 3
+                )
                 offset = max(mindist, min(branchgeo.length - mindist, offset))
-                geometries.at[geometry.Index, 'branch_offset'] = offset
+                geometries.at[geometry.Index, "branch_offset"] = offset
 
     else:
         branch_bounds = branches.bounds.values.T
@@ -141,33 +145,38 @@ def find_nearest_branch(branches, geometries, method='overal', maxdist=5):
             nearidx = possibly_intersecting(branch_bounds, geometry.geometry, buffer=maxdist)
             selectie = branches.loc[nearidx]
 
-            if method == 'overal':
+            if method == "overal":
                 # Determine distances to branches
                 dist = selectie.distance(geometry.geometry)
-            elif method == 'centroid':
+            elif method == "centroid":
                 # Determine distances to branches
                 dist = selectie.distance(geometry.geometry.centroid)
-            elif method == 'ends':
+            elif method == "ends":
                 # Since a culvert can cross a channel, it is
                 crds = geometry.geometry.coords[:]
-                dist = (selectie.distance(Point(*crds[0])) + selectie.distance(Point(*crds[-1]))) * 0.5
+                dist = (
+                    selectie.distance(Point(*crds[0])) + selectie.distance(Point(*crds[-1]))
+                ) * 0.5
 
             # Determine nearest
             if dist.min() < maxdist:
                 branchidxmin = dist.idxmin()
-                geometries.at[geometry.Index, 'branch_id'] = dist.idxmin()
+                geometries.at[geometry.Index, "branch_id"] = dist.idxmin()
                 if isinstance(geometry.geometry, Point):
                     geo = geometry.geometry
                 else:
                     geo = geometry.geometry.centroid
 
                 # Calculate offset
-                branchgeo = branches.at[branchidxmin, 'geometry']
-                mindist = min(0.1, branchgeo.length / 2.)
-                offset = max(mindist, min(branchgeo.length - mindist, round(branchgeo.project(geo), 3)))
-                geometries.at[geometry.Index, 'branch_offset'] = offset
+                branchgeo = branches.at[branchidxmin, "geometry"]
+                mindist = min(0.1, branchgeo.length / 2.0)
+                offset = max(
+                    mindist, min(branchgeo.length - mindist, round(branchgeo.project(geo), 3))
+                )
+                geometries.at[geometry.Index, "branch_offset"] = offset
 
-def orthogonal_line(line: LineString, offset: float, width: float=1.0) -> List[Tuple[float]]:
+
+def orthogonal_line(line: LineString, offset: float, width: float = 1.0) -> List[Tuple[float]]:
     """
     Parameters
     ----------
@@ -185,18 +194,32 @@ def orthogonal_line(line: LineString, offset: float, width: float=1.0) -> List[T
     """
 
     # Determine angle at offset
-    angle = np.angle(complex(*np.diff([
-        line.interpolate(offset - 0.001).coords[0][:2],
-        line.interpolate(offset + 0.001).coords[0][:2]
-    ], axis=0)[0])) + 0.5 * np.pi
+    angle = (
+        np.angle(
+            complex(
+                *np.diff(
+                    [
+                        line.interpolate(offset - 0.001).coords[0][:2],
+                        line.interpolate(offset + 0.001).coords[0][:2],
+                    ],
+                    axis=0,
+                )[0]
+            )
+        )
+        + 0.5 * np.pi
+    )
 
     # Create new line
     pt = line.interpolate(offset).coords[0]
 
     f = 0.5 * width
-    line = [(pt[0] + np.cos(angle) * f, pt[1] + np.sin(angle) * f), (pt[0] - np.cos(angle) * f, pt[1] - np.sin(angle) * f)]
+    line = [
+        (pt[0] + np.cos(angle) * f, pt[1] + np.sin(angle) * f),
+        (pt[0] - np.cos(angle) * f, pt[1] - np.sin(angle) * f),
+    ]
 
     return line
+
 
 def extend_linestring(line: LineString, near_pt: Point, length: float) -> LineString:
 
@@ -207,11 +230,12 @@ def extend_linestring(line: LineString, near_pt: Point, length: float) -> LineSt
     coords = line.coords[:]
     x0, y0 = coords[nearest_end[0]]
     dx, dy = np.diff(np.vstack([coords[nearest_end[0]], coords[nearest_end[1]]]), axis=0)[0]
-    segmentlength = (dx**2 + dy**2)**0.5
-    dx /= (segmentlength * length)
-    dy /= (segmentlength * length)
+    segmentlength = (dx**2 + dy**2) ** 0.5
+    dx /= segmentlength * length
+    dy /= segmentlength * length
 
     return LineString([(x0, y0), (x0 - dx, y0 - dy)])
+
 
 def points_in_polygon(points: np.ndarray, polygon: Polygon) -> np.ndarray:
     """
@@ -228,7 +252,8 @@ def points_in_polygon(points: np.ndarray, polygon: Polygon) -> np.ndarray:
     # First select points in square box around polygon
     ptx, pty = points.T
     mainindex = possibly_intersecting(
-        dataframebounds=np.c_[[ptx, pty, ptx, pty]], geometry=polygon)
+        dataframebounds=np.c_[[ptx, pty, ptx, pty]], geometry=polygon
+    )
     boxpoints = points[mainindex]
 
     extp = path.Path(polygon.exterior)
@@ -256,6 +281,7 @@ def points_in_polygon(points: np.ndarray, polygon: Polygon) -> np.ndarray:
 
     return mainindex
 
+
 def get_voronoi_around_nodes(nodes: np.ndarray, facedata: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Creates voronoi polygons around face nodes.
 
@@ -268,9 +294,16 @@ def get_voronoi_around_nodes(nodes: np.ndarray, facedata: gpd.GeoDataFrame) -> g
     """
     # Creat voronoi polygon
     # Add border to limit polygons
-    border = box(nodes[:, 0].min(), nodes[:, 1].min(), nodes[:, 0].max(), nodes[:, 1].max()).buffer(1000).exterior
-    borderpts = [border.interpolate(dist).coords[0] for dist in np.linspace(0, border.length, max(20, int(border.length / 100)))]
-    vor = Voronoi(points=nodes.tolist()+borderpts)
+    border = (
+        box(nodes[:, 0].min(), nodes[:, 1].min(), nodes[:, 0].max(), nodes[:, 1].max())
+        .buffer(1000)
+        .exterior
+    )
+    borderpts = [
+        border.interpolate(dist).coords[0]
+        for dist in np.linspace(0, border.length, max(20, int(border.length / 100)))
+    ]
+    vor = Voronoi(points=nodes.tolist() + borderpts)
     clippoly = facedata.unary_union
     # Get lines
     lines = []
@@ -298,13 +331,15 @@ def get_voronoi_around_nodes(nodes: np.ndarray, facedata: gpd.GeoDataFrame) -> g
                 if isinstance(poly, MultiPolygon):
                     poly = poly.buffer(0.001)
                 if isinstance(poly, MultiPolygon):
-                    logger.warning('Got multipolygon when clipping voronoi polygon. Only adding coordinates for largest of the polygons.')
+                    logger.warning(
+                        "Got multipolygon when clipping voronoi polygon. Only adding coordinates for largest of the polygons."
+                    )
                     poly = poly[np.argmax([p.area for p in common.as_polygon_list(poly)])]
                 crds = np.vstack(poly.exterior.coords[:])
-            data.append({'geometry': poly, 'crds': crds})
-            
+            data.append({"geometry": poly, "crds": crds})
+
     # Limit to model extend
     facedata = gpd.GeoDataFrame(data)
-    facedata.index=np.arange(len(nodes), dtype=np.uint32) + 1
+    facedata.index = np.arange(len(nodes), dtype=np.uint32) + 1
 
     return facedata
