@@ -7,14 +7,14 @@ class Models:
 
         class one_d:
             max_dist_to_struct = 3
-            max_snap_dist = 0.1
+            max_snap_dist = 1
             node_distance = 100
 
         class two_d:
             coupling_type = "2Dto1D"
             dx = 500
             dy = 500
-            #elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            # elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
             elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
@@ -22,8 +22,8 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v10_test.shp" # From V7
+    # p_folder = r"D:\work\P1414_ROI\GIS"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v2.1_test.shp"  # From V7
     bridges_path = p_folder + r"\HHRijnland\Niet legger\brug_edited.shp"
     culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
     peil_gebieden_path = p_folder + r"\HHRijnland\Legger\Peilvakken\peilvakken.shp"

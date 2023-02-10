@@ -1,5 +1,5 @@
 # %%
-from download_helpers.utilities import json_download_rijnland, wfs_download_rijnland
+from utilities import json_download_rijnland, wfs_download_rijnland
 
 # %% Stuw
 stuw_url = r"https://rijnland.enl-mcs.nl/arcgis/services/Stuw/MapServer/WFSServer?service=wfs&request=GetFeature&typeNames=stuw"
@@ -36,5 +36,19 @@ kering_agv_url = r"https://maps.waternet.nl/arcgis/rest/services/AGV_Legger/AGV_
 kering_agv_output_path = r"D:\Work\Project\P1414\GIS\WAGV\kering\kering.shp"
 
 json_download_rijnland(url=kering_agv_url, output_file_path=kering_agv_output_path)
+
+# %%
+noodwaterkering_url = (
+    r"https://rijnland.enl-mcs.nl/arcgis/rest/services/Noodwaterkering/MapServer/0/query?"
+)
+noodwaterkering_output_path = (
+    r"D:\Work\Project\P1414\GIS\HHRijnland\Legger\Noodwaterkering\noodwaterkering.shp"
+)
+
+json_download_rijnland(
+    url=noodwaterkering_url,
+    output_file_path=noodwaterkering_output_path,
+    geometry_type="esriGeometryPoint",
+)
 
 # %%

@@ -1,14 +1,16 @@
+import os
 from typing import Any, Optional
 
 import pandera as pa
 from pandera.typing import DataFrame, Series
 from pandera.typing.geopandas import GeoSeries
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 from data_structures.dhydamo_data_model_checks import (
     geometry_check,
     globalid_check,
     none_geometry_check,
+    validate_codes,
 )
 from data_structures.hydamo_globals import (
     HYDAMO_SHAPE_NUMS,
@@ -52,7 +54,7 @@ class GPDBasicShema(BasicSchema):
 
 
 class BrugSchema(GPDBasicShema):
-    code: Series[str] = pa.Field(coerce=True)
+    code: Series[str] = pa.Field(unique=True)
     intreeverlies: Series[float] = pa.Field(ge=0, le=1)
     lengte: Series[float] = pa.Field(gt=0)
     ruwheid: Series[float] = pa.Field(gt=0)
@@ -62,7 +64,7 @@ class BrugSchema(GPDBasicShema):
 
 class DuikerSchema(GPDBasicShema):
     breedteopening: Series[float] = pa.Field(gt=0)
-    code: Series[str] = pa.Field(coerce=True)
+    code: Series[str] = pa.Field(unique=True)
     doorstroomopening: Series[str]
     hoogtebinnenonderkantbene: Series[float]
     hoogtebinnenonderkantbov: Series[float]
@@ -73,12 +75,12 @@ class DuikerSchema(GPDBasicShema):
     typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)
     uittreeverlies: Series[float] = pa.Field(ge=0, le=1)
     vormkoker: Series[int] = pa.Field(
-        isin=HYDAMO_SHAPE_NUMS, coerce=True
+        isin=HYDAMO_SHAPE_NUMS
     )  # accepteer enkel waarden volgend hydamo standaard
 
 
 class GemaalSchema(GPDBasicShema):
-    code: Series[str] = pa.Field(coerce=True)
+    code: Series[str] = pa.Field(unique=True)
 
 
 class Hydroobject_normgpSchema(PDBasicShema):
@@ -94,22 +96,22 @@ class KunstwerkopeningSchema(PDBasicShema):
     laagstedoorstroomhoogte: Series[float]
     stuwid: Series[str] = pa.Field(unique=True)
     vormopening: Series[int] = pa.Field(
-        isin=HYDAMO_SHAPE_NUMS, coerce=True
+        isin=HYDAMO_SHAPE_NUMS
     )  # accepteer enkel waarden volgend hydamo standaard
 
 
 class NormgeparamprofielwaardeSchema(BasicSchema):
     geometry: GeoSeries = pa.Field(nullable=True)  # by design, to add to gpkg
     normgeparamprofielid: Series[str]
-    ruwheidhoog: Series[float] = pa.Field(gt=0, coerce=True)
-    ruwheidlaag: Series[float] = pa.Field(gt=0, coerce=True)
+    ruwheidhoog: Series[float] = pa.Field(gt=0)
+    ruwheidlaag: Series[float] = pa.Field(gt=0)
     soortparameter: Series[str]
     typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)
     waarde: Series[float]
 
 
 class PompSchema(PDBasicShema):
-    code: Series[str] = pa.Field(coerce=True)  # addition to confluence
+    code: Series[str] = pa.Field(unique=True)  # addition to confluence
     gemaalid: Series[str] = pa.Field(unique=True)
     maximalecapaciteit: Series[float] = pa.Field(ge=0)
 
@@ -120,22 +122,20 @@ class ProfielgroepSchema(PDBasicShema):
 
 
 class ProfiellijnSchema(GPDBasicShema):
-    profielgroepid: Series[str] = pa.Field(coerce=True, unique=True)
+    profielgroepid: Series[str] = pa.Field(unique=True)
 
 
 class ProfielpuntSchema(GPDBasicShema):
-    code: Series[str] = pa.Field(coerce=True)
-    profiellijnid: Series[str] = pa.Field(coerce=True)
-    codevolgnummer: Series[int] = pa.Field(coerce=True)
+    code: Series[str] = pa.Field(unique=True)
+    profiellijnid: Series[str]
+    codevolgnummer: Series[int]
 
 
 class RegelmiddelSchema(GPDBasicShema):
     code: Series[str]  # addition to confluence
     kunstwerkopeningid: Series[str] = pa.Field(unique=True)
     overlaatonderlaat: Series[str]
-    soortregelbaarheid: Series[int] = pa.Field(
-        isin=list(MANAGEMENT_DEVICE_TYPES.values()), coerce=True
-    )
+    soortregelbaarheid: Series[int] = pa.Field(isin=list(MANAGEMENT_DEVICE_TYPES.values()))
     stuwid: Series[str] = pa.Field(unique=True)
 
 
@@ -143,14 +143,14 @@ class RuwheidsprofielSchema(BasicSchema):
     code: Series[str]  # addition to confluence
     geometry: GeoSeries = pa.Field(nullable=True)  # by design, to add to gpkg
     profielpuntid: Series[str] = pa.Field(coerce=True, unique=True)
-    ruwheidhoog: Series[float] = pa.Field(gt=0, coerce=True)
-    ruwheidlaag: Series[float] = pa.Field(gt=0, coerce=True)
+    ruwheidhoog: Series[float] = pa.Field(gt=0)
+    ruwheidlaag: Series[float] = pa.Field(gt=0)
     typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)
 
 
 class SturingSchema(PDBasicShema):
     bovengrens: Series[float] = pa.Field(nullable=True)
-    code: Series[str] = pa.Field(coerce=True)  # addition to confluence
+    code: Series[str] = pa.Field(unique=True)  # addition to confluence
     doelvariabele: Series[str]  # addition to confluence
     ondergrens: Series[float] = pa.Field(nullable=True)
     pompid: Series[str] = pa.Field(unique=True)
@@ -158,15 +158,13 @@ class SturingSchema(PDBasicShema):
 
 
 class StuwSchema(GPDBasicShema):
-    afvoercoefficient: Series[float] = pa.Field(coerce=True)
-    code: Series[str] = pa.Field(coerce=True)
-    soortstuw: Series[float] = pa.Field(
-        isin=HYDAMO_WEIR_TYPES, coerce=True
-    )  # addition to confluence
+    afvoercoefficient: Series[float]
+    code: Series[str] = pa.Field(unique=True)
+    soortstuw: Series[float] = pa.Field(isin=HYDAMO_WEIR_TYPES)  # addition to confluence
 
 
 class WaterloopSchema(GPDBasicShema):
-    code: Series[str] = pa.Field(coerce=True, unique=True)
+    code: Series[str] = pa.Field(unique=True)
     typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)  # addition to confluence
 
 
@@ -213,8 +211,17 @@ class DHydamoDataModel(BaseModel):
     stuw: Optional[DataFrame[StuwSchema]]
     waterloop: Optional[DataFrame[WaterloopSchema]]
 
+    @root_validator(pre=False)
+    def validate_codes(cls, values):
+        """
+        Validate that codes are unique between structures
+        """
+
+        return validate_codes(values)
+
     class Config:
-        validate_assignment = True  # validates new attributes that are assigned
+        extra = "forbid"  # do not allow extra fields to be assigned
+        validate_assignment = True  # validates new fields that are assigned
 
     def to_gpkg(self, output_gpkg: str) -> None:
         """
@@ -226,6 +233,7 @@ class DHydamoDataModel(BaseModel):
         Returns:
             None
         """
+        os.remove(output_gpkg)
         for key, value in self.__dict__.items():
             if value is not None:
                 try:

@@ -1,19 +1,19 @@
 import sys
 
-#sys.path.append("D:\Work\git\GIS_tools\Code")
-sys.path.append("D:\work\P1414_ROI\GitHub\GIS_tools\Code")
+from hydrolib.core.io.ext.models import ExtModel, Lateral
+
+sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
-#folder = r"D:\Work\Project\P1414"
-folder = r"D:\work\P1414_ROI"
+folder = r"D:\Work\Project\P1414"
 gpkg_file = folder + r"\GIS\HYDAMO\HDSR_clipped.gpkg"
-output_folder = folder + r"\Models\HDSR\V0"
+output_folder = folder + r"\Models\HDSR\V00"
 
 config = r"hdsr_config"
 defaults = r"defaults"
 
 build_database = True
-build_model = False
+build_model = True
 
 
 if build_database:
@@ -28,6 +28,15 @@ if build_database:
     dhd.to_dhydamo_gpkg(output_gpkg=gpkg_file)
 
 if build_model:
+    lateral = Lateral(
+        id="LateralSource_2D_1",
+        name="LateralSource_2D_1",
+        branchId="hdsr_H012375_0",
+        chainage=30,
+        discharge=10000,
+    )
+    extforcefilenew = ExtModel(lateral=[lateral])
+
     # 1. initialize an instance of DHydamoData
     dhd = DHydamoData()
 
@@ -35,4 +44,11 @@ if build_model:
     dhd.from_dhydamo_gpkg(gpkg_file)
 
     # 3. save as dhydro model
-    dhd.to_dhydro(config=config, output_folder=output_folder)
+    dhd.to_dhydro(config=config, output_folder=output_folder, write=False)
+    dhd.fm.geometry.usecaching = 1
+    dhd.fm.numerics.cflmax = 10
+    dhd.fm.output.hisinterval = [0]
+
+    dhd.fm.external_forcing.extforcefilenew = extforcefilenew
+
+    dhd.write_dimr(output_folder=output_folder)

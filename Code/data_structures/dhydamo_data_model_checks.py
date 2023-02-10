@@ -1,6 +1,8 @@
 import uuid
 
 import geopandas as gpd
+import numpy as np
+import pandas as pd
 from shapely.geometry import LineString, MultiPoint, Point
 
 
@@ -59,3 +61,24 @@ def none_geometry_check(geometry: gpd.GeoSeries) -> bool:
         return True
     else:
         return False
+
+
+def validate_codes(values: dict) -> dict:
+    struct_list = ["brug", "duiker", "gemaal", "stuw"]
+    codes = None
+    # check if field is assigned and if so add code column to list of codes
+    for ix, struct in enumerate(struct_list):
+        if values.get(struct) is not None:
+            if ix == 0:
+                codes = values.get(struct)["code"]
+            else:
+                codes = pd.concat([codes, values.get(struct)["code"]], ignore_index=True)
+
+    # if code columns were assigned, check for duplicates
+    if codes is not None:
+        duplicate_codes = codes.duplicated(keep=False)
+        if np.sum(duplicate_codes) > 0:
+            print("The codes that cause the errors are:")
+            print(codes.loc[duplicate_codes])
+            raise ValueError("Duplicate codes found in structures")
+    return values

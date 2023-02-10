@@ -7,23 +7,31 @@ class Models:
 
         class one_d:
             max_dist_to_struct = 3
-            max_snap_dist = 0.1
+            max_snap_dist = 1
             node_distance = 100
 
         class two_d:
             coupling_type = "2Dto1D"
             dx = 500
             dy = 500
-            #elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            # elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
 
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\WAGV\Niet legger\hydrovak_combined_v10.shp"
+    # p_folder = r"D:\work\P1414_ROI\GIS"
+    # branches_path = p_folder + r"\WAGV\Niet legger\hydrovak_combined_v10.shp"
+    # branches_path = [
+    #     p_folder + r"\Uitgesneden watergangen\AGV_v00_test.shp",
+    #     p_folder + r"\WAGV\hydrovak\hydrovak.shp",
+    # ]
+    branches_path = [
+        p_folder + r"\Uitgesneden watergangen\AGV_v2.1_test.shp",
+        p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp",
+    ]
     bridges_path = p_folder + r"\WAGV\brug_v13\brug_v13_clipped.shp"
     culvert_path = p_folder + r"\WAGV\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp"
     measured_profile_path = (

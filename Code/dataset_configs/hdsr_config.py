@@ -1,29 +1,28 @@
 class Models:
     class FM:
-        one_d_bool = False
+        one_d_bool = True
         two_d_bool = True
         start_time = 20160601
         stop_time = 86400
 
         class one_d:
             max_dist_to_struct = 3
-            max_snap_dist = 0.1
+            max_snap_dist = 1
             node_distance = 100
 
         class two_d:
             coupling_type = "2Dto1D"
-            dx = 100
-            dy = 100
+            dx = 500
+            dy = 500
             elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            extent_path = "D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
             two_d_buffer = 100
 
 
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v10_test.shp" #Corrected from V7
+    # p_folder = r"D:\work\P1414_ROI\GIS"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v2.1_test.shp"  # Corrected from V7
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
     pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"

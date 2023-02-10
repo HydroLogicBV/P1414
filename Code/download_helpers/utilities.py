@@ -18,12 +18,14 @@ def wfs_download_rijnland(url: str, output_file_path: str = None) -> None:
         return gdf
 
 
-def json_download_rijnland(url: str, output_file_path: str = None) -> None:
+def json_download_rijnland(
+    url: str, output_file_path: str = None, geometry_type: str = "esriGeometryPolygon"
+) -> None:
     """ """
 
     params = {
         "where": "1=1",
-        "geometryType": "esriGeometryPolygon",
+        "geometryType": geometry_type,
         "spatialRel": "esriSpatialRelIntersects",
         "relationParam": "",
         "outFields": "*",

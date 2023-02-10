@@ -1,17 +1,24 @@
 # %% Init
 import uuid
 from copy import copy
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import geopandas as gpd
+import networkx as nx
 import numpy as np
 from scipy.spatial import KDTree
 from shapely.geometry import LineString, MultiPoint, Point
 from tqdm import tqdm
 
+from networkx_tools import gdf_to_nx
+
 
 def check_branch_overlap(
-    new_branches: gpd.GeoDataFrame, old_branches: gpd.GeoDataFrame, min_overlap: float = 0.5
+    new_branches: gpd.GeoDataFrame,
+    old_branches: gpd.GeoDataFrame,
+    geometry_accuracy: float,
+    min_overlap: float,
+    max_graphs: int,
 ) -> Tuple[gpd.GeoDataFrame, List[float]]:
     """
     Computes overlap between unclipped and clipped branches.
@@ -31,64 +38,73 @@ def check_branch_overlap(
     """
     # print("Checking for split branches and fixing them")
 
-    # setting index to new_id for easier indexing later
-    old_branches.set_index("new_id", inplace=True)
-    new_branches.set_index("new_id", inplace=True)
-
-    # find branches that are MultiLineString due to partial intersection
-    MLS_branches_bool = new_branches.geometry.type == "MultiLineString"
-    # MLS_branches = new_branches.loc[MLS_branches_bool]
-    # other_branches = new_branches.loc[~MLS_branches_bool]
-
-    n_split_branches_init = np.sum(MLS_branches_bool)
-    # print("Number of split branches: {}".format(n_split_branches_init))
-
-    n_replaced = 0
-    n_dropped = 0
-    out_branches = copy(new_branches)
-
-    # Loop over all branches. If MLS, check if minimum overlap is achieved and then replace, otherwise, drop.
-    # If not MLS, check for sufficient overlap, if not, drop.
-
+    # G = gdf_to_nx(old_branches)
+    _out_branches = copy(old_branches)
+    _out_branches["new_length"] = 0
+    _out_branches["old_length"] = 0
+    overlap_list = []
     for ix, branch in new_branches.iterrows():
-        new_length = np.sum(new_branches.loc[branch.name].geometry.length)
-        old_length = np.sum(old_branches.loc[branch.name].geometry.length)
+        new_length = np.sum(
+            new_branches[new_branches["new_id"] == branch["new_id"]].geometry.length
+        )
+        old_length = np.sum(
+            old_branches[old_branches["new_id"] == branch["new_id"]].geometry.length
+        )
+        overlap = new_length / old_length
 
-        if MLS_branches_bool[ix]:
-            if (new_length / old_length) >= min_overlap:
-                out_branches.loc[branch.name] = old_branches.loc[branch.name]
-                n_replaced += 1
+        if np.isnan(new_length):
+            new_length = 0
+
+        _out_branches.loc[_out_branches["new_id"] == branch["new_id"], "new_length"] = new_length
+        _out_branches.loc[_out_branches["new_id"] == branch["new_id"], "old_length"] = old_length
+
+        overlap_list.append({"id": ix, "overlap": overlap})
+
+    G = gdf_to_nx(_out_branches, decimals=geometry_accuracy)
+    component_list = sorted(nx.connected_components(G), key=len, reverse=True)
+    H = None
+    for n in range(max_graphs):
+        if n > len(component_list):
+            break
+
+        S = G.subgraph(component_list[n])
+
+        new_lengths = old_lengths = 0
+        for x, y, data in S.edges(data=True):
+            if data["new_length"] > 0:
+                new_lengths += data["new_length"]
+                old_lengths += data["geometry"].length
+        if new_lengths > 1e3:
+            overlap = new_lengths / old_lengths
+        else:
+            overlap = 0
+        print(overlap)
+        if overlap > min_overlap:
+            if H is None:
+                H = nx.Graph(S)
             else:
-                out_branches.drop(index=branch.name, inplace=True)
-                n_dropped += 1
+                H = nx.compose(H, nx.Graph(S))
 
-        elif not MLS_branches_bool[ix]:
-            if (new_length / old_length) < min_overlap:
-                out_branches.drop(index=branch.name, inplace=True)
-                n_dropped += 1
+    out_branches_list = []
+    for x, y, data in H.edges(data=True):
+        out_branches_list.append(data)
 
-    n_split_branches = np.sum(out_branches.geometry.type == "MultiLineString")
-    # print(
-    #     "Replaced {} branches with sufficient overlap. Dropped {} branches without sufficient overlap".format(
-    #         n_replaced, n_dropped
-    #     )
-    # )
-    # print("Remaining number of split branches: {}".format(n_split_branches))
-
-    if n_split_branches > 0:
-        print(out_branches.loc[out_branches.geometry.type == "MultiLineString"])
-        raise ValueError("still found split branches...")
-
-    return out_branches, [n_split_branches_init, n_split_branches, n_replaced, n_dropped]
+    out_branches = gpd.GeoDataFrame(
+        data=out_branches_list, geometry="geometry", crs=new_branches.crs
+    )
+    return out_branches, None
 
 
 def clip_branches(
     in_branches_path: str,
     overlay_branches_path: str,
-    buffer_dist=5,
-    min_overlap: float = 0.5,
-    max_distance: float = 0.5,
-    min_connectivity: int = 2,
+    buffer_dist=10,
+    geometry_accuracy: int = 0,
+    in_branches: gpd.GeoDataFrame = None,
+    max_graphs: float = 100,
+    min_overlap: float = 0.25,
+    min_width: float = 5,
+    width_column: str = None,
 ) -> gpd.GeoDataFrame:
     """
     Wrapper function that performs all actions required to clip branches using an overlay polygon
@@ -114,18 +130,29 @@ def clip_branches(
     # Load input branches, explode multilinestrings, and assign unique ids.
     # Also load overlay branches
     overlay_branches, _ = read_rm_branches(overlay_branches_path)
-    in_branches = (
-        gpd.read_file(in_branches_path, geometry="geometry")
-        .to_crs(overlay_branches.crs)
-        .explode(index_parts=False)
-    )
+    if in_branches is None:
+        if in_branches_path.endswith(r".shp"):
+            in_branches = (
+                gpd.read_file(in_branches_path, geometry="geometry")
+                .to_crs(overlay_branches.crs)
+                .explode(index_parts=False)
+            )
+        elif in_branches_path.endswith(r".gpkg"):
+            in_branches = (
+                gpd.read_file(in_branches_path, layer="waterloop", geometry="geometry")
+                .to_crs(overlay_branches.crs)
+                .explode(index_parts=False)
+            )
+
     in_branches["new_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
+    if width_column is not None:
+        in_branches = in_branches.loc[in_branches[width_column].astype(float) > min_width, :]
 
     # compute extend of input branches and clip overlay branches to it
     convex_hull = in_branches.dissolve(by=None).convex_hull
     overlay_branches_clipped = overlay_branches.clip(convex_hull)
 
-    pbar = tqdm(total=6)
+    pbar = tqdm(total=5)
     pbar.set_description("Clipping overlay branches")
     pbar.update(1)
 
@@ -134,6 +161,16 @@ def clip_branches(
     buffered_branches = gpd.GeoDataFrame(
         geometry=overlay_branches_clipped.buffer(distance=buffer_dist)
     ).dissolve(by=None)
+
+    pbar.update(1)
+
+    # Validate network toplogy
+    pbar.set_description("Validating network toplogy")
+    out_branches = validate_network_topology(
+        branches_gdf=in_branches, geometry_accuracy=geometry_accuracy
+    )
+    in_branches = copy(out_branches)
+    in_branches["new_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
 
     pbar.update(1)
 
@@ -146,24 +183,20 @@ def clip_branches(
     # skip branches with an overlap of less than min_overlap
     pbar.set_description("Droping branches with insufficient overlap")
     out_branches, stats = check_branch_overlap(
-        new_branches=out_branches, old_branches=in_branches, min_overlap=min_overlap
+        geometry_accuracy=geometry_accuracy,
+        max_graphs=max_graphs,
+        min_overlap=min_overlap,
+        new_branches=out_branches,
+        old_branches=in_branches,
     )
 
-    pbar.update(1)
+    # # skip branches that are not connected to at least two other branches
+    # pbar.set_description("Droping branches with too little connectivity")
+    # out_branches = skip_branches_con(
+    #     in_branches=out_branches, max_distance=max_distance, min_connectivity=min_connectivity
+    # )
 
-    # Validate network toplogy
-    pbar.set_description("Validating network toplogy")
-    out_branches = validate_network_topology(branches_gdf=out_branches, snap_distance=buffer_dist)
-
-    pbar.update(1)
-
-    # skip branches that are not connected to at least two other branches
-    pbar.set_description("Droping branches with too little connectivity")
-    out_branches = skip_branches_con(
-        in_branches=out_branches, max_distance=max_distance, min_connectivity=min_connectivity
-    )
-
-    pbar.update(1)
+    # pbar.update(1)
 
     return out_branches
 
@@ -197,62 +230,6 @@ def _clip_branches(
     return out_branches
 
 
-def delete_branches(gdf: gpd.GeoDataFrame, snap_distance: float) -> gpd.GeoDataFrame:
-    _gdf = gdf.loc[gdf.geometry.length > snap_distance, :]
-
-    short_branches_ix = np.where(gdf.geometry.length <= snap_distance)[0]
-    print(gdf.shape[0], _gdf.shape[0], short_branches_ix)
-    boundaries = []
-    for branch_ix in short_branches_ix:
-        branch = gdf.iloc[branch_ix, :]
-        boundary = branch.geometry.boundary
-        if boundary not in boundaries:
-            boundaries.append(boundary)
-
-    l_points = []
-    r_points = []
-    for ix, boundary in enumerate(boundaries):
-        l_point = Point(boundary.geoms[0].x, boundary.geoms[0].y)
-        r_point = Point(boundary.geoms[1].x, boundary.geoms[1].y)
-
-        l_points.append(l_point)
-        r_points.append(r_point)
-
-    l_mpoints = MultiPoint(l_points)
-    # r_mpoints = MultiPoint(r_points)
-
-    # # print(*boundaries)
-    gdf = copy(_gdf)
-    for ix, (name, branch) in enumerate(_gdf.iterrows()):
-        # Delete z-dimensison of linestring if it exists
-        if np.array(branch.geometry.coords).shape[1] > 2:
-            geometry = [Point(x, y) for x, y, _ in branch.geometry.coords]
-            try:
-                gdf.geometry.iloc[ix] = LineString(geometry)
-            except ValueError:
-                print("oepsie")
-        else:
-            geometry = [Point(x, y) for x, y in branch.geometry.coords]
-
-        boundary = branch.geometry.boundary
-
-        if l_mpoints.contains(geometry[0]):
-            jx = l_points.index(geometry[0])
-            _branch = copy(branch)
-            geometry[0] = r_points[jx]
-            _branch.geometry = LineString(geometry)
-            gdf.iloc[ix] = _branch
-
-        if l_mpoints.contains(geometry[-1]):
-            jx = l_points.index(geometry[-1])
-            _branch = copy(branch)
-            geometry[-1] = r_points[jx]
-            _branch.geometry = LineString(geometry)
-            gdf.iloc[ix] = _branch
-
-    return gdf
-
-
 def read_rm_branches(
     rm_branches_path: str, epsg: int = 28992
 ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
@@ -276,61 +253,8 @@ def read_rm_branches(
     return rm_branches, onderdoorgangen
 
 
-def skip_branches_con(
-    in_branches: gpd.GeoDataFrame, max_distance: float = 0.5, min_connectivity: int = 2
-) -> gpd.GeoDataFrame:
-    """
-    Function that removes branches from GeoDataFrame if they are not sufficiently connected to other branches
-    The criterion for this is min_connectivity for the number of branches that should coincide in a point
-    Max_distance is the distance tolerance for branches starting and ending in a point
-
-    Args:
-        in_branches (gpd.GeoDataFrame): GeoDataFrame with branches containging a geometry column with LineStrings
-        max_distance (float): maximum distance at which branches are considered connected
-        min_connectivity (int): minumum number of branches that should meet in a point
-
-    Returns:
-        out_branhces (gpd.GeoDataFrame): GeoDataFrame with branches that fullfill the connectivity criterion
-    """
-
-    # print("Checking for isolated branches")
-    n_in = in_branches.shape[0]
-
-    # skip branches further than max_dist away from another branch
-    point_list = []
-    for ix, branch in in_branches.iterrows():
-        coords = branch.geometry.coords
-        point_list.append(coords[0])
-        point_list.append(coords[-1])
-
-    # build spatial KDTree from start and end points
-    kdtree = KDTree(point_list)
-    sdm = kdtree.sparse_distance_matrix(
-        kdtree, max_distance=max_distance, output_type="coo_matrix"
-    )
-
-    # matrix is symetrical, so picking one of the two axis to count number of non empty entries (explicit zeros allowed)
-    nnz = sdm.getnnz(axis=0)
-
-    # compare number of points within max_distance to min_connectivity
-    bool_array = nnz < min_connectivity
-
-    # Drop branches with insufficient connectivity on both sides
-    out_branches = copy(in_branches)
-    for ix, (name, branch) in enumerate(in_branches.iterrows()):
-        if (bool_array[ix * 2]) & (bool_array[ix * 2 + 1]):
-            out_branches.drop(index=name, inplace=True)
-        # elif bool_array[ix * 2 + 1]:
-        #     out_branches.drop(index=name, inplace=True)
-
-    # out_branches = in_branches
-    n_out = out_branches.shape[0]
-    # print("Dropped {} isolated branches".format(n_in - n_out))
-    return out_branches
-
-
 def validate_network_topology(
-    branches_gdf: gpd.GeoDataFrame, snap_distance: float = None
+    branches_gdf: gpd.GeoDataFrame, geometry_accuracy: float
 ) -> gpd.GeoDataFrame:
     """
     Function to validate the toplogy of the network.
@@ -345,6 +269,26 @@ def validate_network_topology(
     Returns:
         branches_gdf (gpd.GeoDataFrame): output geodataframe with branches that properly connect to one another
     """
+
+    def snap_nodes(in_branches: gpd.GeoDataFrame, geometry_accuracy: float):
+        in_branches["t_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
+        in_branches.set_index("t_id", inplace=True)
+        out_branches = copy(in_branches)
+        for ix, branch in in_branches.iterrows():
+
+            point_list = []
+            for x, y, *_ in branch.geometry.coords[:]:
+                point_list.append(
+                    (np.around(x, geometry_accuracy), np.around(y, geometry_accuracy))
+                )
+
+            geometry = LineString(point_list)
+            if geometry.length > 0:
+                out_branches.loc[ix, "geometry"] = LineString(point_list)
+            else:
+                out_branches = out_branches.drop(index=ix)
+
+        return out_branches
 
     MLS_branches_bool = branches_gdf.geometry.type == "MultiLineString"
     if np.sum(MLS_branches_bool) > 0:
@@ -364,23 +308,26 @@ def validate_network_topology(
     # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
     intersected_gdf = gdf.sjoin(buffered_branches, how="left", predicate="within")
 
-    if snap_distance is not None:
-        if snap_distance > 0:
-            intersected_gdf = delete_branches(gdf=intersected_gdf, snap_distance=snap_distance)
-        else:
-            raise ValueError("snap_distance should be > 0")
+    intersected_gdf = snap_nodes(in_branches=intersected_gdf, geometry_accuracy=geometry_accuracy)
+    # if snap_distance is not None:
+    #     if snap_distance > 0:
+    #         intersected_gdf = delete_branches(gdf=intersected_gdf, snap_distance=snap_distance)
+    #     else:
+    #         raise ValueError("snap_distance should be > 0")
 
     return intersected_gdf
 
 
 # %% Initialize
 print("initialize")
-p_folder = r"D:\work\P1414_ROI\GIS"
-version = "v10"
+p_folder = r"D:\Work\Project\P1414\GIS"
+# p_folder = r"D:\work\P1414_ROI\GIS"
+version = "v2.1"
 # p_folder = r"D:\work\Project\P1414\GIS"
-old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited_v12.shp"
+old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited_v10.shp"
 
-agv_branches_path = p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"
+# agv_branches_path = p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"
+agv_branches_path = p_folder + r"\WAGV\hydrovak\hydrovak.shp"
 clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_{}_test.shp".format(version)
 
 HDSR_branches_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
@@ -389,11 +336,11 @@ clipped_HDSR_branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_{}_test.
 )
 
 HHD_branches_path = (
-    p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
+    p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water_ww.shp"
 )
 clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_{}_test.shp".format(version)
 
-HHR_branches_path = p_folder + r"\HHRijnland\Niet legger\Watergangen_edited_v3.shp"
+HHR_branches_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as.shp"
 clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_{}_test.shp".format(version)
 
 HHR_west_branches_path = p_folder + r"\HHRijnland\Niet legger\Westeinderplassen_cut_v5.shp"
@@ -408,13 +355,16 @@ clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_{}_test.
 RMM_branches_path = p_folder + r"\Rijn Maasmonding\RMM_Branches_edited.shp"
 fixed_RMM_branches_path = p_folder + r"\Uitgesneden watergangen\RMM_branches.shp"
 
-AGV = False
-HDSR = False
-HHD = False
-HHR = False
-HHSK = False
+AGV = True
+HDSR = True
+HHD = True
+HHR = True
+HHSK = True
 RMM = False
-HHR_westeinder = True
+HHR_westeinder = False
+
+max_graphs = 25
+min_width = 3.33
 
 # %% AGV
 if AGV:
@@ -423,16 +373,29 @@ if AGV:
     intersected_branches = clip_branches(
         in_branches_path=agv_branches_path,
         overlay_branches_path=old_rm_branches_path,
+        max_graphs=max_graphs,
+        min_width=min_width,
+        width_column="IWS_W_WATB",
     )
     intersected_branches.to_file(clipped_agv_branches_path)
 
 # %% HDSR
 if HDSR:
     print("HDSR")
-
+    branches = (
+        gpd.read_file(HDSR_branches_path, geometry="geometry")
+        .to_crs(28992)
+        .explode(index_parts=False)
+    )
+    branches = branches.loc[branches["CATEGORIEO"] == 1, :]
     intersected_branches = clip_branches(
         in_branches_path=HDSR_branches_path,
         overlay_branches_path=old_rm_branches_path,
+        geometry_accuracy=0,
+        in_branches=branches,
+        max_graphs=max_graphs,
+        min_width=min_width,
+        width_column="IWS_W_WATB",
     )
     intersected_branches.to_file(clipped_HDSR_branches_path)
 
@@ -441,16 +404,30 @@ if HHD:
     print("HHD")
 
     intersected_branches = clip_branches(
-        in_branches_path=HHD_branches_path, overlay_branches_path=old_rm_branches_path
+        in_branches_path=HHD_branches_path,
+        overlay_branches_path=old_rm_branches_path,
+        max_graphs=max_graphs,
+        min_width=min_width,
+        width_column="bodembreed",
     )
     intersected_branches.to_file(clipped_HHD_branches_path)
 
 # %% HHR
 if HHR:
     print("HHR")
-
+    branches = (
+        gpd.read_file(HHR_branches_path, geometry="geometry")
+        .to_crs(28992)
+        .explode(index_parts=False)
+    )
+    branches = branches.loc[branches["CATEGORIEO"] == "primair", :]
     intersected_branches = clip_branches(
-        in_branches_path=HHR_branches_path, overlay_branches_path=old_rm_branches_path
+        in_branches_path=HHR_branches_path,
+        overlay_branches_path=old_rm_branches_path,
+        in_branches=branches,
+        max_graphs=max_graphs,
+        min_width=min_width,
+        width_column="BREEDTE",
     )
     intersected_branches.to_file(clipped_HHR_branches_path)
 
@@ -461,6 +438,9 @@ if HHSK:
     intersected_branches = clip_branches(
         in_branches_path=HHSK_branches_path,
         overlay_branches_path=old_rm_branches_path,
+        max_graphs=max_graphs,
+        min_width=min_width,
+        width_column="WATERBREED",
     )
     intersected_branches.to_file(clipped_HHSK_branches_path)
 

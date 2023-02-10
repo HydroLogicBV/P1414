@@ -20,11 +20,11 @@ class Models:
 
 class RawData:
     ## PATHS
-    #p_folder = r"D:\Work\Project\P1414\GIS"
-    p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
-    branches_path = p_folder + r"\netwerk_selectie_v2.shp"
-    river_profile_path = p_folder + r"\ZW_cross.csv"
-    weir_path = p_folder + r"\netwerk_watergangen_boezemmodel_Weirs.shp"
+    p_folder = r"D:\Work\Project\P1414\GIS"
+    # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
+    branches_path = p_folder + r"\ARK NZK\netwerk_selectie_v2.shp"
+    river_profile_path = p_folder + r"\ARK NZK\ZW_cross.csv"
+    weir_path = p_folder + r"\ARK NZK\netwerk_watergangen_boezemmodel_Weirs.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 

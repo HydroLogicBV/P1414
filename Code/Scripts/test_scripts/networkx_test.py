@@ -8,6 +8,8 @@ import momepy
 import networkx as nx
 import numpy as np
 
+momepy.gdf_to_nx
+
 
 def _angle(a, b, c):
     """
@@ -49,6 +51,8 @@ def _generate_primal(G, gdf_network, fields, multigraph):
         # Round location
         # first = (np.around(first[0], -1), np.around(first[1], -1))
         # last = (np.around(last[0], -1), np.around(last[1], -1))
+        first = (np.around(first[0], 5), np.around(first[1], 5))
+        last = (np.around(last[0], 5), np.around(last[1], 5))
 
         data = [r for r in row][1:]
         attributes = dict(zip(fields, data))
@@ -235,40 +239,65 @@ def gdf_to_nx(
     return net
 
 
+# gdf = gpd.read_file(
+#     r"D:\Work\Project\P1414\GIS\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
+# ).explode()
+# gdf = gdf.loc[gdf["IWS_W_WATB"] > 5, :]
+# gdf = gpd.read_file(
+#     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
+# ).explode()
+# gdf = gpd.read_file(
+#     r"D:\Work\Project\P1414\GIS\HHRijnland\Legger\Watergang\Watergang_as.shp"
+# ).explode(ignore_index=True)
+# gdf = gdf.loc[gdf["BODEMBREED"] > 5, :]
 # gdf = gpd.read_file(r"D:\Work\Project\P1414\GIS\HHSK\Legger\Hoofdwatergang.shp").explode()
-# gdf = gdf.loc[gdf["WATERBREED"] > 10, :]
-gdf = gpd.read_file(
-    r"D:\Work\Project\P1414\GIS\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
-).explode()
-gdf = gdf.loc[gdf["IWS_W_WATB"] > 10, :]
+# gdf = gdf.loc[gdf["WATERBREED"] > 5, :]
+gdf = gpd.read_file(r"D:\Work\Project\P1414\GIS\WAGV\hydrovak\hydrovak.shp").explode()
+gdf = gdf.loc[gdf["IWS_W_WATB"] > 5, :]
+
 print("rounding coords")
 G = gdf_to_nx(gdf)
 # G = nx.Graph(G)
+component_list = sorted(nx.connected_components(G), key=len, reverse=True)
 
-print(nx.degree_histogram(G))
+for n in range(3):
+    sG = G.subgraph(component_list[n])
 
-to_be_removed = [x for x in G.nodes() if G.degree(x) <= 1]
-for x in to_be_removed:
-    G.remove_node(x)
+    new_lengths = old_lengths = 0
+    for x, y, data in sG.edges(data=True):
+        # new_lengths += edge
+        print(data)
+        break
 
-to_be_removed = [x for x in G.nodes() if G.degree(x) < 1]
-for x in to_be_removed:
-    G.remove_node(x)
+# print(G.edges[:, :, :]["OBJECTID"])
+# mering three most impotant components to network
 
-# k_edge_components = nx.k_edge_components(G, 3)
-# H = nx.Graph()
-# for edge in k_edge_components:
-#     print(list(edge))
-#     x, y = list(edge)[0]
-#     H.add_edge(x, y)
+# print(H.edges)
+# print(
+#     H.get_edge_data(
+#         u=(5.294029083000055, 51.97453857700003), v=(5.302407304000042, 51.97215656900005)
+#     )
+# )
+# print(nx.degree_histogram(G))
+print(nx.degree_histogram(H))
+
+# trim non-conected nodes
+# to_be_removed = [x for x in G.nodes() if G.degree(x) <= 1]
+# for x in to_be_removed:
+#     G.remove_node(x)
+
+# to_be_removed = [x for x in G.nodes() if G.degree(x) < 1]
+# for x in to_be_removed:
+#     G.remove_node(x)
+
 
 # print(H.nodes)
 # Plot
-positions = {n: [n[0], n[1]] for n in list(G.nodes)}
+positions = {n: [n[0], n[1]] for n in list(H.nodes)}
 f, ax = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
 gdf.plot(color="k", ax=ax[0])
 for i, facet in enumerate(ax):
     facet.set_title(("Rivers", "Graph")[i])
     facet.axis("off")
-nx.draw(G, positions, ax=ax[1], node_size=5)
+nx.draw(H, positions, ax=ax[1], node_size=5)
 plt.show()

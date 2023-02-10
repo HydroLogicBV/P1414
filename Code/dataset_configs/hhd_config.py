@@ -7,14 +7,14 @@ class Models:
 
         class one_d:
             max_dist_to_struct = 3
-            max_snap_dist = 0.1
+            max_snap_dist = 1
             node_distance = 100
 
         class two_d:
             coupling_type = "2Dto1D"  # "1Dto2D"
             dx = 500
             dy = 500
-            #elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            # elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
             elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
@@ -22,8 +22,11 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v9_test.shp" # Corrected from V7
+    # p_folder = r"D:\work\P1414_ROI\GIS"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v2.1_test.shp"  # Corrected from V7
+    # branches_path = (
+    #     p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
+    # )
     # bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     # culvert_path = p_folder + r"\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen_edited.shp"
     peil_gebieden_path = p_folder + r"\HHDelfland\Peilbesluiten.shp\PeilgebiedPraktijk.shp"
@@ -37,22 +40,41 @@ class RawData:
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
+    # branch_index_mapping = dict(
+    #     [
+    #         ("bodembreedte", None),
+    #         ("bodemhoogte benedenstrooms", None),
+    #         ("bodemhoogte bovenstrooms", None),
+    #         ("code", "CODE"),
+    #         ("diepte", "LEGDIEPNUM"),
+    #         ("geometry", "geometry"),
+    #         ("globalid", "globalid"),
+    #         ("hoogte insteek linkerzijde", None),
+    #         ("hoogte insteek rechterzijde", None),
+    #         ("taludhelling linkerzijde", None),
+    #         ("taludhelling rechterzijde", None),
+    #         ("typeruwheid", None),
+    #         ("ruwheidhoog", None),
+    #         ("ruwheidlaag", None),
+    #         ("water_width_index", None),
+    #     ]
+    # )
     branch_index_mapping = dict(
         [
-            ("bodembreedte", None),
-            ("bodemhoogte benedenstrooms", None),
-            ("bodemhoogte bovenstrooms", None),
-            ("code", "CODE"),
-            ("diepte", "LEGDIEPNUM"),
+            ("bodembreedte", "bodembreed"),
+            ("bodemhoogte benedenstrooms", "bodemhoogt"),
+            ("bodemhoogte bovenstrooms", "bodemhoo_1"),
+            ("code", "code"),
+            ("diepte", "diepte"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", None),
-            ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", None),
-            ("taludhelling rechterzijde", None),
-            ("typeruwheid", None),
-            ("ruwheidhoog", None),
-            ("ruwheidlaag", None),
+            ("hoogte insteek linkerzijde", "hoogte ins"),
+            ("hoogte insteek rechterzijde", "hoogte i_1"),
+            ("taludhelling linkerzijde", "taludhelli"),
+            ("taludhelling rechterzijde", "taludhel_1"),
+            ("typeruwheid", "typeruwhei"),
+            ("ruwheidhoog", "ruwheidhoo"),
+            ("ruwheidlaag", "ruwheidlaa"),
             ("water_width_index", None),
         ]
     )

@@ -19,27 +19,31 @@ from shapely.geometry import LineString, Polygon
 from data_structures.dhydamo_data_model import DHydamoDataModel
 
 
-def to_dhydro(
-    self, config: str, output_folder: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
-):
+def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None):
     """ """
 
     def add_branches(ddm: DHydamoDataModel, features: List[str], hydamo: HyDAMO) -> HyDAMO:
         hydamo.branches.set_data(
-            ddm.waterloop, index_col="code"
+            ddm.waterloop, index_col="code", check_geotype=False
         )  # using globalid leads to errors in D-HYDRO. Probably too long name
 
         # Check for circular features in branches
-        hydamo.branches_popped = hydamo.branches.copy()
+        hydamo.branches_popped = copy(hydamo.branches)  # .copy()
         for _, branch in hydamo.branches.iterrows():
 
-            start = branch.geometry.coords[0]
-            end = branch.geometry.coords[-1]
-            if start == end:
+            start = np.array(branch.geometry.coords)[0]
+            end = np.array(branch.geometry.coords)[-1]
+            if np.array_equal(start, end):
                 code = branch.code
                 hydamo.branches_popped = hydamo.branches_popped.drop(code)
 
-        hydamo.branches = hydamo.branches_popped.set_geometry("geometry")
+            if branch.geometry.length < 1e-3:
+                hydamo.branches_popped = hydamo.branches_popped.drop(code)
+
+        hydamo.branches.delete_all()
+        hydamo.branches.set_data(
+            hydamo.branches_popped.set_geometry("geometry"), index_col="code", check_geotype=False
+        )
 
         if (
             ("profielgroep" in features)
@@ -66,18 +70,20 @@ def to_dhydro(
                     by="codevolgnummer", axis=0, ascending=True, inplace=True
                 )
 
-                linestring = LineString(profiel_punten.geometry.values)
+                # skip profiles with only one point. MIght be result of clipping
+                if profiel_punten.shape[0] > 1:
+                    linestring = LineString(profiel_punten.geometry.values)
 
-                profiel_punt_lijn = dict(
-                    [
-                        ("code", line),
-                        ("geometry", linestring),
-                        ("globalid", profiel_punten.iloc[0, :]["globalid"]),
-                        ("profiellijnid", line),
-                        ("codevolgnummer", 1),
-                    ]
-                )
-                profiel_punt_lines.append(profiel_punt_lijn)
+                    profiel_punt_lijn = dict(
+                        [
+                            ("code", line),
+                            ("geometry", linestring),
+                            ("globalid", profiel_punten.iloc[0, :]["globalid"]),
+                            ("profiellijnid", line),
+                            ("codevolgnummer", 1),
+                        ]
+                    )
+                    profiel_punt_lines.append(profiel_punt_lijn)
 
             profiel_punt_lines_gdf = gpd.GeoDataFrame(
                 data=profiel_punt_lines, geometry="geometry", crs=profiel_punt_gdf.crs
@@ -291,13 +297,28 @@ def to_dhydro(
             name="default",
         )
         hydamo.crosssections.set_default_definition(definition=default, shift=-2.5)
+
+        models = Df2HydrolibModel(hydamo)
+
+        # Assign to FM model
+        fm.geometry.structurefile = [StructureModel(structure=models.structures)]
+        fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
+        fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
+
+        fm.geometry.frictfile = []
+        for i, fric_def in enumerate(models.friction_defs):
+            fric_model = FrictionModel(global_=fric_def)
+            fric_model.filepath = f"roughness_{i}.ini"
+            fm.geometry.frictfile.append(fric_model)
+
         return fm, hydamo
 
     def build_2D_model(
         dx: float,
         dy: float,
+        extent: gpd.GeoDataFrame,
         fm: FMModel,
-        coupling: str = "1Dto2D",
+        coupling: str = None,
         elevation_raster_path: str = None,
         one_d=False,
     ) -> FMModel:
@@ -321,9 +342,13 @@ def to_dhydro(
 
         if one_d:
             if coupling == "1Dto2D":
-                mesh.links1d2d_add_links_1d_to_2d(network=network)
+                mesh.links1d2d_add_links_1d_to_2d(
+                    network=network, within=extent.geometry.values[0]
+                )
             elif coupling == "2Dto1D":
-                mesh.links1d2d_add_links_2d_to_1d_embedded(network=network)
+                mesh.links1d2d_add_links_2d_to_1d_embedded(
+                    network=network, within=extent.geometry.values[0]
+                )
             else:
                 print("No 1D to 2D links have been set")
         return fm
@@ -334,51 +359,6 @@ def to_dhydro(
         fm.time.tstop = stop_time
 
         return fm
-
-    def write_model(fm: FMModel, hydamo: HyDAMO, output_folder: str, one_d=True, use_caching=True):
-        if use_caching:
-            fm.geometry.usecaching = 1
-
-        if one_d:
-            models = Df2HydrolibModel(hydamo)
-            # Export to DIMR configuration
-            fm.geometry.structurefile = [StructureModel(structure=models.structures)]
-            fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
-            fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
-
-            fm.geometry.frictfile = []
-            for i, fric_def in enumerate(models.friction_defs):
-                fric_model = FrictionModel(global_=fric_def)
-                fric_model.filepath = f"roughness_{i}.ini"
-                fm.geometry.frictfile.append(fric_model)
-
-        # fm.output.obsfile = [ObservationPointModel(observationpoint=models.obspoints)]
-
-        # extmodel = ExtModel()
-        # extmodel.boundary = models.boundaries_ext
-        # extmodel.lateral = models.laterals_ext
-        # fm.external_forcing.extforcefilenew = extmodel
-
-        # fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
-        # for ifield, onedfield in enumerate(models.onedfieldmodels):
-        #     fm.geometry.inifieldfile.initial[ifield].datafile = OneDFieldModel(
-        #         global_= onedfield
-        #     )
-        # Now we write the file structure:
-        output_path = Path(output_folder)
-        output_path.mkdir(exist_ok=True, parents=True)
-        fm.filepath = Path(output_folder) / "fm" / "test.mdu"
-        dimr = DIMR()
-        dimr.component.append(
-            FMComponent(name="DFM", workingDir=output_path / "fm", model=fm, inputfile=fm.filepath)
-        )
-        dimr.save(recurse=True)
-        # import shutil
-        # shutil.copy(data_path / "initialWaterDepth.ini", folder / "fm")
-
-        dimr = DIMRWriter(output_path=output_path)
-        dimr.write_dimrconfig(fm=fm)  # , rr_model=drrmodel, rtc_model=drtcmodel)
-        dimr.write_runbat()
 
     # check if data has been loaded and correct attributes are set
     if (not hasattr(self, "ddm")) | (not hasattr(self, "features")):
@@ -464,4 +444,50 @@ def to_dhydro(
             )
 
     # save D-HYDRO model
-    write_model(self.fm, self.hydamo, output_folder=output_folder, one_d=model_config.FM.one_d)
+    # write_dimr(fm=self.fm, output_folder=output_folder, one_d=model_config.FM.one_d)
+
+
+def write_dimr(fm: FMModel, output_folder: str):
+
+    # if one_d:
+    #     models = Df2HydrolibModel(hydamo)
+    #     # Export to DIMR configuration
+    #     fm.geometry.structurefile = [StructureModel(structure=models.structures)]
+    #     fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
+    #     fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
+
+    #     fm.geometry.frictfile = []
+    #     for i, fric_def in enumerate(models.friction_defs):
+    #         fric_model = FrictionModel(global_=fric_def)
+    #         fric_model.filepath = f"roughness_{i}.ini"
+    #         fm.geometry.frictfile.append(fric_model)
+
+    # fm.output.obsfile = [ObservationPointModel(observationpoint=models.obspoints)]
+
+    # extmodel = ExtModel()
+    # extmodel.boundary = models.boundaries_ext
+    # extmodel.lateral = models.laterals_ext
+    # fm.external_forcing.extforcefilenew = extmodel
+
+    # fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
+    # for ifield, onedfield in enumerate(models.onedfieldmodels):
+    #     fm.geometry.inifieldfile.initial[ifield].datafile = OneDFieldModel(
+    #         global_= onedfield
+    #     )
+    # Now we write the file structure:
+    output_path = Path(output_folder)
+    output_path.mkdir(exist_ok=True, parents=True)
+    fm.filepath = Path(output_folder) / "dflowfm" / "test.mdu"
+    dimr = DIMR()
+    dimr.component.append(
+        FMComponent(
+            name="DFM", workingDir=output_path / "dflowfm", model=fm, inputfile=fm.filepath
+        )
+    )
+    dimr.save(recurse=True)
+    # import shutil
+    # shutil.copy(data_path / "initialWaterDepth.ini", folder / "fm")
+    dimr_path = r"C:\Program Files\Deltares\D-HYDRO Suite 2023.01 1D2D\plugins\DeltaShell.Dimr\kernels\x64\dimr\scripts\run_dimr.bat"
+    dimr = DIMRWriter(dimr_path=dimr_path, output_path=output_path)
+    dimr.write_dimrconfig(fm=fm)  # , rr_model=drrmodel, rtc_model=drtcmodel)
+    dimr.write_runbat()

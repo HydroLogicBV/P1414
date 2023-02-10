@@ -3,8 +3,8 @@ import pandas as pd
 from clip_tools.clip_tools import _clip_structures_by_branches
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
-from data_structures.hydamo_helpers import convert_to_dhydamo_data
-from data_structures.to_dhydro_helpers import to_dhydro
+from data_structures.hydamo_helpers import check_and_fix_duplicate_code, convert_to_dhydamo_data
+from data_structures.to_dhydro_helpers import to_dhydro, write_dimr
 
 
 class DHydamoData:
@@ -83,7 +83,7 @@ class DHydamoData:
                 # print("succesfully loaded {}".format(attribute))
                 data = gpd.read_file(gpkg_path, layer=attribute)
             except ValueError:
-                print("failed to load {}".format(attribute))
+                # print("failed to load {}".format(attribute))
                 continue
 
             setattr(ddm, attribute, data)
@@ -104,9 +104,9 @@ class DHydamoData:
         # self.gpkg_path = output_gpkg
         self.ddm.to_gpkg(output_gpkg=output_gpkg)
 
-    def to_dhydro(self, config: str, output_folder: str):
+    def to_dhydro(self, config: str, output_folder: str, write=True):
         """
-        Class method that save a DHydamoDataModel to a D-HYDRO Model
+        Class method that converts a DHydamoDataModel to a D-HYDRO Model and saves unless write=False
 
         Args:
             config (str): configuration file to use (should be in ./dataset_configs)
@@ -115,7 +115,13 @@ class DHydamoData:
         Returns:
             None
         """
-        return to_dhydro(self=self, config=config, output_folder=output_folder)
+        to_dhydro(self=self, config=config)
+
+        if write:
+            self.write_dimr(output_folder=output_folder)
+
+    def write_dimr(self, output_folder: str):
+        return write_dimr(fm=self.fm, output_folder=output_folder)
 
     def _set_data(self, ddm: DHydamoDataModel) -> None:
         """
@@ -159,4 +165,6 @@ class DHydamoData:
                                 [getattr(self.ddm, key), getattr(ddm, key)], ignore_index=True
                             )
                         )
+                        new_gdf = check_and_fix_duplicate_code(new_gdf)
+
                         setattr(self.ddm, key, new_gdf)

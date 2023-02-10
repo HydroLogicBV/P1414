@@ -21,9 +21,9 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\Rijntakken\Region_Network_Branches.shp"
-    river_profile_path = p_folder + r"\Rijntakken\ZW_cross.csv"
-    weir_path = p_folder + r"\Rijntakken\Region_Network_Weirs.shp"
+    branches_path = p_folder + r"\Rijntakken\without_waal\RTK_Branches.shp"
+    river_profile_path = p_folder + r"\Rijntakken\without_waal\ZW_cross.csv"
+    weir_path = p_folder + r"\Rijntakken\without_waal\RTK_Weirs.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 

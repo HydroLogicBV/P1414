@@ -1,7 +1,7 @@
 import importlib
 import uuid
 import warnings
-from copy import copy
+from copy import copy, deepcopy
 from typing import List, Tuple
 
 import geopandas as gpd
@@ -10,11 +10,30 @@ import pandas as pd
 from shapely.geometry import LineString, MultiPoint, Point
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
-from data_structures.hydamo_globals import (MANAGEMENT_DEVICE_TYPES,
-                                            ROUGHNESS_MAPPING_LIST,
-                                            WEIR_MAPPING)
+from data_structures.hydamo_globals import (
+    MANAGEMENT_DEVICE_TYPES,
+    ROUGHNESS_MAPPING_LIST,
+    WEIR_MAPPING,
+)
 
-warnings.filterwarnings(action='ignore', message='Mean of empty slice')
+warnings.filterwarnings(action="ignore", message="Mean of empty slice")
+
+
+def check_and_fix_duplicate_code(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    if "code" in gdf.columns:
+        gdf["code"] = gdf["code"].astype("str").str.strip()
+        # _gdf = copy(gdf)
+        duplicates = gdf.duplicated(subset="code", keep=False)
+        duplicate_codes = gdf.loc[duplicates, "code"]
+
+        for code in duplicate_codes.unique():
+            n_duplicates = np.sum(gdf["code"] == code)
+            pad_list = [r"{}_{}".format(code, n) for n in np.arange(n_duplicates, dtype=np.int8)]
+
+            gdf.loc[gdf["code"] == code, "code"] = pad_list
+
+    return gdf
+
 
 def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     if (not isinstance(gdf, int)) | (not isinstance(gdf, float)):
@@ -22,34 +41,12 @@ def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gdf
 
 
-def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAPPING_LIST):
+def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAPPING_LIST) -> str:
     """ """
     type_ruwheid = structure["typeruwheid"]
     if isinstance(type_ruwheid, int) or isinstance(type_ruwheid, float):
         type_ruwheid = rougness_map[int(type_ruwheid) - 1]
     return type_ruwheid
-
-
-def load_geo_file(file_path: str, layer: str = None):
-    """ """
-    if file_path.endswith(r".shp"):
-        gdf = gpd.read_file(file_path)
-    elif file_path.endswith(r".gpkg"):
-        if layer is not None:
-            gdf = gpd.read_file(file_path, layer=layer)
-        else:
-            raise ValueError("provide a layer when loading a gpkg")
-    else:
-        raise ValueError("filetype not implemented")
-
-    mls_struct_bool = (gdf.geometry.type == "MultiLineString") | (
-        gdf.geometry.type == "MultiPoint"
-    )
-
-    if np.sum(mls_struct_bool) > 0:
-        gdf = gdf.explode(ignore_index=True, index_parts=False)
-
-    return gdf
 
 
 def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
@@ -129,7 +126,6 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         dist_tol: float = 0.25,
         roughness_mapping: List = ROUGHNESS_MAPPING_LIST,
     ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
-
         # Load shapefile with profile points & group them by metingprof attribute
         # profile_points = gpd.read_file(profile_points_path)
         grouped_points = profile_points_gdf.groupby(by="profiel nummer")
@@ -268,10 +264,32 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             hydroobject_normgp (gpd.GeoDataFrame): output geodataframe containing names of branches and corresponding profiles
             normgeparamprofielwaarde (gpd.GeoDataFrame): output geodataframe containing parameterized profiles
         """
-
         # script
         ho_ngp_list = []
         ngp_list = []
+        branches_gdf[
+            [
+                "bodembreedte",
+                "bodemhoogte benedenstrooms",
+                "bodemhoogte bovenstrooms",
+                "hoogte insteek linkerzijde",
+                "hoogte insteek rechterzijde",
+                "taludhelling linkerzijde",
+                "taludhelling rechterzijde",
+            ]
+        ] = branches_gdf[
+            [
+                "bodembreedte",
+                "bodemhoogte benedenstrooms",
+                "bodemhoogte bovenstrooms",
+                "hoogte insteek linkerzijde",
+                "hoogte insteek rechterzijde",
+                "taludhelling linkerzijde",
+                "taludhelling rechterzijde",
+            ]
+        ].astype(
+            float
+        )
 
         branches_gdf.loc[
             branches_gdf["bodembreedte"] < min_water_width,
@@ -282,32 +300,38 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             "water_width_index",
         ] = np.nan
 
+        branches_gdf["globalid"] = [str(uuid.uuid4()) for _ in range(branches_gdf.shape[0])]
+        branches_gdf.set_index("globalid", drop=False, inplace=True)
         branches_out_gdf = copy(branches_gdf)
 
         # Check for duplicate codes, if there are, they are replaced in the following loop
         duplicates = branches_gdf.duplicated(subset=["code"])
-
         # for ix_1, branch in tqdm(branches_gdf.iterrows(), total=branches_gdf.shape[0]):
-        for jx, (ix_1, branch) in enumerate(branches_gdf.iterrows()):
-            # Create unique ident for branch and add to branch
-            branch_gid = str(uuid.uuid4())
-            branches_out_gdf.loc[ix_1, "globalid"] = branch_gid
+        # for jx, (ix_1, branch) in enumerate(branches_gdf.iterrows()):
+        for jx, ix_1 in enumerate(branches_gdf.index):
+            branch = branches_gdf.loc[ix_1, :]
+            # Dont use jx with numerical index column
+
+            # # Create unique ident for branch and add to branch
+            # branch_gid = str(uuid.uuid4())
+            # branches_out_gdf.at[ix_1, "globalid"] = branch_gid
+            branch_gid = ix_1
 
             # replace duplicate codes by addinng a uniqure number
-            if duplicates[jx]:
-                branches_out_gdf.loc[ix_1, "code"] = branches_out_gdf.loc[ix_1, "code"] + str(jx)
+            if duplicates.iloc[jx]:
+                branches_out_gdf.at[ix_1, "code"] = branches_out_gdf.at[ix_1, "code"] + str(jx)
             # branches_out_gdf.loc[ix_1, "code"] = branch_gid
 
             # turn numerical roughnes types to strings
             type_ruwheid = check_roughness(branch)
-            branches_out_gdf.loc[ix_1, "typeruwheid"] = type_ruwheid
+            branches_out_gdf.at[ix_1, "typeruwheid"] = type_ruwheid
 
             # check if linestring
             assert isinstance(branch.geometry, LineString)
 
             # Delete z-dimensison of linestring if it exists
             if np.array(branch.geometry.coords).shape[1] > 2:
-                branches_out_gdf.loc[ix_1, "geometry"] = LineString(
+                branches_out_gdf.at[ix_1, "geometry"] = LineString(
                     [xy[0:2] for xy in list(branch.geometry.coords)]
                 )
 
@@ -364,11 +388,15 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             else:
                 prof_type = "trapezium"
 
+            width = branch[width_ix]
+            if width < 0:
+                width = 0
+
             # set required parameters for either rectangle or trapezium profile
             if prof_type == "rectangle":
                 params = dict(
                     [
-                        ("bodembreedte", branch[width_ix]),
+                        ("bodembreedte", width),
                         (
                             "bodemhoogte benedenstrooms",
                             branch["bodemhoogte benedenstrooms"],
@@ -382,7 +410,7 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             elif prof_type == "trapezium":
                 params = dict(
                     [
-                        ("bodembreedte", branch[width_ix]),
+                        ("bodembreedte", width),
                         (
                             "bodemhoogte benedenstrooms",
                             branch["bodemhoogte benedenstrooms"],
@@ -430,7 +458,6 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
             # loop over parameters to add to ngp_list
             for ix_2, (key, value) in enumerate(params.items()):
-
                 ngp_values = dict(
                     [
                         ("normgeparamprofielid", ngp_gid),
@@ -447,23 +474,33 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 )
                 ngp_list.append(ngp_values)
 
-        hydroobject_normgp = gpd.GeoDataFrame(ho_ngp_list, geometry="geometry", crs=28992)
-        normgeparamprofielwaarde = gpd.GeoDataFrame(ngp_list, geometry="geometry", crs=28992)
+        if len(ho_ngp_list) > 0:
+            hydroobject_normgp = gpd.GeoDataFrame(
+                ho_ngp_list, geometry="geometry", crs=branches_out_gdf.crs
+            )
+        else:
+            hydroobject_normgp = None
+
+        if len(ngp_list) > 0:
+            normgeparamprofielwaarde = gpd.GeoDataFrame(
+                ngp_list, geometry="geometry", crs=branches_out_gdf.crs
+            )
+        else:
+            normgeparamprofielwaarde = None
 
         return (
-            branches_out_gdf[["code", "globalid", "geometry", "typeruwheid"]],
+            branches_out_gdf[["code", "globalid", "geometry", "typeruwheid"]].reset_index(
+                drop=True
+            ),
             hydroobject_normgp,
             normgeparamprofielwaarde,
         )
 
     def create_pump_data(pump_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
-
         pump_station_list = []
         pump_list = []
         management_list = []
 
-        # if not isinstance(pump_gdf["maximalecapaciteit"], float):
-        #     pump_gdf["maximalecapaciteit"] = pump_gdf["maximalecapaciteit"].astype(float)
         pump_gdf["maximalecapaciteit"] = check_column_is_numerical(
             gdf=pump_gdf["maximalecapaciteit"]
         )
@@ -510,7 +547,9 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
         return pump_station_gdf, _pump_gdf, management_gdf
 
-    def create_river_profiles(riv_prof_df: pd.DataFrame) -> gpd.GeoDataFrame:
+    def create_river_profiles(
+        branches_gdf: gpd.GeoDataFrame, riv_prof_df: pd.DataFrame
+    ) -> gpd.GeoDataFrame:
         ## TODO build list of dicts
         riv_prof_df["id"] = riv_prof_df["id"].astype(str)
         unique_ids = riv_prof_df["id"].unique()
@@ -553,6 +592,9 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             geom_data = slice[slice["Data_type"] == "geom"]
             # print(meta_data.dropna(axis=1))
             # print(geom_data.dropna(axis=1))
+            if np.sum(branches_gdf["code"].str.contains(meta_data["branch"].values[0])) == 0:
+                continue
+
             for ix in range(geom_data.shape[0]):
                 geom_df.at[g_ix, "name"] = u_id
                 geom_df.at[g_ix, "ix"] = ix
@@ -577,7 +619,12 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             meta_df.at[u_id, "mainwidth"] = meta_data["width main channel"].values[0]
             meta_df.at[u_id, "fp1width"] = meta_data["width floodplain 1"].values[0]
             meta_df.at[u_id, "fp2width"] = meta_data["width floodplain 2"].values[0]
-            meta_df.at[u_id, "branchid"] = meta_data["branch"].values[0]
+            # meta_df.at[u_id, "branchid"] = meta_data["branch"].values[0]
+            # account for padded codes
+            meta_df.at[u_id, "branchid"] = branches_gdf.loc[
+                branches_gdf["code"].str.contains(meta_data["branch"].values[0]), "code"
+            ].values[0]
+
             meta_df.at[u_id, "chainage"] = meta_data["chainage"].values[0]
             meta_df.at[u_id, "geometry"] = None
 
@@ -600,7 +647,6 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         return geom_gdf, meta_gdf
 
     def create_weir_data(weir_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
-
         weir_list = []
         opening_list = []
         management_device_list = []
@@ -711,7 +757,6 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
     def fill_branch_norm_parm_profiles_data(
         defaults, in_branches_gdf: gpd.GeoDataFrame, data_config, insteek_marge=0.25
     ) -> gpd.GeoDataFrame:
-
         """ """
 
         def find_branch_width(branch_geom, buffer_list, name, watervlak_geometry):
@@ -806,12 +851,9 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                     out_branches_gdf.loc[bool_ix, "bodemhoogte benedenstrooms"] = bodem_hoogte
                     out_branches_gdf.loc[bool_ix, "bodemhoogte bovenstrooms"] = bodem_hoogte
 
-        else:
-            out_branches_gdf = in_branches_gdf
+            in_branches_gdf = copy(out_branches_gdf)
 
-        in_branches_gdf = copy(out_branches_gdf)
         if hasattr(data_config, "watervlak_path"):
-
             watervlak_gdf = gpd.read_file(data_config.watervlak_path, geometry="geometry")
             watervlak_geometry = watervlak_gdf.dissolve(by=None).geometry.values[0]
 
@@ -819,8 +861,11 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             # cpus = 8
             # pool = Pool(processes=cpus)
             results = []
+            save = False
             for ix, (name, branch) in enumerate(in_branches_gdf.iterrows()):
                 if (branch["bodembreedte"] is None) and (branch["water_width_index"] is None):
+                    if not save:
+                        save = True
                     branch_geom = branch.geometry
 
                     kwds = dict(
@@ -839,36 +884,47 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 # res = r.get()
                 out_branches_gdf.at[res["id"], "bodembreedte"] = res["width"]
 
-<<<<<<< Updated upstream
-            # pool.close()
-            # pool.join()
-=======
-def load_geo_file(file_path: str, layer: str = None):
-    """ """
-    if type(file_path) == list:
-        if len(file_path) <= 2:
-            gdf_1 = gpd.read_file(file_path[0])
-            gdf_2 = gpd.read_file(file_path[1])
+            if save:
+                out_branches_gdf.to_file(data_config.branches_path.replace(".shp", "_ww.shp"))
 
-            gdf_2_buffer = gdf_2.copy()
-            gdf_2_buffer .geometry = gdf_2_buffer.geometry.buffer(1)
-            gdf = gdf_1.sjoin(gdf_2_buffer, how='left',predicate = 'within')
+        if "out_branches_gdf" in locals():
+            return out_branches_gdf
         else:
-            raise ValueError('Can only join two shapefiles together')
-    elif file_path.endswith(r".shp"):
-        gdf = gpd.read_file(file_path)
-    elif file_path.endswith(r".gpkg"):
-        if layer is not None:
-            gdf = gpd.read_file(file_path, layer=layer)
+            return in_branches_gdf
+
+    def load_geo_file(file_path: str, layer: str = None):
+        """ """
+        if type(file_path) == list:
+            if len(file_path) <= 2:
+                gdf_1 = gpd.read_file(file_path[0])
+                gdf_2 = gpd.read_file(file_path[1])
+
+                gdf_2_buffer = gdf_2.copy()
+                gdf_2_buffer.geometry = gdf_2_buffer.geometry.buffer(1)
+                gdf = gdf_1.sjoin(gdf_2_buffer, how="left", predicate="within")
+
+            else:
+                raise ValueError("Can only join two shapefiles together")
+        elif file_path.endswith(r".shp"):
+            gdf = gpd.read_file(file_path)
+        elif file_path.endswith(r".gpkg"):
+            if layer is not None:
+                gdf = gpd.read_file(file_path, layer=layer)
+            else:
+                raise ValueError("provide a layer when loading a gpkg")
         else:
-            raise ValueError("provide a layer when loading a gpkg")
-    else:
-        raise ValueError("filetype not implemented")
->>>>>>> Stashed changes
+            raise ValueError("filetype not implemented")
 
-        return out_branches_gdf
+        gdf.set_geometry(col="geometry", inplace=True)
 
-    def map_columns(defaults, gdf: gpd.GeoDataFrame, index_mapping: dict) -> gpd.GeoDataFrame:
+        # check for multi-element geometries
+        if np.sum(gdf.geometry.type.isin(["MultiPoint", "MultiLine"])) > 0:
+            gdf = gdf.explode(ignore_index=True, index_parts=False)
+        return gdf
+
+    def map_columns(
+        defaults, gdf: gpd.GeoDataFrame, index_mapping: dict, code_pad: str = None
+    ) -> gpd.GeoDataFrame:
         """ """
 
         def fill_empty_columns(
@@ -954,6 +1010,11 @@ def load_geo_file(file_path: str, layer: str = None):
             index_mapping=index_mapping,
         )
 
+        if ("code" in _gdf.columns) and (code_pad is not None):
+            _gdf["code"] = code_pad + _gdf["code"].astype(str)
+            # check for dupliacte columns in code
+            _gdf = check_and_fix_duplicate_code(_gdf)
+
         # gdf = gpd.GeoDataFrame(_gdf[list(index_mapping.keys())], geometry="geometry", crs=gdf.crs)
         gdf = _gdf[list(index_mapping.keys())]
 
@@ -963,6 +1024,7 @@ def load_geo_file(file_path: str, layer: str = None):
     ddm = DHydamoDataModel()
     defaults = importlib.import_module("dataset_configs." + defaults)
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
+    code_padding = config[:4] + r"_"  # add prefix of length 4 to all objects with codes
 
     if hasattr(data_config, "branches_path"):
         if data_config.branches_path is not None:
@@ -970,6 +1032,7 @@ def load_geo_file(file_path: str, layer: str = None):
             branches_gdf = load_geo_file(data_config.branches_path, layer="waterloop")
 
             branches_gdf, index_mapping = map_columns(
+                code_pad=code_padding,
                 defaults=defaults.Branches,
                 gdf=branches_gdf,
                 index_mapping=data_config.branch_index_mapping,
@@ -989,6 +1052,7 @@ def load_geo_file(file_path: str, layer: str = None):
         if data_config.bridges_path is not None:
             ## Bridges
             bridges_gdf, _ = map_columns(
+                code_pad=code_padding,
                 defaults=defaults.Bridges,
                 gdf=load_geo_file(data_config.bridges_path, layer="brug"),
                 index_mapping=data_config.bridge_index_mapping,
@@ -999,6 +1063,7 @@ def load_geo_file(file_path: str, layer: str = None):
         if data_config.culvert_path is not None:
             ## Culverts
             culvert_gdf, _ = map_columns(
+                code_pad=code_padding,
                 defaults=defaults.Culverts,
                 gdf=load_geo_file(data_config.culvert_path, layer="duiker"),
                 index_mapping=data_config.culvert_index_mapping,
@@ -1012,6 +1077,7 @@ def load_geo_file(file_path: str, layer: str = None):
                 layer="metingprofielpunt",
             )
             measure_profile_gdf, _ = map_columns(
+                code_pad=code_padding,
                 defaults=defaults.MeasuredProfiles,
                 gdf=measure_profile_gdf,
                 index_mapping=data_config.measured_profile_index_mapping,
@@ -1028,6 +1094,7 @@ def load_geo_file(file_path: str, layer: str = None):
             ## Pumps
             pump_gdf = load_geo_file(data_config.pump_path, layer="gemaal")
             pump_gdf, _ = map_columns(
+                code_pad=code_padding,
                 defaults=defaults.Pumps,
                 gdf=pump_gdf,
                 index_mapping=data_config.pump_index_mapping,
@@ -1039,7 +1106,7 @@ def load_geo_file(file_path: str, layer: str = None):
         if data_config.river_profile_path is not None:
             riv_prof_df = pd.read_csv(data_config.river_profile_path)
             ddm.rivier_profielen, ddm.rivier_profielen_data = create_river_profiles(
-                riv_prof_df=riv_prof_df
+                branches_gdf=branches_gdf, riv_prof_df=riv_prof_df
             )
 
     if hasattr(data_config, "weir_path"):
@@ -1047,7 +1114,10 @@ def load_geo_file(file_path: str, layer: str = None):
             ## Weirs
             weir_gdf = load_geo_file(data_config.weir_path, layer="stuw")
             weir_gdf, _ = map_columns(
-                defaults=defaults.Weirs, gdf=weir_gdf, index_mapping=data_config.weir_index_mapping
+                code_pad=code_padding,
+                defaults=defaults.Weirs,
+                gdf=weir_gdf,
+                index_mapping=data_config.weir_index_mapping,
             )
 
             ddm.stuw, ddm.kunstwerkopening, ddm.regelmiddel = create_weir_data(weir_gdf=weir_gdf)

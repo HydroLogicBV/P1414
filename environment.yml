@@ -10,6 +10,7 @@ dependencies:
   - jupyter
   - lxml
   - matplotlib
+  - momepy
   - netCDF4
   - numpy
   - pandas
