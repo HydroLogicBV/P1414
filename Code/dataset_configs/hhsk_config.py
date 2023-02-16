@@ -21,8 +21,8 @@ class Models:
 
 class RawData:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
-    # p_folder = r"D:\work\P1414_ROI\GIS"
+    # p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = r"D:\work\P1414_ROI\GIS"
     branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v2.1_test.shp"  # From V7
     culvert_path = p_folder + r"\HHSK\Legger\Duiker.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Legger\Peilvakken.shp"

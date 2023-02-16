@@ -14,15 +14,15 @@ class Models:
             coupling_type = "2Dto1D"  # "1Dto2D"
             dx = 500
             dy = 500
-            # elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            # elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
 
 class RawData:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
-    # p_folder = r"D:\work\P1414_ROI\GIS"
+    # p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = r"D:\work\P1414_ROI\GIS"
     branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v2.1_test.shp"  # Corrected from V7
     # branches_path = (
     #     p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"

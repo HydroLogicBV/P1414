@@ -1,11 +1,12 @@
 import sys
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
-# sys.path.append("D:\work\P1414_ROI\GitHub\GIS_tools\Code")
+#sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append("D:\work\P1414_ROI\GitHub\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\HHD_clipped_wnp.gpkg"
+folder = r"D:\work\P1414_ROI"
+gpkg_file = folder + r"\GIS\HYDAMO\HHD_clipped.gpkg"
 output_folder = folder + r"\Models\HHD\V0"
 
 config = r"hhd_config"

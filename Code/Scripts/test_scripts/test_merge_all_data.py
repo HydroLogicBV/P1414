@@ -7,6 +7,7 @@ import pandas as pd
 from scipy.spatial import KDTree
 import shapelyTools as sT
 from importlib import reload
+import time
 reload(sT)
 
 # Load the watergangen per waterschap
@@ -46,21 +47,22 @@ hhdl_to_hhrl_hhsk = sT.snap_endpoints(hhdl_to_hhsk, hhrl_mls, max_dist = 5)
 print('HHDL en HHRL verbonden bij Noordelijke Sluisbrug, Leidschendam')
 #%%
 # Nr 3, 4 & 5: AGV - HDSR op de Vecht, bij Breukelen (ARK) en bij Kockengen
-HDSR_buffer = hdsr_mls.buffer(20.0, cap_style=2)
-HDSR_buffer_gpd = gpd.GeoDataFrame(HDSR_buffer).rename(columns={0:'geometry'}).set_geometry('geometry')
-HDSR_un = HDSR_buffer_gpd.unary_union
+# HDSR_buffer = hdsr_mls.buffer(20.0, cap_style=2)
+# HDSR_buffer_gpd = gpd.GeoDataFrame(HDSR_buffer).rename(columns={0:'geometry'}).set_geometry('geometry')
+# HDSR_un = HDSR_buffer_gpd.unary_union
 
-AGV_diff = AGV_water.difference(HDSR_un)
-AGV_diff_ex = AGV_diff.explode(ignore_index=True)
-AGV_diff_ex.drop_duplicates(inplace=True)
-AGV_diff_ex_drop = AGV_diff_ex[~AGV_diff_ex.is_empty]
-# drop_idx = []
-# for i, branch in enumerate(AGV_diff_ex):
-#     if branch.length == 0.0:
-#         drop_idx.append(i)
-# AGV_diff_ex_drop = AGV_diff_ex.drop(drop_idx, axis=0)
+# AGV_diff = AGV_water.difference(HDSR_un)
+# AGV_diff_ex = AGV_diff.explode(ignore_index=True)
+# AGV_diff_ex.drop_duplicates(inplace=True)
+# AGV_diff_ex_drop = AGV_diff_ex[~AGV_diff_ex.is_empty]
+# # drop_idx = []
+# # for i, branch in enumerate(AGV_diff_ex):
+# #     if branch.length == 0.0:
+# #         drop_idx.append(i)
+# # AGV_diff_ex_drop = AGV_diff_ex.drop(drop_idx, axis=0)
 
-agv_to_hdsr = sT.snap_endpoints(list(AGV_diff_ex_drop.geometry), hdsr_mls, max_dist = 80)
+# agv_to_hdsr = sT.snap_endpoints(list(AGV_diff_ex_drop.geometry), hdsr_mls, max_dist = 80)
+agv_to_hdsr = sT.snap_endpoints(agv_mls, hdsr_mls, max_dist=50)
 print('AGV en HDSR verbonden op de Vecht, bij Breukelen en bij Kockengen')
 #%%
 # Nr 6: RL- HDSR bij Zwammerdam
@@ -190,4 +192,165 @@ for n, water in westeinder.iterrows():
     if type(water.geometry) == shapely.geometry.multilinestring.MultiLineString:
         count_mls += 1
         mls_idx.append(n)
+# %%
+
+#############################
+def non_zero_min_idx(sdm_array):
+    '''
+    This function returns the index with the smallest distance from an array taken from the 
+    sparse distance matrix
+    '''
+    non_zeros = np.nonzero(sdm_array)[0]
+    try: 
+        min_idx = non_zeros[0] 
+        for i in non_zeros:
+            if sdm_array[i] < sdm_array[min_idx]:
+                min_idx = i
+                
+    except:
+        min_idx = None
+
+    return min_idx, sdm_array[min_idx]
+
+#%%
+# Check that still needs to be added: When connecting 
+# multiple branches to one branch (as a crossing is close),
+# Only pick the closest branch to merge and discard the rest
+
+# Ideas to realise this: Check in the sdm array whether there are 
+# multiple different branches added. If so, select the index with the minimum 
+# connectivity. If that specific index does not correspond to the 
+# min_idx_coords, skip it. Make this an extra function so that not
+# all code gets cramped up into one single function, although the main
+# function is allowed to get a bit larger (it will inevitably be this way)
+# 
+
+def check_more_branches(sdm_array,base_idx, min_idx):
+    '''
+    This function checks whether there are more branches connecting to a single branch, and
+    returns whether the given index is indeed the closest branch
+    '''
+    if np.sum(sdm_array[:,min_idx]) == 1:
+        check_min_idx = True
+
+    else:
+        min_match_idx, _ = non_zero_min_idx(sdm_array[:, min_idx])
+
+        if min_match_idx == base_idx: 
+            check_min_idx = True
+        else: 
+            check_min_idx = False 
+
+    return check_min_idx 
+## Trying out KDTree ########
+
+def merge_data(data_base_input, data_match_input, max_dist, outputfile_path):
+    t_start = time.perf_counter()
+    
+    data_base = data_base_input.copy()
+    data_match = data_match_input.copy()
+    point_list_base = []
+    for ix, branch in data_base.iterrows():
+        coords = branch.geometry.coords
+        point_list_base.append(coords[0])
+        point_list_base.append(coords[-1])
+
+    point_list_match = []
+    for ix, branch in data_match.iterrows():
+        coords = branch.geometry.coords
+        point_list_match.append(coords[0])
+        point_list_match.append(coords[-1])
+
+    # build spatial KDTree from start and end points
+    kdtree_base = KDTree(point_list_base)
+    kdtree_match = KDTree(point_list_match)
+
+    sdm = kdtree_base.sparse_distance_matrix(
+    kdtree_match, max_distance=max_dist, output_type="coo_matrix"
+    )
+
+    # matrix is symetrical, so picking one of the two axis to count number of non empty entries (explicit zeros allowed)
+    nnz_base = sdm.getnnz(axis=1)
+    bool_array = nnz_base > 0
+
+    # With the bool array: find the closest point in the other dataset
+    # Move the closest coordinate to that specific location 
+    geometry_branches = data_base.geometry
+
+    for ix, branch in data_base.iterrows():
+        if bool_array[ix * 2] and bool_array[ix * 2 + 1]:
+            min_idx_start, min_dist_start = non_zero_min_idx(sdm.toarray()[ix * 2])
+            min_idx_end, min_dist_end = non_zero_min_idx(sdm.toarray()[ix * 2 + 1])
+            
+            try: 
+                if min_dist_start <= min_dist_end: 
+                    min_idx_coords = min_idx_start
+                    coord_index = ix * 2
+                else: 
+                    min_idx_coords = min_idx_end
+                    coord_index = ix * 2 + 1 
+
+                closest_branch_check = check_more_branches(sdm.toarray(),coord_index,min_idx_coords)
+            except: min_idx_coords = None
+
+            if min_idx_coords != None and closest_branch_check:
+                coords = branch.geometry.coords[:]
+                print(min_idx_coords)
+                coords[0] = point_list_match[min_idx_coords]
+                geometry_branches[ix] = shapely.geometry.LineString(coords)
+
+        elif (bool_array[ix * 2]):
+            min_idx_coords, _= non_zero_min_idx(sdm.toarray()[ix * 2])
+            
+            if min_idx_coords != None:
+                coords = branch.geometry.coords[:]
+                coords[0] = point_list_match[min_idx_coords]
+                geometry_branches[ix] = shapely.geometry.LineString(coords)
+
+        elif (bool_array[ix * 2 + 1]):
+            min_idx_coords, _ = non_zero_min_idx(sdm.toarray()[ix * 2 + 1])
+            
+            if min_idx_coords != None:
+                coords = branch.geometry.coords[:]
+                coords[-1] = point_list_match[min_idx_coords]
+                geometry_branches[ix] = shapely.geometry.LineString(coords)
+
+            
+
+    data_base = data_base.set_geometry(geometry_branches)
+    data_base.to_file(outputfile_path)
+    
+    print(f'Data merged in {time.perf_counter() - t_start:0.4f} seconds ')
+    return data_base
+
+AGV_water = merge_data(AGV_water, 
+                       HDSR_water, 
+                        max_dist = 50, 
+                        outputfile_path = r'D:\work\P1414_ROI\GIS\AGV_to_HDSR_test.shp'
+                       )
+
+HHDL_water = merge_data(HHDL_water, 
+                        HHSK_water,
+                        max_dist = 10,
+                        outputfile_path = r'D:\work\P1414_ROI\GIS\HHDL_to_HHSK_test.shp')
+
+AGV_water = merge_data(AGV_water, 
+                       HHRL_water,
+                       max_dist = 50,
+                       outputfile_path = r'D:\work\P1414_ROI\GIS\AGV_to_HHRL_test.shp')
+
+HHDL_water = merge_data(HHDL_water,
+                        HHRL_water,
+                        max_dist = 5,
+                        outputfile_path = r'D:\work\P1414_ROI\GIS\HHDL_to_HHRL_test.shp')
+
+HDSR_water = merge_data(HDSR_water,
+                        HHRL_water,
+                        max_dist = 10,
+                        outputfile_path = r'D:\work\P1414_ROI\GIS\HDSR_to_HHRL_test.shp')
+
+combined_gdf = pd.concat([AGV_water, HHDL_water,HDSR_water, HHRL_water, HHSK_water])
+combined_gdf.to_file(r'D:\work\P1414_ROI\GIS\combined_watergangen.shp')
+# %%
+
 # %%
