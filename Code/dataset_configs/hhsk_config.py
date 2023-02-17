@@ -23,8 +23,9 @@ class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v2.1_test.shp"  # From V7
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v2.2_test.shp"  # From V7
     culvert_path = p_folder + r"\HHSK\Legger\Duiker.shp"
+    norm_profile_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Legger\Peilvakken.shp"
     pump_path = p_folder + r"\HHSK\Niet legger\Gemaal_peil.shp"
     weir_path = p_folder + r"\HHSK\Legger\Stuw.shp"
@@ -83,6 +84,27 @@ class RawData:
             ("ruwheid", None),
             ("uittreeverlies", None),
             ("vormkoker", "VORM"),
+        ]
+    )
+
+    ## Normprofielen
+    np_index_mapping = dict(
+        [
+            ("bodembreedte", "BODEMBREED"),
+            ("bodemhoogte benedenstrooms", None),
+            ("bodemhoogte bovenstrooms", None),
+            ("code", "CODE"),
+            ("diepte", ["DIEPTE", "MAXIMALEWA"]),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("hoogte insteek linkerzijde", None),
+            ("hoogte insteek rechterzijde", None),
+            ("taludhelling linkerzijde", "TALUDLINKS"),
+            ("taludhelling rechterzijde", "TALUDRECHT"),
+            ("typeruwheid", None),
+            ("ruwheidhoog", None),
+            ("ruwheidlaag", None),
+            ("water_width_index", "WATERBREED"),
         ]
     )
 

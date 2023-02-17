@@ -8,6 +8,7 @@ import networkx as nx
 import numpy as np
 from scipy.spatial import KDTree
 from shapely.geometry import LineString, MultiPoint, Point
+from shapely.ops import linemerge
 from tqdm import tqdm
 
 from networkx_tools import gdf_to_nx
@@ -36,6 +37,40 @@ def check_branch_overlap(
                                         number of replaced branches, number of dropped branches]
 
     """
+
+    def combine_straight_branches(G: nx.Graph):
+        # Select all nodes with only 2 neighbors
+        nodes_to_remove = [n for n in G.nodes if len(list(G.neighbors(n))) == 2]
+
+        for node in nodes_to_remove:
+            edges = G.edges(node, data=True)
+            if len(edges) == 1:
+                continue
+            else:
+                (_, _, data1), (_, _, data2) = edges
+            data_new = {}
+            for key, value in data1.items():
+                if isinstance(value, (int, float)):
+                    data_new[key] = np.nanmean([value, data2[key]])
+
+                elif isinstance(value, str):
+                    data_new[key] = value
+
+                elif isinstance(value, LineString):
+                    data_new[key] = linemerge([data1[key], data2[key]])
+
+                elif value is None:
+                    data_new[key] = None
+
+                else:
+                    print(value)
+                    print(type(value))
+                    raise TypeError("Unimplemented type")
+
+            G.add_edge(*G.neighbors(node), **data_new)
+            G.remove_node(node)
+        return G
+
     # print("Checking for split branches and fixing them")
 
     # G = gdf_to_nx(old_branches)
@@ -85,6 +120,8 @@ def check_branch_overlap(
             else:
                 H = nx.compose(H, nx.Graph(S))
 
+    H = combine_straight_branches(G=H)
+
     out_branches_list = []
     for x, y, data in H.edges(data=True):
         out_branches_list.append(data)
@@ -92,6 +129,7 @@ def check_branch_overlap(
     out_branches = gpd.GeoDataFrame(
         data=out_branches_list, geometry="geometry", crs=new_branches.crs
     )
+
     return out_branches, None
 
 
@@ -322,7 +360,7 @@ def validate_network_topology(
 print("initialize")
 p_folder = r"D:\Work\Project\P1414\GIS"
 # p_folder = r"D:\work\P1414_ROI\GIS"
-version = "v2.1"
+version = "v2.2"
 # p_folder = r"D:\work\Project\P1414\GIS"
 old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited_v10.shp"
 
@@ -348,17 +386,21 @@ clipped_HHR_west_branches_path = (
     p_folder + r"\Uitgesneden watergangen\HHR_west_{}_test.shp".format(version)
 )
 
-HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
-clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_{}_test.shp".format(
+# HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
+HHSK_branches_path = p_folder + r"\HHSK\Legger\oppervlaktewater_lijnen.shp"
+clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_{}_test_v2.shp".format(
     version
 )
-RMM_branches_path = p_folder + r"\Rijn Maasmonding\RMM_Branches_edited.shp"
-fixed_RMM_branches_path = p_folder + r"\Uitgesneden watergangen\RMM_branches.shp"
+# clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_{}_test.shp".format(
+#     version
+# )
+RMM_branches_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Branches.shp"
+fixed_RMM_branches_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Branches_fixed.shp"
 
-AGV = True
-HDSR = True
-HHD = True
-HHR = True
+AGV = False
+HDSR = False
+HHD = False
+HHR = False
 HHSK = True
 RMM = False
 HHR_westeinder = False
@@ -434,13 +476,19 @@ if HHR:
 # %% HHSK
 if HHSK:
     print("HHSK")
-
+    branches = (
+        gpd.read_file(HHSK_branches_path, geometry="geometry")
+        .to_crs(28992)
+        .explode(index_parts=False)
+    )
+    branches = branches.loc[branches["CATEGORIEO"] == 1, :]
     intersected_branches = clip_branches(
         in_branches_path=HHSK_branches_path,
         overlay_branches_path=old_rm_branches_path,
+        in_branches=branches,
         max_graphs=max_graphs,
         min_width=min_width,
-        width_column="WATERBREED",
+        width_column="BREEDTE",
     )
     intersected_branches.to_file(clipped_HHSK_branches_path)
 
@@ -450,14 +498,7 @@ if RMM:
         index_parts=False
     )
     in_branches["new_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
-    out_branches = validate_network_topology(branches_gdf=in_branches, snap_distance=0.5)
+    out_branches = validate_network_topology(branches_gdf=in_branches, geometry_accuracy=0)
     out_branches.to_file(fixed_RMM_branches_path)
 
-# %% HHR Westeinderplassen
-if HHR_westeinder:
-    print("HHR Westeinder")
-
-    intersected_branches = clip_branches(
-        in_branches_path=HHR_west_branches_path, overlay_branches_path=old_rm_branches_path
-    )
-    intersected_branches.to_file(clipped_HHR_west_branches_path)
+# %%

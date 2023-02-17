@@ -10,8 +10,8 @@ output_folder = folder + r"\Models\WAGV\V0"
 config = r"wagv_config"
 defaults = r"defaults"
 
-build_database = False
-build_model = True
+build_database = True
+build_model = False
 
 
 if build_database:

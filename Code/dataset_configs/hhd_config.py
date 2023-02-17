@@ -23,12 +23,13 @@ class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v2.1_test.shp"  # Corrected from V7
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v2.2_test.shp"  # Corrected from V7
     # branches_path = (
     #     p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
     # )
     # bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     # culvert_path = p_folder + r"\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen_edited.shp"
+    norm_profile_path = p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water_ww.shp"
     peil_gebieden_path = p_folder + r"\HHDelfland\Peilbesluiten.shp\PeilgebiedPraktijk.shp"
     pump_path = p_folder + r"\HHDelfland\Niet legger\Gemaal_peil.shp"
     watervlak_path = (
@@ -112,6 +113,27 @@ class RawData:
     #         ("vormkoker", "VORMKOKER"),
     #     ]
     # )
+
+    ## Normprofielen
+    np_index_mapping = dict(
+        [
+            ("bodembreedte", "bodembreed"),
+            ("bodemhoogte benedenstrooms", "bodemhoogt"),
+            ("bodemhoogte bovenstrooms", "bodemhoo_1"),
+            ("code", "code"),
+            ("diepte", "diepte"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("hoogte insteek linkerzijde", "hoogte ins"),
+            ("hoogte insteek rechterzijde", "hoogte i_1"),
+            ("taludhelling linkerzijde", "taludhelli"),
+            ("taludhelling rechterzijde", "taludhel_1"),
+            ("typeruwheid", "typeruwhei"),
+            ("ruwheidhoog", "ruwheidhoo"),
+            ("ruwheidlaag", "ruwheidlaa"),
+            ("water_width_index", None),
+        ]
+    )
 
     ## Peil gebied
     peil_index_mapping = dict(

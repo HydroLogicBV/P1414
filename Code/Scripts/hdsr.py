@@ -6,13 +6,13 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydamo_data import DHydamoData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\HDSR_clipped.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\HDSR_clipped_test.gpkg"
 output_folder = folder + r"\Models\HDSR\V00"
 
 config = r"hdsr_config"
 defaults = r"defaults"
 
-build_database = True
+build_database = False
 build_model = True
 
 
@@ -31,7 +31,7 @@ if build_model:
     lateral = Lateral(
         id="LateralSource_2D_1",
         name="LateralSource_2D_1",
-        branchId="hdsr_H012375_0",
+        branchId="hdsr_H012375",
         chainage=30,
         discharge=10000,
     )
