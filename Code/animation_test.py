@@ -12,14 +12,18 @@ from flowmeshreader import load_map_data, mesh_to_tiff
 from plotting import raster_plot_with_context
 
 # set paths
-input_file_path = r"D:\Work\Project\P1414\Models\AGV\V5a\dflowfm\output\DFM_map.nc"
-output_gif_path = r"D:\Work\Project\P1414\Models\AGV\V5a\dflowfm\output\waterdepth.webp"
-output_fig_path = r"D:\Work\Project\P1414\Models\AGV\V5a\dflowfm\output\fig"
+input_file_path = (
+    r"D:\Work\Project\P1414\Models\Combined\V5\run_model_lat\dflowfm\output\DFM_map.nc"
+)
+output_gif_path = (
+    r"D:\Work\Project\P1414\Models\Combined\V5\run_model_lat\dflowfm\output\waterdepth.webp"
+)
+output_fig_path = r"D:\Work\Project\P1414\Models\Combined\V5\run_model_lat\dflowfm\output\fig"
 Path(output_fig_path).mkdir(exist_ok=True)
 
 # raster options
-resolution = 30  # m
-dhydro_resolution = 100  # m
+resolution = 160  # m
+dhydro_resolution = 500  # m
 distance_tol = np.ceil(np.sqrt(2 * dhydro_resolution**2))  # m
 interpolation = r"nearest"
 
@@ -37,7 +41,7 @@ map_data[map_data < 0.01] = np.nan
 # If not, check if tiff exists to make png from.
 # If both don't exist, create both
 frames = []
-for ix in tqdm(range(25)):
+for ix in tqdm(range(5, 505, 25)):
     output_png_file_path = output_fig_path + r"\{}.png".format(ix)
     output_tiff_file_path = output_fig_path + r"\{}.tiff".format(ix)
 

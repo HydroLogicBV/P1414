@@ -8,6 +8,7 @@ import numpy as np
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
 from hydrolib.core.io.friction.models import FrictionModel
+from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
 from hydrolib.core.io.mdu.models import FMModel
 from hydrolib.core.io.structure.models import StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
@@ -362,12 +363,12 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
             # loop over all attributes of object
             for attribute, value in options.__dict__.items():
                 # Skip python special attributes
-                if attribute.startswith("__"):
+                # if attribute.startswith("__"):
+                if "__" in attribute:
                     continue
-
                 # if an option is found, try to set it
                 # options should be int, float, list, or str type
-                if isinstance(value, (int, float, list, str)):
+                if isinstance(value, (int, float, list, str, INIBasedModel, INIGeneral, INIModel)):
                     try:
                         setattr(obj_loc, attribute, value)
                     except Exception as e:

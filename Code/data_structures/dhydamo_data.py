@@ -1,5 +1,3 @@
-import importlib
-
 import geopandas as gpd
 import pandas as pd
 from geo_tools.clip_tools import _clip_structures_by_branches

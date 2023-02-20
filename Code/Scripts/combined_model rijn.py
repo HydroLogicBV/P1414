@@ -9,11 +9,11 @@ from data_structures.dhydamo_data import DHydamoData
 folder = r"D:\Work\Project\P1414"
 gpkg_file = folder + r"\GIS\HYDAMO\rhine_combined_test.gpkg"
 
-output_folder = folder + r"\Models\Combined\rijn_V0"
+output_folder = folder + r"\Models\Combined\rijn_V2"
 
-config_dhydro = r"rijntakken_config"
-config_list = [r"ark_nzk_config", r"rijntakken_config", r"rijnmaasmonding_config"]
-snap_dist_list = [0, 10, 50]
+config_dhydro = r"rijn_combined_config"
+config_list = [r"rijntakken_config", r"rijnmaasmonding_config"]
+snap_dist_list = [10, 50]
 
 defaults = r"defaults"
 
@@ -34,16 +34,5 @@ if build_model:
     dhd = DHydamoData()
     dhd.from_dhydamo_gpkg(gpkg_file)
     dhd.to_dhydro(config=config_dhydro, output_folder=output_folder, write=False)
-
-    lateral2 = Lateral(
-        id="LateralSource_1D_1",
-        name="LateralSource_1D_1",
-        branchId="rijn_DuitseRijn",
-        chainage=30,
-        discharge=15000,
-    )
-    extforcefilenew = ExtModel(lateral=[lateral2])
-
-    dhd.fm.external_forcing.extforcefilenew = extforcefilenew
 
     dhd.write_dimr(output_folder=output_folder)

@@ -1487,6 +1487,21 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         # return only columns that are in that dict
         return gdf, index_mapping
 
+    def merge_to_ddm(
+        ddm: DHydamoDataModel, feature: str, feature_gdf: gpd.GeoDataFrame
+    ) -> DHydamoDataModel:
+        if hasattr(ddm, feature):
+            new_gdf = gpd.GeoDataFrame(
+                data=pd.concat([getattr(ddm, feature), feature_gdf]),
+                geometry="geometry",
+                crs=profielgroep.crs,
+            )
+            setattr(ddm, feature, new_gdf)
+        else:
+            setattr(ddm, feature, feature_gdf)
+
+        return ddm
+
     ddm = DHydamoDataModel()
     defaults = importlib.import_module("dataset_configs." + defaults)
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
@@ -1513,10 +1528,6 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             if hasattr(data_config, "norm_profile_path") and (
                 data_config.norm_profile_path is not None
             ):
-                # ddm.waterloop = branches_gdf[
-                #     ["code", "globalid", "geometry", "typeruwheid"]
-                # ].reset_index(drop=True)
-
                 np_gdf = load_geo_file(data_config.norm_profile_path)
 
                 if hasattr(data_config, "np_selection"):
@@ -1549,20 +1560,6 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                     ddm.ruwheidsprofiel,
                 ) = create_mp_from_np(branches_gdf=np_gdf)
             else:
-                # ## Branches
-                # branches_gdf = load_geo_file(data_config.branches_path, layer="waterloop")
-
-                # branches_gdf, index_mapping = map_columns(
-                #     code_pad=code_padding,
-                #     defaults=defaults.Branches,
-                #     gdf=branches_gdf,
-                #     index_mapping=data_config.branch_index_mapping,
-                # )
-
-                # branches_gdf = fill_branch_norm_parm_profiles_data(
-                #     defaults=defaults.Peil, in_branches_gdf=branches_gdf, data_config=data_config
-                # )
-
                 (
                     ddm.waterloop,
                     _,
@@ -1610,41 +1607,46 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 ruwheidsprofiel,
             ) = create_measured_profile_data(profile_points_gdf=measure_profile_gdf)
 
-            if hasattr(ddm, "profielgroep"):
-                ddm.profielgroep = gpd.GeoDataFrame(
-                    data=pd.concat([ddm.profielgroep, profielgroep]),
-                    geometry="geometry",
-                    crs=profielgroep.crs,
-                )
-            else:
-                ddm.profielgroep = profielgroep
+            ddm = merge_to_ddm(ddm=ddm, feature="profielgroep", feature_gdf=profielgroep)
+            ddm = merge_to_ddm(ddm=ddm, feature="profiellijn", feature_gdf=profiellijn)
+            ddm = merge_to_ddm(ddm=ddm, feature="profielpunt", feature_gdf=profielpunt)
+            ddm = merge_to_ddm(ddm=ddm, feature="ruwheidsprofiel", feature_gdf=ruwheidsprofiel)
 
-            if hasattr(ddm, "profiellijn"):
-                ddm.profiellijn = gpd.GeoDataFrame(
-                    data=pd.concat([ddm.profiellijn, profiellijn]),
-                    geometry="geometry",
-                    crs=profiellijn.crs,
-                )
-            else:
-                ddm.profiellijn = profiellijn
+            # if hasattr(ddm, "profielgroep"):
+            #     ddm.profielgroep = gpd.GeoDataFrame(
+            #         data=pd.concat([ddm.profielgroep, profielgroep]),
+            #         geometry="geometry",
+            #         crs=profielgroep.crs,
+            #     )
+            # else:
+            #     ddm.profielgroep = profielgroep
 
-            if hasattr(ddm, "profielpunt"):
-                ddm.profielpunt = gpd.GeoDataFrame(
-                    data=pd.concat([ddm.profielpunt, profielpunt]),
-                    geometry="geometry",
-                    crs=profielpunt.crs,
-                )
-            else:
-                ddm.profielpunt = profielpunt
+            # if hasattr(ddm, "profiellijn"):
+            #     ddm.profiellijn = gpd.GeoDataFrame(
+            #         data=pd.concat([ddm.profiellijn, profiellijn]),
+            #         geometry="geometry",
+            #         crs=profiellijn.crs,
+            #     )
+            # else:
+            #     ddm.profiellijn = profiellijn
 
-            if hasattr(ddm, "ruwheidsprofiel"):
-                ddm.ruwheidsprofiel = gpd.GeoDataFrame(
-                    data=pd.concat([ddm.ruwheidsprofiel, ruwheidsprofiel]),
-                    geometry="geometry",
-                    crs=ruwheidsprofiel.crs,
-                )
-            else:
-                ddm.ruwheidsprofiel = ruwheidsprofiel
+            # if hasattr(ddm, "profielpunt"):
+            #     ddm.profielpunt = gpd.GeoDataFrame(
+            #         data=pd.concat([ddm.profielpunt, profielpunt]),
+            #         geometry="geometry",
+            #         crs=profielpunt.crs,
+            #     )
+            # else:
+            #     ddm.profielpunt = profielpunt
+
+            # if hasattr(ddm, "ruwheidsprofiel"):
+            #     ddm.ruwheidsprofiel = gpd.GeoDataFrame(
+            #         data=pd.concat([ddm.ruwheidsprofiel, ruwheidsprofiel]),
+            #         geometry="geometry",
+            #         crs=ruwheidsprofiel.crs,
+            #     )
+            # else:
+            #     ddm.ruwheidsprofiel = ruwheidsprofiel
 
     if hasattr(data_config, "pump_path"):
         if data_config.pump_path is not None:
@@ -1667,6 +1669,10 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 riv_prof_df=riv_prof_df,
                 code_padding=code_padding,
             )
+
+    if hasattr(data_config, "sluice_path"):
+        if data_config.sluice_path is not None:
+            sluice_gdf = load_geo_file(data_config.sluice_path, layer="sluis")
 
     if hasattr(data_config, "weir_path"):
         if data_config.weir_path is not None:
