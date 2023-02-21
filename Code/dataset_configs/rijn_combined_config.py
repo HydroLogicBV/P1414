@@ -1,8 +1,6 @@
-from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel,
-                                        QuantityUnitPair)
+from hydrolib.core.io.bc.models import ForcingBase, ForcingModel, QuantityUnitPair
 from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
-from hydrolib.core.io.polyfile.models import (Description, Metadata, Point,
-                                              PolyFile, PolyObject)
+from hydrolib.core.io.polyfile.models import Description, Metadata, Point, PolyFile, PolyObject
 
 
 class Models:
@@ -10,7 +8,7 @@ class Models:
         one_d_bool = True
         two_d_bool = False
         start_time = 20160601
-        stop_time = 86400*7
+        stop_time = 86400 * 7
 
         class one_d:
             max_dist_to_struct = 3
@@ -32,13 +30,8 @@ class Models:
                 __boundaries = [
                     Boundary(
                         quantity="waterlevelbnd",
-                        nodeid="172541.443336_513910.402941",
-                        forcingfile=ForcingModel(forcing=[__fb1]),
-                    ),
-                    Boundary(
-                        quantity="waterlevelbnd",
                         nodeid="62730.000000_445440.000000",
-                        forcingfile=ForcingModel(forcing=[__fb2]),
+                        forcingfile=ForcingModel(forcing=[__fb1, __fb2]),
                     ),
                 ]
                 __laterals = [

@@ -3,6 +3,7 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Literal, Optional
 
+import numpy as np
 from pydantic import Field, NonNegativeInt, PositiveInt
 from pydantic.class_validators import validator
 
@@ -52,9 +53,7 @@ class FrictGeneral(INIGeneral):
     """The friction file's `[General]` section with file meta data."""
 
     class Comments(INIBasedModel.Comments):
-        fileversion: Optional[str] = Field(
-            "File version. Do not edit this.", alias="fileVersion"
-        )
+        fileversion: Optional[str] = Field("File version. Do not edit this.", alias="fileVersion")
         filetype: Optional[str] = Field(
             "File type. Should be 'roughness'. Do not edit this.",
             alias="fileType",
@@ -85,9 +84,7 @@ class FrictGlobal(INIBasedModel):
     """
 
     class Comments(INIBasedModel.Comments):
-        frictionid: Optional[str] = Field(
-            "Name of the roughness variable.", alias="frictionId"
-        )
+        frictionid: Optional[str] = Field("Name of the roughness variable.", alias="frictionId")
         frictiontype: Optional[str] = Field(
             "The global roughness type for this variable, which is used "
             + "if no branch specific roughness definition is given.",
@@ -166,7 +163,7 @@ class FrictBranch(INIBasedModel):
     levels: Optional[List[float]]
     numlocations: Optional[NonNegativeInt] = Field(0, alias="numLocations")
     chainage: Optional[List[float]]
-    frictionvalues: Optional[List[float]] = Field(
+    frictionvalues: Optional[List[List[float]]] = Field(
         alias="frictionValues"
     )  # TODO: turn this into List[List[float]], see issue #143.
 
@@ -184,9 +181,7 @@ class FrictBranch(INIBasedModel):
     @validator("levels", always=True)
     @classmethod
     def _validate_levels(cls, v, values):
-        if v is not None and (
-            values["numlevels"] is None or len(v) != values["numlevels"]
-        ):
+        if v is not None and (values["numlevels"] is None or len(v) != values["numlevels"]):
             raise ValueError(
                 f"Number of values for levels should be equal to the numLevels value (branchId={values.get('branchid', '')})."
             )
@@ -217,7 +212,8 @@ class FrictBranch(INIBasedModel):
             else values["numlevels"]
         )
         numvals = max(1, values["numlocations"]) * numlevels
-        if v is not None and len(v) != numvals:
+        # if v is not None and len(v) != numvals:
+        if v is not None and np.asarray(v).size != numvals:
             raise ValueError(
                 f"Number of values for frictionValues should be equal to the numLocations*numLevels value (branchId={values.get('branchid', '')})."
             )

@@ -1,15 +1,13 @@
 import sys
 
-from hydrolib.core.io.ext.models import ExtModel, Lateral
-
 sys.path.append("D:\Work\git\GIS_tools\Code")
 
-from data_structures.dhydamo_data import DHydamoData
+from data_structures.dhydro_data import DHydroData
 
 folder = r"D:\Work\Project\P1414"
 gpkg_file = folder + r"\GIS\HYDAMO\rhine_combined_test.gpkg"
 
-output_folder = folder + r"\Models\Combined\rijn_V2"
+output_folder = folder + r"\Models\Combined\rijn_V3"
 
 config_dhydro = r"rijn_combined_config"
 config_list = [r"rijntakken_config", r"rijnmaasmonding_config"]
@@ -21,18 +19,20 @@ build_database = True
 build_model = True
 
 if build_database:
-    dhd = DHydamoData()
+    dhd = DHydroData()
     for ix, config in enumerate(config_list):
         print("\n" + config)
 
-        dhd.from_raw_data(defaults=defaults, config=config, branch_snap_dist=snap_dist_list[ix])
+        dhd.hydamo_from_raw_data(
+            defaults=defaults, config=config, branch_snap_dist=snap_dist_list[ix]
+        )
 
     dhd.clip_structures_by_branches()
-    dhd.to_dhydamo_gpkg(output_gpkg=gpkg_file)
+    dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
 
 if build_model:
-    dhd = DHydamoData()
-    dhd.from_dhydamo_gpkg(gpkg_file)
+    dhd = DHydroData()
+    dhd.hydamo_from_gpkg(gpkg_file)
     dhd.to_dhydro(config=config_dhydro, output_folder=output_folder, write=False)
 
     dhd.write_dimr(output_folder=output_folder)

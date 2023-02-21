@@ -1,3 +1,8 @@
+BRANCH_FRICTION_FUNCTION = {
+    "Constant": "constant",
+    "Discharge": "absDischarge",
+    "Waterlevel": "waterLevel",
+}
 HYDAMO_SHAPE_NUMS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 98, 99]
 HYDAMO_WEIR_TYPES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 25, 26, 98, 99]
 MANAGEMENT_DEVICE_TYPES = {
