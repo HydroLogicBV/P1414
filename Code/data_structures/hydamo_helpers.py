@@ -1,12 +1,13 @@
 import importlib
 import uuid
 import warnings
-from copy import copy, deepcopy
+from copy import copy
 from typing import List, Tuple
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+from shapely import affinity
 from shapely.geometry import LineString, MultiPoint, Point
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
@@ -19,18 +20,18 @@ from data_structures.hydamo_globals import (
 warnings.filterwarnings(action="ignore", message="Mean of empty slice")
 
 
-def check_and_fix_duplicate_code(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    if "code" in gdf.columns:
-        gdf["code"] = gdf["code"].astype("str").str.strip()
+def check_and_fix_duplicate_code(gdf: gpd.GeoDataFrame, column="code") -> gpd.GeoDataFrame:
+    if column in gdf.columns:
+        gdf[column] = gdf[column].astype("str").str.strip()
         # _gdf = copy(gdf)
-        duplicates = gdf.duplicated(subset="code", keep=False)
-        duplicate_codes = gdf.loc[duplicates, "code"]
+        duplicates = gdf.duplicated(subset=column, keep=False)
+        duplicate_codes = gdf.loc[duplicates, column]
 
         for code in duplicate_codes.unique():
-            n_duplicates = np.sum(gdf["code"] == code)
+            n_duplicates = np.sum(gdf[column] == code)
             pad_list = [r"{}_{}".format(code, n) for n in np.arange(n_duplicates, dtype=np.int8)]
 
-            gdf.loc[gdf["code"] == code, "code"] = pad_list
+            gdf.loc[gdf[column] == code, column] = pad_list
 
     return gdf
 
@@ -39,6 +40,16 @@ def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     if (not isinstance(gdf, int)) | (not isinstance(gdf, float)):
         gdf = gdf.astype(float)
     return gdf
+
+
+def check_is_not_na_number(input, zero_allowed=False) -> bool:
+    if (input is None) or (np.isnan(input)):
+        return False
+
+    if (not zero_allowed) and (input == 0):
+        return False
+
+    return True
 
 
 def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAPPING_LIST) -> str:
@@ -152,7 +163,7 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 )
 
             # skip 'line' if it only has one point
-            if sorted_group.shape[0] < 5:
+            if sorted_group.shape[0] < 4:
                 continue
 
             # Initialize name and list of points
@@ -220,7 +231,8 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                         [
                             ("code", point_code),
                             ("profielpuntid", point_id),
-                            ("typeruwheid", roughness_mapping[int(row["typeruwheid"]) - 1]),
+                            # ("typeruwheid", roughness_mapping[int(row["typeruwheid"]) - 1]),
+                            ("typeruwheid", check_roughness(row)),
                             ("ruwheidhoog", float(row["ruwheidhoog"])),
                             ("ruwheidlaag", float(row["ruwheidlaag"])),
                             ("geometry", None),
@@ -248,6 +260,405 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         roughnes_profiles = gpd.GeoDataFrame(roughnes_profiles, geometry="geometry", crs=28992)
 
         return profile_groups, profile_lines, profile_points, roughnes_profiles
+
+    def create_mp_from_np(
+        branches_gdf: gpd.GeoDataFrame,
+        dist_tol: float = 0.25,
+        min_water_width: float = 0.1,
+        roughness_mapping: List = ROUGHNESS_MAPPING_LIST,
+    ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        def rectangular_point_profile(
+            branch: LineString,
+            profiel_nummer: str,
+            params: dict,
+            def_height: float = 2,
+            rect_offset: float = 0.1,
+            interp_range: float = 0.1,
+        ) -> List[Point]:
+
+            bwidth = params["bodembreedte"]
+
+            # l_offset_line_1 = branch.geometry.parallel_offset(
+            #     distance=(bwidth + rect_offset) / 2, side="left"
+            # )
+            # l_offset_line_2 = branch.geometry.parallel_offset(distance=bwidth / 2, side="left")
+            # r_offset_line_1 = branch.geometry.parallel_offset(
+            #     distance=(bwidth + rect_offset) / 2, side="right"
+            # )
+            # r_offset_line_2 = branch.geometry.parallel_offset(distance=bwidth / 2, side="right")
+
+            rotated_line = affinity.rotate(
+                branch.geometry, 90, origin=branch.geometry.interpolate(0.5, normalized=True)
+            )
+
+            p1 = rotated_line.interpolate(0.5 - interp_range / 2, normalized=True)
+            p2 = rotated_line.interpolate(0.5 + interp_range / 2, normalized=True)
+
+            if p2.x > p1.x:
+                dx_o = p2.x - p1.x
+                dy_o = p2.y - p1.y
+            else:
+                dx_o = p1.x - p2.x
+                dy_o = p1.y - p2.y
+
+            if dx_o != 0:
+                s = dy_o / dx_o
+                # given a line slope dy/dx (i.e. a/b), pythagoras a**2 + b**2 = c**2, and a desired length c
+                # we can determine that b_n = c_n/sqrt(1+(a/b)**2) and a_n = b_n * (a/b)
+                dx_1 = bwidth / np.sqrt(1 + s**2)
+                dy_1 = dx_1 * s
+
+                dx_2 = (bwidth + rect_offset) / np.sqrt(1 + s**2)
+                dy_2 = dx_2 * s
+            else:
+                dx_1 = dx_2 = 0
+                dy_1 = dy_2 = bwidth
+
+            centroid = branch.geometry.interpolate(0.5, normalized=True)
+            # centroid = rotated_line.centroid
+            c_x, c_y = centroid.x, centroid.y
+
+            list_of_points = [
+                Point(c_x - 0.5 * dx_2, c_y - 0.5 * dy_2),
+                Point(c_x - 0.5 * dx_1, c_y - 0.5 * dy_1),
+                Point(c_x + 0.5 * dx_1, c_y + 0.5 * dy_1),
+                Point(c_x + 0.5 * dx_2, c_y + 0.5 * dy_2),
+            ]
+
+            bheight = np.nanmean(
+                [params["bodemhoogte benedenstrooms"], params["bodemhoogte bovenstrooms"]]
+            )
+            if ("hoogte insteek linkerzijde" in params) and (
+                "hoogte insteek rechterzijde" in params
+            ):
+                prof_height = [
+                    params["hoogte insteek linkerzijde"],
+                    bheight,
+                    bheight,
+                    params["hoogte insteek rechterzijde"],
+                ]
+            else:
+                prof_height = [def_height, bheight, bheight, def_height]
+
+            p_list = []
+            for ix, point in enumerate(list_of_points):
+                p_dict = dict(
+                    [
+                        ("codevolgnummer", ix + 1),
+                        ("geometry", Point(point.x, point.y, prof_height[ix])),
+                        ("profiel nummer", profiel_nummer),
+                        ("type meting", 2),
+                        ("typeruwheid", branch["typeruwheid"]),
+                        ("ruwheidhoog", branch["ruwheidhoog"]),
+                        ("ruwheidlaag", branch["ruwheidlaag"]),
+                    ]
+                )
+                p_list.append(p_dict)
+
+            return p_list
+
+        def trapezium_point_profile(
+            branch: LineString,
+            profiel_nummer: str,
+            params: dict,
+            interp_range: float = 0.1,
+        ) -> List[Point]:
+
+            bheight = np.nanmean(
+                [params["bodemhoogte benedenstrooms"], params["bodemhoogte bovenstrooms"]]
+            )
+
+            prof_height = [
+                params["hoogte insteek linkerzijde"],
+                bheight,
+                bheight,
+                params["hoogte insteek rechterzijde"],
+            ]
+
+            l_depth = params["hoogte insteek linkerzijde"] - bheight
+            r_depth = params["hoogte insteek rechterzijde"] - bheight
+
+            # talud is dx/dy
+            left_offset = params["taludhelling linkerzijde"] * l_depth
+            right_offset = params["taludhelling rechterzijde"] * r_depth
+
+            bwidth = params["bodembreedte"]
+
+            # l_offset_line_1 = branch.geometry.parallel_offset(
+            #     distance=bwidth / 2 + left_offset, side="left"
+            # )
+            # l_offset_line_2 = branch.geometry.parallel_offset(distance=bwidth / 2, side="left")
+            # r_offset_line_1 = branch.geometry.parallel_offset(
+            #     distance=bwidth / 2 + right_offset, side="right"
+            # )
+            # r_offset_line_2 = branch.geometry.parallel_offset(distance=bwidth / 2, side="right")
+
+            rotated_line = affinity.rotate(
+                branch.geometry, 90, origin=branch.geometry.interpolate(0.5, normalized=True)
+            )
+
+            p1 = rotated_line.interpolate(0.5 - interp_range / 2, normalized=True)
+            p2 = rotated_line.interpolate(0.5 + interp_range / 2, normalized=True)
+
+            if p2.x > p1.x:
+                dx_o = p2.x - p1.x
+                dy_o = p2.y - p1.y
+            else:
+                dx_o = p1.x - p2.x
+                dy_o = p1.y - p2.y
+
+            if dx_o != 0:
+                s = dy_o / dx_o
+                # given a line slope dy/dx (i.e. a/b), pythagoras a**2 + b**2 = c**2, and a desired length c
+                # we can determine that b_n = c_n/sqrt(1+(a/b)**2) and a_n = b_n * (a/b)
+                dx_1 = bwidth / np.sqrt(1 + s**2)
+                dy_1 = dx_1 * s
+
+                dx_2 = (bwidth + left_offset + right_offset) / np.sqrt(1 + s**2)
+                dy_2 = dx_2 * s
+            else:
+                dx_1 = dx_2 = 0
+                dy_1 = dy_2 = bwidth
+
+            centroid = branch.geometry.interpolate(0.5, normalized=True)
+            # centroid = rotated_line.centroid
+            c_x, c_y = centroid.x, centroid.y
+
+            list_of_points = [
+                Point(c_x - 0.5 * dx_2, c_y - 0.5 * dy_2),
+                Point(c_x - 0.5 * dx_1, c_y - 0.5 * dy_1),
+                Point(c_x + 0.5 * dx_1, c_y + 0.5 * dy_1),
+                Point(c_x + 0.5 * dx_2, c_y + 0.5 * dy_2),
+            ]
+
+            p_list = []
+            for ix, point in enumerate(list_of_points):
+                try:
+                    p_dict = dict(
+                        [
+                            ("codevolgnummer", ix + 1),
+                            ("geometry", Point(point.x, point.y, prof_height[ix])),
+                            ("profiel nummer", profiel_nummer),
+                            ("type meting", 2),
+                            ("typeruwheid", branch["typeruwheid"]),
+                            ("ruwheidhoog", branch["ruwheidhoog"]),
+                            ("ruwheidlaag", branch["ruwheidlaag"]),
+                        ]
+                    )
+                except:
+                    print(params)
+                    raise
+                p_list.append(p_dict)
+            return p_list
+
+        # Load shapefile with profile points & group them by metingprof attribute
+        # profile_points = gpd.read_file(profile_points_path)
+        branches_gdf[
+            [
+                "bodembreedte",
+                "bodemhoogte benedenstrooms",
+                "bodemhoogte bovenstrooms",
+                "hoogte insteek linkerzijde",
+                "hoogte insteek rechterzijde",
+                "taludhelling linkerzijde",
+                "taludhelling rechterzijde",
+            ]
+        ] = branches_gdf[
+            [
+                "bodembreedte",
+                "bodemhoogte benedenstrooms",
+                "bodemhoogte bovenstrooms",
+                "hoogte insteek linkerzijde",
+                "hoogte insteek rechterzijde",
+                "taludhelling linkerzijde",
+                "taludhelling rechterzijde",
+            ]
+        ].astype(
+            float
+        )
+
+        branches_gdf.loc[
+            branches_gdf["bodembreedte"] < min_water_width,
+            "bodembreedte",
+        ] = np.nan
+        branches_gdf.loc[
+            branches_gdf["water_width_index"] < min_water_width,
+            "water_width_index",
+        ] = np.nan
+
+        branches_gdf["globalid"] = [str(uuid.uuid4()) for _ in range(branches_gdf.shape[0])]
+        branches_gdf.set_index("globalid", drop=False, inplace=True)
+        branches_out_gdf = copy(branches_gdf)
+
+        # initialize empty lists
+        pp_list = []
+        # Loop over the grouped profile points to create a line from the points
+        for jx, ix_1 in enumerate(branches_gdf.index):
+            branch = branches_gdf.loc[ix_1, :]
+            # Dont use jx with numerical index column
+
+            # # Create unique ident for branch and add to branch
+            branch_gid = ix_1
+
+            # # replace duplicate codes by addinng a uniqure number
+            # if duplicates.iloc[jx]:
+            #     branches_out_gdf.at[ix_1, "code"] = branches_out_gdf.at[ix_1, "code"] + str(jx)
+
+            # turn numerical roughnes types to strings
+            type_ruwheid = check_roughness(branch)
+            branches_out_gdf.at[ix_1, "typeruwheid"] = type_ruwheid
+
+            # check if linestring
+            try:
+                assert isinstance(branch.geometry, LineString)
+            except AssertionError:
+                print(branch.geometry.type)
+                raise
+
+            # Delete z-dimensison of linestring if it exists
+            if np.array(branch.geometry.coords).shape[1] > 2:
+                branches_out_gdf.at[ix_1, "geometry"] = LineString(
+                    [xy[0:2] for xy in list(branch.geometry.coords)]
+                )
+
+            # Check if width and depth parameters are available, if not, skip
+            # Also skip if no width is available
+            if (
+                (
+                    (branch[["bodemhoogte benedenstrooms", "bodemhoogte bovenstrooms"]].empty)
+                    or (
+                        branch[["bodemhoogte benedenstrooms", "bodemhoogte bovenstrooms"]]
+                        .isna()
+                        .values.all()
+                    )
+                )
+                or (
+                    (
+                        (branch[["bodembreedte", "bodemhoogte benedenstrooms"]].empty)
+                        or (
+                            branch[["bodembreedte", "bodemhoogte benedenstrooms"]]
+                            .isna()
+                            .values.all()
+                        )
+                    )
+                    and (
+                        (branch[["water_width_index", "bodemhoogte benedenstrooms"]].empty)
+                        or (
+                            branch[["water_width_index", "bodemhoogte benedenstrooms"]]
+                            .isna()
+                            .values.all()
+                        )
+                    )
+                )
+                or (
+                    (branch[["bodembreedte", "water_width_index"]].empty)
+                    or (branch[["bodembreedte", "water_width_index"]].isna().values.all())
+                )
+            ):
+                # print("no profile for branch {}".format(branch_gid))
+                continue
+
+            # Check if all parameters are present for trapezium profile. If not, use rectangular profile
+            width_ix = "bodembreedte"
+            if np.isnan(branch["bodembreedte"]):
+                prof_type = "rectangle"
+                width_ix = "water_width_index"
+            elif (
+                (not check_is_not_na_number(branch["hoogte insteek linkerzijde"]))
+                | (not check_is_not_na_number(branch["hoogte insteek rechterzijde"]))
+                | (not check_is_not_na_number(branch["taludhelling linkerzijde"]))
+                | (not check_is_not_na_number(branch["taludhelling rechterzijde"]))
+            ):
+                prof_type = "rectangle"
+            else:
+                prof_type = "trapezium"
+
+            width = branch[width_ix]
+            if width < 0:
+                width = 0
+            elif width > 200:
+                width = 0
+
+            # set required parameters for either rectangle or trapezium profile
+            if prof_type == "rectangle":
+                params = dict(
+                    [
+                        ("bodembreedte", width),
+                        (
+                            "bodemhoogte benedenstrooms",
+                            branch["bodemhoogte benedenstrooms"],
+                        ),
+                        (
+                            "bodemhoogte bovenstrooms",
+                            branch["bodemhoogte bovenstrooms"],
+                        ),
+                    ]
+                )
+                if check_is_not_na_number(branch["hoogte insteek linkerzijde"]):
+                    params["hoogte insteek linkerzijde"] = branch["hoogte insteek linkerzijde"]
+
+                if check_is_not_na_number(branch["hoogte insteek rechterzijde"]):
+                    params["hoogte insteek rechterzijde"] = branch["hoogte insteek rechterzijde"]
+
+                p_list = rectangular_point_profile(
+                    branch=branch, profiel_nummer=ix_1, params=params
+                )
+                pp_list += p_list
+            elif prof_type == "trapezium":
+                params = dict(
+                    [
+                        ("bodembreedte", width),
+                        (
+                            "bodemhoogte benedenstrooms",
+                            branch["bodemhoogte benedenstrooms"],
+                        ),
+                        (
+                            "bodemhoogte bovenstrooms",
+                            branch["bodemhoogte bovenstrooms"],
+                        ),
+                        (
+                            "hoogte insteek linkerzijde",
+                            branch["hoogte insteek linkerzijde"],
+                        ),
+                        (
+                            "hoogte insteek rechterzijde",
+                            branch["hoogte insteek rechterzijde"],
+                        ),
+                        (
+                            "taludhelling linkerzijde",
+                            branch["taludhelling linkerzijde"],
+                        ),
+                        (
+                            "taludhelling rechterzijde",
+                            branch["taludhelling rechterzijde"],
+                        ),
+                    ]
+                )
+
+                # if hoogte insteek is lower than the bottom, swap bottom and hoogte insteek
+                if np.amin(
+                    [params["hoogte insteek linkerzijde"], params["hoogte insteek rechterzijde"]]
+                ) < np.amax(
+                    [params["bodemhoogte benedenstrooms"], params["bodemhoogte bovenstrooms"]]
+                ):
+                    (
+                        params["bodemhoogte benedenstrooms"],
+                        params["bodemhoogte bovenstrooms"],
+                        params["hoogte insteek linkerzijde"],
+                        params["hoogte insteek rechterzijde"],
+                    ) = (
+                        params["hoogte insteek linkerzijde"],
+                        params["hoogte insteek rechterzijde"],
+                        params["bodemhoogte benedenstrooms"],
+                        params["bodemhoogte bovenstrooms"],
+                    )
+
+                p_list = trapezium_point_profile(branch=branch, profiel_nummer=ix_1, params=params)
+                pp_list += p_list
+
+        # Create GeoDataFrame from list of dicts
+        pp_gdf = gpd.GeoDataFrame(data=pp_list, geometry="geometry", crs=branches_gdf.crs)
+        return create_measured_profile_data(profile_points_gdf=pp_gdf, dist_tol=0)
 
     def create_norm_parm_profiles_v2(
         branches_gdf: gpd.GeoDataFrame, min_water_width: float = 0.1
@@ -304,8 +715,8 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         branches_gdf.set_index("globalid", drop=False, inplace=True)
         branches_out_gdf = copy(branches_gdf)
 
-        # Check for duplicate codes, if there are, they are replaced in the following loop
-        duplicates = branches_gdf.duplicated(subset=["code"])
+        # # Check for duplicate codes, if there are, they are replaced in the following loop
+        # duplicates = branches_gdf.duplicated(subset=["code"])
         # for ix_1, branch in tqdm(branches_gdf.iterrows(), total=branches_gdf.shape[0]):
         # for jx, (ix_1, branch) in enumerate(branches_gdf.iterrows()):
         for jx, ix_1 in enumerate(branches_gdf.index):
@@ -313,14 +724,11 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             # Dont use jx with numerical index column
 
             # # Create unique ident for branch and add to branch
-            # branch_gid = str(uuid.uuid4())
-            # branches_out_gdf.at[ix_1, "globalid"] = branch_gid
             branch_gid = ix_1
 
-            # replace duplicate codes by addinng a uniqure number
-            if duplicates.iloc[jx]:
-                branches_out_gdf.at[ix_1, "code"] = branches_out_gdf.at[ix_1, "code"] + str(jx)
-            # branches_out_gdf.loc[ix_1, "code"] = branch_gid
+            # # replace duplicate codes by addinng a uniqure number
+            # if duplicates.iloc[jx]:
+            #     branches_out_gdf.at[ix_1, "code"] = branches_out_gdf.at[ix_1, "code"] + str(jx)
 
             # turn numerical roughnes types to strings
             type_ruwheid = check_roughness(branch)
@@ -338,11 +746,36 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             # Check if width and depth parameters are available, if not, skip
             # Also skip if no width is available
             if (
-                (branch[["bodembreedte", "bodemhoogte benedenstrooms"]].empty)
-                or (branch[["bodembreedte", "bodemhoogte benedenstrooms"]].isna().values.any())
-                or (branch[["bodembreedte", "water_width_index"]].empty)
-                or (branch[["bodembreedte", "water_width_index"]].empty)
-                or (branch[["bodembreedte", "water_width_index"]].isna().values.all())
+                (
+                    (branch[["bodemhoogte benedenstrooms", "bodemhoogte bovenstrooms"]].empty)
+                    or (
+                        branch[["bodemhoogte benedenstrooms", "bodemhoogte bovenstrooms"]]
+                        .isna()
+                        .values.all()
+                    )
+                )
+                or (
+                    (
+                        (branch[["bodembreedte", "bodemhoogte benedenstrooms"]].empty)
+                        or (
+                            branch[["bodembreedte", "bodemhoogte benedenstrooms"]]
+                            .isna()
+                            .values.all()
+                        )
+                    )
+                    and (
+                        (branch[["water_width_index", "bodemhoogte benedenstrooms"]].empty)
+                        or (
+                            branch[["water_width_index", "bodemhoogte benedenstrooms"]]
+                            .isna()
+                            .values.all()
+                        )
+                    )
+                )
+                or (
+                    (branch[["bodembreedte", "water_width_index"]].empty)
+                    or (branch[["bodembreedte", "water_width_index"]].isna().values.all())
+                )
             ):
                 # print("no profile for branch {}".format(branch_gid))
                 continue
@@ -364,25 +797,31 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
             if np.isnan(branch["bodembreedte"]):
                 prof_type = "rectangle"
                 width_ix = "water_width_index"
+            # elif (
+            #     (branch["hoogte insteek linkerzijde"] is None)
+            #     | (branch["hoogte insteek rechterzijde"] is None)
+            #     | (branch["taludhelling linkerzijde"] is None)
+            #     | (branch["taludhelling rechterzijde"] is None)
+            # ):
+            #     prof_type = "rectangle"
+            # elif (
+            #     np.isnan(branch["hoogte insteek linkerzijde"])
+            #     | np.isnan(branch["hoogte insteek rechterzijde"])
+            #     | np.isnan(branch["taludhelling linkerzijde"])
+            #     | np.isnan(branch["taludhelling rechterzijde"])
+            # ):
+            #     prof_type = "rectangle"
+            # elif (
+            #     (branch["hoogte insteek linkerzijde"] == 0)
+            #     | (branch["hoogte insteek rechterzijde"] == 0)
+            #     | (branch["taludhelling linkerzijde"] == 0)
+            #     | (branch["taludhelling rechterzijde"] == 0)
+            # ):
             elif (
-                (branch["hoogte insteek linkerzijde"] is None)
-                | (branch["hoogte insteek rechterzijde"] is None)
-                | (branch["taludhelling linkerzijde"] is None)
-                | (branch["taludhelling rechterzijde"] is None)
-            ):
-                prof_type = "rectangle"
-            elif (
-                np.isnan(branch["hoogte insteek linkerzijde"])
-                | np.isnan(branch["hoogte insteek rechterzijde"])
-                | np.isnan(branch["taludhelling linkerzijde"])
-                | np.isnan(branch["taludhelling rechterzijde"])
-            ):
-                prof_type = "rectangle"
-            elif (
-                (branch["hoogte insteek linkerzijde"] == 0)
-                | (branch["hoogte insteek rechterzijde"] == 0)
-                | (branch["taludhelling linkerzijde"] == 0)
-                | (branch["taludhelling rechterzijde"] == 0)
+                (not check_is_not_na_number(branch["hoogte insteek linkerzijde"]))
+                | (not check_is_not_na_number(branch["hoogte insteek rechterzijde"]))
+                | (not check_is_not_na_number(branch["taludhelling linkerzijde"]))
+                | (not check_is_not_na_number(branch["taludhelling rechterzijde"]))
             ):
                 prof_type = "rectangle"
             else:
@@ -390,6 +829,8 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
             width = branch[width_ix]
             if width < 0:
+                width = 0
+            elif width > 200:
                 width = 0
 
             # set required parameters for either rectangle or trapezium profile
@@ -548,7 +989,7 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         return pump_station_gdf, _pump_gdf, management_gdf
 
     def create_river_profiles(
-        branches_gdf: gpd.GeoDataFrame, riv_prof_df: pd.DataFrame
+        branches_gdf: gpd.GeoDataFrame, riv_prof_df: pd.DataFrame, code_padding: str
     ) -> gpd.GeoDataFrame:
         ## TODO build list of dicts
         riv_prof_df["id"] = riv_prof_df["id"].astype(str)
@@ -587,6 +1028,7 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
         g_ix = 0
         for u_id in unique_ids:
+            name = code_padding + u_id
             slice = riv_prof_df[riv_prof_df["id"] == u_id]
             meta_data = slice[slice["Data_type"] == "meta"]
             geom_data = slice[slice["Data_type"] == "geom"]
@@ -596,7 +1038,7 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 continue
 
             for ix in range(geom_data.shape[0]):
-                geom_df.at[g_ix, "name"] = u_id
+                geom_df.at[g_ix, "name"] = name
                 geom_df.at[g_ix, "ix"] = ix
                 geom_df.at[g_ix, "levels"] = geom_data["level"].values[ix]
                 geom_df.at[g_ix, "flowWidths"] = geom_data["Flow width"].values[ix]
@@ -604,43 +1046,43 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 geom_df.at[g_ix, "geometry"] = None
                 g_ix += 1
 
-            meta_df.at[u_id, "numLevels"] = geom_data.shape[0]
-            meta_df.at[u_id, "name"] = u_id
-            meta_df.at[u_id, "thalweg"] = 0
-            meta_df.at[u_id, "leveecrestLevel"] = meta_data["Crest level summerdike"].values[0]
+            meta_df.at[name, "numLevels"] = geom_data.shape[0]
+            meta_df.at[name, "name"] = name
+            meta_df.at[name, "thalweg"] = 0
+            meta_df.at[name, "leveecrestLevel"] = meta_data["Crest level summerdike"].values[0]
 
-            meta_df.at[u_id, "leveebaselevel"] = meta_data[
+            meta_df.at[name, "leveebaselevel"] = meta_data[
                 "Floodplain baselevel behind summerdike"
             ].values[0]
-            meta_df.at[u_id, "leveeflowarea"] = meta_data["Flow area behind summerdike"].values[0]
-            meta_df.at[u_id, "leveetotalarea"] = meta_data["Total area behind summerdike"].values[
+            meta_df.at[name, "leveeflowarea"] = meta_data["Flow area behind summerdike"].values[0]
+            meta_df.at[name, "leveetotalarea"] = meta_data["Total area behind summerdike"].values[
                 0
             ]
-            meta_df.at[u_id, "mainwidth"] = meta_data["width main channel"].values[0]
-            meta_df.at[u_id, "fp1width"] = meta_data["width floodplain 1"].values[0]
-            meta_df.at[u_id, "fp2width"] = meta_data["width floodplain 2"].values[0]
+            meta_df.at[name, "mainwidth"] = meta_data["width main channel"].values[0]
+            meta_df.at[name, "fp1width"] = meta_data["width floodplain 1"].values[0]
+            meta_df.at[name, "fp2width"] = meta_data["width floodplain 2"].values[0]
             # meta_df.at[u_id, "branchid"] = meta_data["branch"].values[0]
             # account for padded codes
-            meta_df.at[u_id, "branchid"] = branches_gdf.loc[
+            meta_df.at[name, "branchid"] = branches_gdf.loc[
                 branches_gdf["code"].str.contains(meta_data["branch"].values[0]), "code"
             ].values[0]
 
-            meta_df.at[u_id, "chainage"] = meta_data["chainage"].values[0]
-            meta_df.at[u_id, "geometry"] = None
+            meta_df.at[name, "chainage"] = meta_data["chainage"].values[0]
+            meta_df.at[name, "geometry"] = None
 
             total_width = (
-                meta_df.at[u_id, "mainwidth"]
-                + meta_df.at[u_id, "fp1width"]
-                + meta_df.at[u_id, "fp2width"]
+                meta_df.at[name, "mainwidth"]
+                + meta_df.at[name, "fp1width"]
+                + meta_df.at[name, "fp2width"]
             )
-            max_width = geom_df.loc[geom_df["name"] == u_id, "flowWidths"].max()
+            max_width = geom_df.loc[geom_df["name"] == name, "flowWidths"].max()
             if total_width > max_width:
                 diff = total_width - max_width
 
-                max_ix = geom_df.loc[geom_df["name"] == u_id, "flowWidths"].idxmax()
+                max_ix = geom_df.loc[geom_df["name"] == name, "flowWidths"].idxmax()
                 geom_df.at[max_ix, "flowWidths"] = geom_df.at[max_ix, "flowWidths"] + diff
                 if geom_df.at[max_ix, "flowWidths"] > geom_df.at[max_ix, "totalWidths"]:
-                    geom_df.at[max_ix, "totalWidths"] = geom_df.at[max_ix, "flowWidths"]
+                    geom_df.at[max_ix, "totalWidths"] = geom_df.at[max_ix, "flowWidths"] + 1
 
         geom_gdf = gpd.GeoDataFrame(geom_df, geometry="geometry", crs="epsg:28992")
         meta_gdf = gpd.GeoDataFrame(meta_df, geometry="geometry", crs="epsg:28992")
@@ -774,6 +1216,30 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
             return dict([("id", name), ("overlap", overlap_area), ("width", width)])
 
+        in_branches_gdf[
+            [
+                "bodembreedte",
+                "bodemhoogte benedenstrooms",
+                "bodemhoogte bovenstrooms",
+                "hoogte insteek linkerzijde",
+                "hoogte insteek rechterzijde",
+                "taludhelling linkerzijde",
+                "taludhelling rechterzijde",
+            ]
+        ] = in_branches_gdf[
+            [
+                "bodembreedte",
+                "bodemhoogte benedenstrooms",
+                "bodemhoogte bovenstrooms",
+                "hoogte insteek linkerzijde",
+                "hoogte insteek rechterzijde",
+                "taludhelling linkerzijde",
+                "taludhelling rechterzijde",
+            ]
+        ].astype(
+            float
+        )
+
         if (
             hasattr(data_config, "peil_gebieden_path")
             and ("diepte" in data_config.branch_index_mapping)
@@ -788,8 +1254,8 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
             out_branches_gdf = copy(in_branches_gdf)
 
-            in_branches_with_peil = gpd.overlay(
-                in_branches_gdf, peil_gebieden_gdf, how="intersection"
+            in_branches_with_peil = gpd.sjoin(
+                in_branches_gdf, peil_gebieden_gdf, how="left", predicate="intersects"
             )
 
             for name, branch in in_branches_with_peil.iterrows():
@@ -800,22 +1266,22 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                     # check for duplicates
                     pass
 
-                if (branch["hoogte insteek linkerzijde"] is None) and (
-                    branch["hoogte insteek rechterzijde"] is not None
+                if (not check_is_not_na_number(branch["hoogte insteek linkerzijde"])) and (
+                    check_is_not_na_number(branch["hoogte insteek rechterzijde"])
                 ):
                     out_branches_gdf.loc[
                         bool_ix, "hoogte insteek linkerzijde"
                     ] = out_branches_gdf.at[bool_ix, "hoogte insteek rechterzijde"]
-                elif (branch["hoogte insteek linkerzijde"] is not None) and (
-                    branch["hoogte insteek rechterzijde"] is None
+                elif (check_is_not_na_number(branch["hoogte insteek linkerzijde"])) and (
+                    not check_is_not_na_number(branch["hoogte insteek rechterzijde"])
                 ):
                     out_branches_gdf.loc[
                         bool_ix, "hoogte insteek rechterzijde"
                     ] = out_branches_gdf.at[bool_ix, "hoogte insteek linkerzijde"]
-                elif (branch["hoogte insteek linkerzijde"] is None) and (
-                    branch["hoogte insteek rechterzijde"] is None
+                elif (not check_is_not_na_number(branch["hoogte insteek linkerzijde"])) and (
+                    not check_is_not_na_number(branch["hoogte insteek rechterzijde"])
                 ):
-                    if branch["vast peil"] is not None:
+                    if check_is_not_na_number(branch["vast peil"]):
                         peil = branch["vast peil"]
                     else:
                         peil = np.nanmean([branch["boven peil"], branch["onder peil"]])
@@ -825,20 +1291,20 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                     out_branches_gdf.loc[bool_ix, "hoogte insteek linkerzijde"] = insteek_hoogte
                     out_branches_gdf.loc[bool_ix, "hoogte insteek rechterzijde"] = insteek_hoogte
 
-                if (branch["bodemhoogte benedenstrooms"] is None) and (
-                    branch["bodemhoogte bovenstrooms"] is not None
+                if (not check_is_not_na_number(branch["bodemhoogte benedenstrooms"])) and (
+                    check_is_not_na_number(branch["bodemhoogte bovenstrooms"])
                 ):
                     out_branches_gdf.loc[
                         bool_ix, "bodemhoogte benedenstrooms"
                     ] = out_branches_gdf.at[bool_ix, "bodemhoogte bovenstrooms"]
-                elif (branch["bodemhoogte benedenstrooms"] is not None) and (
-                    branch["bodemhoogte bovenstrooms"] is None
+                elif (check_is_not_na_number(branch["bodemhoogte benedenstrooms"])) and (
+                    not check_is_not_na_number(branch["bodemhoogte bovenstrooms"])
                 ):
                     out_branches_gdf.loc[
                         bool_ix, "bodemhoogte bovenstrooms"
                     ] = out_branches_gdf.at[bool_ix, "bodemhoogte benedenstrooms"]
-                elif (branch["bodemhoogte benedenstrooms"] is None) and (
-                    branch["bodemhoogte bovenstrooms"] is None
+                elif (not check_is_not_na_number(branch["bodemhoogte benedenstrooms"])) and (
+                    not check_is_not_na_number(branch["bodemhoogte bovenstrooms"])
                 ):
                     diepte = branch["diepte"]
                     insteek_hoogte = out_branches_gdf.loc[bool_ix, "hoogte insteek linkerzijde"]
@@ -918,7 +1384,7 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         gdf.set_geometry(col="geometry", inplace=True)
 
         # check for multi-element geometries
-        if np.sum(gdf.geometry.type.isin(["MultiPoint", "MultiLine"])) > 0:
+        if np.sum(gdf.geometry.type.isin(["MultiPoint", "MultiLine", "MultiLineString"])) > 0:
             gdf = gdf.explode(ignore_index=True, index_parts=False)
         return gdf
 
@@ -947,7 +1413,7 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                     if isinstance(value, list):
                         _gdf[key] = (
                             gdf[value]
-                            .replace(to_replace=[None], value=np.nan)
+                            .replace(to_replace=[None, "n.v.t."], value=np.nan)
                             .astype(float)
                             .apply(np.nanmean, axis=1)
                         )
@@ -1021,6 +1487,21 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         # return only columns that are in that dict
         return gdf, index_mapping
 
+    def merge_to_ddm(
+        ddm: DHydamoDataModel, feature: str, feature_gdf: gpd.GeoDataFrame
+    ) -> DHydamoDataModel:
+        if hasattr(ddm, feature):
+            new_gdf = gpd.GeoDataFrame(
+                data=pd.concat([getattr(ddm, feature), feature_gdf]),
+                geometry="geometry",
+                crs=profielgroep.crs,
+            )
+            setattr(ddm, feature, new_gdf)
+        else:
+            setattr(ddm, feature, feature_gdf)
+
+        return ddm
+
     ddm = DHydamoDataModel()
     defaults = importlib.import_module("dataset_configs." + defaults)
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
@@ -1030,6 +1511,12 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         if data_config.branches_path is not None:
             ## Branches
             branches_gdf = load_geo_file(data_config.branches_path, layer="waterloop")
+            if hasattr(data_config, "branch_selection"):
+                column, value = (
+                    data_config.branch_selection["column"],
+                    data_config.branch_selection["value"],
+                )
+                branches_gdf = branches_gdf.loc[branches_gdf[column] == value, :]
 
             branches_gdf, index_mapping = map_columns(
                 code_pad=code_padding,
@@ -1038,15 +1525,46 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 index_mapping=data_config.branch_index_mapping,
             )
 
-            branches_gdf = fill_branch_norm_parm_profiles_data(
-                defaults=defaults.Peil, in_branches_gdf=branches_gdf, data_config=data_config
-            )
+            if hasattr(data_config, "norm_profile_path") and (
+                data_config.norm_profile_path is not None
+            ):
+                np_gdf = load_geo_file(data_config.norm_profile_path)
 
-            (
-                ddm.waterloop,
-                ddm.hydroobject_normgp,
-                ddm.normgeparamprofielwaarde,
-            ) = create_norm_parm_profiles_v2(branches_gdf=branches_gdf)
+                if hasattr(data_config, "np_selection"):
+                    column, value = (
+                        data_config.np_selection["column"],
+                        data_config.np_selection["value"],
+                    )
+                    np_gdf = np_gdf.loc[np_gdf[column] == value, :]
+
+                np_gdf, index_mapping = map_columns(
+                    code_pad=code_padding,
+                    defaults=defaults.Branches,
+                    gdf=np_gdf,
+                    index_mapping=data_config.np_index_mapping,
+                )
+                np_gdf = fill_branch_norm_parm_profiles_data(
+                    defaults=defaults.Peil, in_branches_gdf=np_gdf, data_config=data_config
+                )
+
+                (
+                    ddm.waterloop,
+                    ddm.hydroobject_normgp,
+                    ddm.normgeparamprofielwaarde,
+                ) = create_norm_parm_profiles_v2(branches_gdf=branches_gdf)
+
+                (
+                    ddm.profielgroep,
+                    ddm.profiellijn,
+                    ddm.profielpunt,
+                    ddm.ruwheidsprofiel,
+                ) = create_mp_from_np(branches_gdf=np_gdf)
+            else:
+                (
+                    ddm.waterloop,
+                    _,
+                    _,
+                ) = create_norm_parm_profiles_v2(branches_gdf=branches_gdf)
 
     if hasattr(data_config, "bridges_path"):
         if data_config.bridges_path is not None:
@@ -1083,11 +1601,52 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
                 index_mapping=data_config.measured_profile_index_mapping,
             )
             (
-                ddm.profielgroep,
-                ddm.profiellijn,
-                ddm.profielpunt,
-                ddm.ruwheidsprofiel,
+                profielgroep,
+                profiellijn,
+                profielpunt,
+                ruwheidsprofiel,
             ) = create_measured_profile_data(profile_points_gdf=measure_profile_gdf)
+
+            ddm = merge_to_ddm(ddm=ddm, feature="profielgroep", feature_gdf=profielgroep)
+            ddm = merge_to_ddm(ddm=ddm, feature="profiellijn", feature_gdf=profiellijn)
+            ddm = merge_to_ddm(ddm=ddm, feature="profielpunt", feature_gdf=profielpunt)
+            ddm = merge_to_ddm(ddm=ddm, feature="ruwheidsprofiel", feature_gdf=ruwheidsprofiel)
+
+            # if hasattr(ddm, "profielgroep"):
+            #     ddm.profielgroep = gpd.GeoDataFrame(
+            #         data=pd.concat([ddm.profielgroep, profielgroep]),
+            #         geometry="geometry",
+            #         crs=profielgroep.crs,
+            #     )
+            # else:
+            #     ddm.profielgroep = profielgroep
+
+            # if hasattr(ddm, "profiellijn"):
+            #     ddm.profiellijn = gpd.GeoDataFrame(
+            #         data=pd.concat([ddm.profiellijn, profiellijn]),
+            #         geometry="geometry",
+            #         crs=profiellijn.crs,
+            #     )
+            # else:
+            #     ddm.profiellijn = profiellijn
+
+            # if hasattr(ddm, "profielpunt"):
+            #     ddm.profielpunt = gpd.GeoDataFrame(
+            #         data=pd.concat([ddm.profielpunt, profielpunt]),
+            #         geometry="geometry",
+            #         crs=profielpunt.crs,
+            #     )
+            # else:
+            #     ddm.profielpunt = profielpunt
+
+            # if hasattr(ddm, "ruwheidsprofiel"):
+            #     ddm.ruwheidsprofiel = gpd.GeoDataFrame(
+            #         data=pd.concat([ddm.ruwheidsprofiel, ruwheidsprofiel]),
+            #         geometry="geometry",
+            #         crs=ruwheidsprofiel.crs,
+            #     )
+            # else:
+            #     ddm.ruwheidsprofiel = ruwheidsprofiel
 
     if hasattr(data_config, "pump_path"):
         if data_config.pump_path is not None:
@@ -1106,8 +1665,14 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         if data_config.river_profile_path is not None:
             riv_prof_df = pd.read_csv(data_config.river_profile_path)
             ddm.rivier_profielen, ddm.rivier_profielen_data = create_river_profiles(
-                branches_gdf=branches_gdf, riv_prof_df=riv_prof_df
+                branches_gdf=branches_gdf,
+                riv_prof_df=riv_prof_df,
+                code_padding=code_padding,
             )
+
+    if hasattr(data_config, "sluice_path"):
+        if data_config.sluice_path is not None:
+            sluice_gdf = load_geo_file(data_config.sluice_path, layer="sluis")
 
     if hasattr(data_config, "weir_path"):
         if data_config.weir_path is not None:

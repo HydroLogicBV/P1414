@@ -233,7 +233,11 @@ class DHydamoDataModel(BaseModel):
         Returns:
             None
         """
-        os.remove(output_gpkg)
+        try:
+            os.remove(output_gpkg)
+        except FileNotFoundError:
+            pass
+
         for key, value in self.__dict__.items():
             if value is not None:
                 try:

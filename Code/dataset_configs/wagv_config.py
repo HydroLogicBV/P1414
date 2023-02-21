@@ -29,34 +29,39 @@ class RawData:
     #     p_folder + r"\WAGV\hydrovak\hydrovak.shp",
     # ]
     branches_path = [
-        p_folder + r"\Uitgesneden watergangen\AGV_v2.1_test.shp",
+        p_folder + r"\Uitgesneden watergangen\AGV_v2.2_test.shp",
         p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp",
     ]
+
     bridges_path = p_folder + r"\WAGV\brug_v13\brug_v13_clipped.shp"
     culvert_path = p_folder + r"\WAGV\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp"
     measured_profile_path = (
         p_folder + r"\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped_rm.shp"
     )
+    norm_profile_path = [
+        p_folder + r"\WAGV\hydrovak\hydrovak.shp",
+        p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp",
+    ]
     pump_path = p_folder + r"\WAGV\Niet legger\pomp_gemaal_v13_clipped_streefpeil.shp"
     weir_path = p_folder + r"\WAGV\Niet legger\stuw_v13_clipped_with_do.shp"
 
     ## Branches
     branch_index_mapping = dict(
         [
-            ("bodembreedte", "AVVBODDR"),
-            ("bodemhoogte benedenstrooms", "AVVBODH"),
-            ("bodemhoogte bovenstrooms", "AVVBODH"),
+            ("bodembreedte", None),
+            ("bodemhoogte benedenstrooms", None),
+            ("bodemhoogte bovenstrooms", None),
             ("code", "code"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", "IWS_W_WATP"),
-            ("hoogte insteek rechterzijde", "IWS_W_WATP"),
+            ("hoogte insteek linkerzijde", None),
+            ("hoogte insteek rechterzijde", None),
             ("ruwheidhoog", "ruwheidhoo"),
             ("ruwheidlaag", "ruwheidlaa"),
-            ("taludhelling linkerzijde", "AVVTALUL"),
-            ("taludhelling rechterzijde", "AVVTALUR"),
+            ("taludhelling linkerzijde", None),
+            ("taludhelling rechterzijde", None),
             ("typeruwheid", "ruwheidsty"),  # changed in hydrovak_combined
-            ("water_width_index", "IWS_W_WATB"),
+            ("water_width_index", None),
         ]
     )
 
@@ -106,6 +111,26 @@ class RawData:
             ("ruwheidlaag", "ruwheidsw0"),
             ("type meting", "typebodemi"),
             ("typeruwheid", "ruwheidsty"),
+        ]
+    )
+
+    ## Norm Profiles
+    np_index_mapping = dict(
+        [
+            ("bodembreedte", "AVVBODDR"),
+            ("bodemhoogte benedenstrooms", "AVVBODH"),
+            ("bodemhoogte bovenstrooms", "AVVBODH"),
+            ("code", "code"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("hoogte insteek linkerzijde", "IWS_W_WATP"),
+            ("hoogte insteek rechterzijde", "IWS_W_WATP"),
+            ("ruwheidhoog", "ruwheidhoo"),
+            ("ruwheidlaag", "ruwheidlaa"),
+            ("taludhelling linkerzijde", "AVVTALUL"),
+            ("taludhelling rechterzijde", "AVVTALUR"),
+            ("typeruwheid", "ruwheidsty"),  # changed in hydrovak_combined
+            ("water_width_index", "IWS_W_WATB"),
         ]
     )
 

@@ -8,7 +8,7 @@ class Models:
         class one_d:
             max_dist_to_struct = 3
             max_snap_dist = 1
-            node_distance = 500
+            node_distance = 100
 
         class two_d:
             coupling_type = "2Dto1D"
@@ -19,15 +19,14 @@ class Models:
             two_d_buffer = 100
 
         class hydrolib_core_options:
-            class external_forcing:
-                pass
-
             class geometry:
-                dxmin1d = 500
+                dxmin1d = 100
                 usecaching = 1
 
             class numerics:
                 cflmax = 0.7
+                turbulencemodel = 0
+                turbulenceadvection = 0
 
             class output:
                 hisinterval = [0]

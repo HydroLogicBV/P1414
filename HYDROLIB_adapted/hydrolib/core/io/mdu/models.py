@@ -542,6 +542,7 @@ class Geometry(INIBasedModel):
     layertype: int = Field(1, alias="layerType")
     numtopsig: int = Field(0, alias="numTopSig")
     sigmagrowthfactor: float = Field(1.0, alias="sigmaGrowthFactor")
+    dxmin1d: float = Field(0.001, alias="dxmin1D")
     dxdoubleat1dendnodes: bool = Field(True, alias="dxDoubleAt1DEndNodes")
     changevelocityatstructures: bool = Field(False, alias="changeVelocityAtStructures")
     changestructuredimensions: bool = Field(True, alias="changeStructureDimensions")

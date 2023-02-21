@@ -8,6 +8,7 @@ import numpy as np
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
 from hydrolib.core.io.friction.models import FrictionModel
+from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
 from hydrolib.core.io.mdu.models import FMModel
 from hydrolib.core.io.structure.models import StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
@@ -275,7 +276,6 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
         )
 
         # Set the crosssections for the branches
-
         hydamo.crosssections.convert.profiles(
             crosssections=hydamo.profile,
             crosssection_roughness=hydamo.profile_roughness,
@@ -353,11 +353,42 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
                 print("No 1D to 2D links have been set")
         return fm
 
-    def simple_fm_model(start_time: int = 20160601, stop_time: int = 2 * 86400) -> FMModel:
+    def set_hydrolib_core_options(fmmodel: FMModel, options):
+        """ """
+
+        def set_options(obj_loc, options):
+            """
+            sets options recursively
+            """
+            # loop over all attributes of object
+            for attribute, value in options.__dict__.items():
+                # Skip python special attributes
+                # if attribute.startswith("__"):
+                if "__" in attribute:
+                    continue
+                # if an option is found, try to set it
+                # options should be int, float, list, or str type
+                if isinstance(value, (int, float, list, str, INIBasedModel, INIGeneral, INIModel)):
+                    try:
+                        setattr(obj_loc, attribute, value)
+                    except Exception as e:
+                        print("failed to set {}".format(attribute))
+                        print(e)
+                # if not, a subclass was encounterd and we need to traverse deeper
+                else:
+                    set_options(obj_loc=getattr(obj_loc, attribute), options=value)
+
+            return obj_loc
+
+        return set_options(obj_loc=fmmodel, options=options)
+
+    def simple_fm_model(
+        dtmax: int = 60, start_time: int = 20160601, stop_time: int = 2 * 86400
+    ) -> FMModel:
         fm = FMModel()
         fm.time.refdate = start_time
         fm.time.tstop = stop_time
-
+        fm.time.dtmax = dtmax
         return fm
 
     # check if data has been loaded and correct attributes are set
@@ -441,6 +472,11 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
                 extent=extent,
                 fm=self.fm,
                 one_d=model_config.FM.one_d_bool,
+            )
+
+        if hasattr(model_config.FM, "hydrolib_core_options"):
+            self.fm = set_hydrolib_core_options(
+                fmmodel=self.fm, options=model_config.FM.hydrolib_core_options
             )
 
     # save D-HYDRO model

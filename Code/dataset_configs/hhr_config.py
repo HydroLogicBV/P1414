@@ -21,11 +21,12 @@ class Models:
 
 class RawData:
     ## PATHS
-    # p_folder = r"D:\Work\Project\P1414\GIS"
-    p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v2.1_test.shp"  # From V7
+    p_folder = r"D:\Work\Project\P1414\GIS"
+    # p_folder = r"D:\work\P1414_ROI\GIS"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v2.2_test.shp"  # From V7
     bridges_path = p_folder + r"\HHRijnland\Niet legger\brug_edited.shp"
     culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
+    norm_profile_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as.shp"
     peil_gebieden_path = p_folder + r"\HHRijnland\Legger\Peilvakken\peilvakken.shp"
     pump_path = p_folder + r"\HHRijnland\Niet legger\gemaal_peil.shp"
     weir_path = p_folder + r"\HHRijnland\Legger\Stuw\stuw.shp"
@@ -33,6 +34,7 @@ class RawData:
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
+    branch_selection = dict([("column", "CATEGORIEO"), ("value", "primair")])
     branch_index_mapping = dict(
         [
             ("bodembreedte", "BODEMBREED"),
@@ -84,6 +86,28 @@ class RawData:
             ("ruwheid", None),
             ("uittreeverlies", None),
             ("vormkoker", "VORMKOKER"),
+        ]
+    )
+
+    ## Normprofielen
+    np_selection = dict([("column", "CATEGORIEO"), ("value", "primair")])
+    np_index_mapping = dict(
+        [
+            ("bodembreedte", "BODEMBREED"),
+            ("bodemhoogte benedenstrooms", None),
+            ("bodemhoogte bovenstrooms", None),
+            ("code", "CODE"),
+            ("diepte", "WATERDIEPT"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("hoogte insteek linkerzijde", None),
+            ("hoogte insteek rechterzijde", None),
+            ("taludhelling linkerzijde", "TALUDHELLI"),
+            ("taludhelling rechterzijde", "TALUDHEL_1"),
+            ("typeruwheid", "TYPERUWHEI"),
+            ("ruwheidhoog", "RUWHEIDSWA"),
+            ("ruwheidlaag", "RUWHEIDSWA"),
+            ("water_width_index", "BREEDTE"),
         ]
     )
 

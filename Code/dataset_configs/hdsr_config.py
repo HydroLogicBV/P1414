@@ -14,24 +14,25 @@ class Models:
             coupling_type = "2Dto1D"
             dx = 500
             dy = 500
-            #elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
 
 class RawData:
     ## PATHS
-    # p_folder = r"D:\Work\Project\P1414\GIS"
-    p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v2.1_test.shp"  # Corrected from V7
+    p_folder = r"D:\Work\Project\P1414\GIS"
+    # p_folder = r"D:\work\P1414_ROI\GIS"
+    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v2.2_test.shp"  # Corrected from V7
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
+    norm_profile_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
     pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"
     weir_path = p_folder + r"\HDSR\Legger\Stuwen\BR_Stuwen.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
+    branch_selection = dict([("column", "CATEGORIEO"), ("value", 1)])
     branch_index_mapping = dict(
         [
             ("bodembreedte", "IWS_W_BODB"),
@@ -82,6 +83,27 @@ class RawData:
             ("ruwheid", None),
             ("uittreeverlies", None),
             ("vormkoker", "VORMKOKER"),
+        ]
+    )
+
+    ## normprofiles
+    np_selection = branch_selection
+    np_index_mapping = dict(
+        [
+            ("bodembreedte", "IWS_W_BODB"),
+            ("bodemhoogte benedenstrooms", "IWS_W_BODH"),
+            ("bodemhoogte bovenstrooms", "IWS_W_BODH"),
+            ("code", "CODE"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("hoogte insteek linkerzijde", "IWS_W_INST"),
+            ("hoogte insteek rechterzijde", "IWS_W_IN_1"),
+            ("taludhelling linkerzijde", "IWS_W_TALU"),
+            ("taludhelling rechterzijde", "IWS_W_TA_1"),
+            ("typeruwheid", None),
+            ("ruwheidhoog", None),
+            ("ruwheidlaag", None),
+            ("water_width_index", "IWS_W_WATB"),
         ]
     )
 

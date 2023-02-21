@@ -19,9 +19,6 @@ class Models:
             two_d_buffer = 100
 
         class hydrolib_core_options:
-            class external_forcing:
-                pass
-
             class geometry:
                 dxmin1d = 500
                 usecaching = 1

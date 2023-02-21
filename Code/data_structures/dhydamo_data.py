@@ -1,6 +1,7 @@
 import geopandas as gpd
 import pandas as pd
-from clip_tools.clip_tools import _clip_structures_by_branches
+from geo_tools.clip_tools import _clip_structures_by_branches
+from geo_tools.merge_networks import merge_networks
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
 from data_structures.hydamo_helpers import check_and_fix_duplicate_code, convert_to_dhydamo_data
@@ -41,7 +42,7 @@ class DHydamoData:
 
         self.ddm = _clip_structures_by_branches(self, buffer=buffer, min_overlap=min_overlap)
 
-    def from_raw_data(self, defaults: str, config: str) -> None:
+    def from_raw_data(self, defaults: str, config: str, branch_snap_dist: float = 10) -> None:
         """
         Class method to load raw_data into a DHydamoDataModel. This datamodel validates data against expected values
 
@@ -55,10 +56,9 @@ class DHydamoData:
         # load features and add to DHydamoDataModel
         ddm = convert_to_dhydamo_data(defaults=defaults, config=config)
 
-        # set datamodel to self
-        self._set_data(ddm=ddm)
+        self._set_data(ddm=ddm, branch_snap_dist=branch_snap_dist)
 
-    def from_dhydamo_gpkg(self, gpkg_path: str) -> None:
+    def from_dhydamo_gpkg(self, gpkg_path: str, branch_snap_dist: float = 10) -> None:
         """
         Class method to load data from geopackage and validate data against DHydamoDataModel
 
@@ -89,7 +89,7 @@ class DHydamoData:
             setattr(ddm, attribute, data)
 
         # set datamodel to self
-        self._set_data(ddm=ddm)
+        self._set_data(ddm=ddm, branch_snap_dist=branch_snap_dist)
 
     def to_dhydamo_gpkg(self, output_gpkg: str) -> None:
         """
@@ -123,7 +123,7 @@ class DHydamoData:
     def write_dimr(self, output_folder: str):
         return write_dimr(fm=self.fm, output_folder=output_folder)
 
-    def _set_data(self, ddm: DHydamoDataModel) -> None:
+    def _set_data(self, ddm: DHydamoDataModel, branch_snap_dist: float) -> None:
         """
         Class method to add a DHydamoDataModel to self while checking for pre-existing data.
         This method simply assigns the data if there is no pre-existing data.
@@ -160,10 +160,17 @@ class DHydamoData:
 
                     # else, concatonate the old and new geodataframe and assign to the datamodel
                     else:
-                        new_gdf = gpd.GeoDataFrame(
-                            pd.concat(
-                                [getattr(self.ddm, key), getattr(ddm, key)], ignore_index=True
+                        in_gdf = getattr(ddm, key)
+
+                        if key == "waterloop":
+                            in_gdf = merge_networks(
+                                data_base_input=in_gdf,
+                                data_match_input=getattr(self.ddm, key),
+                                max_dist=branch_snap_dist,
                             )
+
+                        new_gdf = gpd.GeoDataFrame(
+                            pd.concat([getattr(self.ddm, key), in_gdf], ignore_index=True)
                         )
                         new_gdf = check_and_fix_duplicate_code(new_gdf)
 

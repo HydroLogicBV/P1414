@@ -1,6 +1,6 @@
 from itertools import chain
 from pathlib import Path
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, Optional, Sequence
 
 from hydrolib.core.io.polyfile.models import Description, Metadata, Point, PolyObject
 
@@ -55,23 +55,20 @@ class Serializer:
         Returns:
             str: The serialised equivalent of this Point
         """
-
         description = Serializer.serialize_description(obj.description)
         metadata = Serializer.serialize_metadata(obj.metadata)
         points = map(Serializer.serialize_point, obj.points)
         return chain(description, metadata, points)
 
 
-def write_polyfile(path: Path, data: Dict) -> None:
+def write_polyfile(path: Path, data: Sequence[PolyObject]) -> None:
     """Write the data to a new file at path
 
     Args:
         path (Path): The path to write the data to
         data (PolyFile): The data to write
     """
-    serialized_data = chain.from_iterable(
-        map(Serializer.serialize_poly_object, data["objects"])
-    )
+    serialized_data = chain.from_iterable(map(Serializer.serialize_poly_object, data))
 
     path.parent.mkdir(parents=True, exist_ok=True)
 
