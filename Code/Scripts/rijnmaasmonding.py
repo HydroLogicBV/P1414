@@ -11,8 +11,8 @@ output_folder = folder + r"\Models\RMM\V0"
 config = r"rijnmaasmonding_config"
 defaults = r"defaults"
 
-build_database = False
-build_model = True
+build_database = True
+build_model = False
 
 if build_database:
     # 1. initialize an instance of DHydamoData
@@ -27,6 +27,4 @@ if build_database:
 if build_model:
     dhd = DHydroData()
     dhd.hydamo_from_gpkg(gpkg_file)
-    dhd.to_dhydro(config=config, output_folder=output_folder, write=False)
-
-    dhd.write_dimr(output_folder=output_folder)
+    dhd.to_dhydro(config=config, output_folder=output_folder)

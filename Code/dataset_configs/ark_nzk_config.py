@@ -18,6 +18,9 @@ class Models:
             two_d_buffer = 100
 
 
+### PEIL ++
+
+
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
@@ -26,6 +29,9 @@ class RawData:
     river_profile_path = p_folder + r"\ARK NZK\ZW_cross.csv"
     weir_path = p_folder + r"\ARK NZK\netwerk_watergangen_boezemmodel_Weirs.shp"
 
+
+    class Peil:
+        default_peil = -0.3
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches

@@ -5,11 +5,15 @@ from typing import List, Union
 
 import geopandas as gpd
 import numpy as np
+from hydrolib.core.basemodel import DiskOnlyFileModel
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
 from hydrolib.core.io.friction.models import FrictBranch, FrictGlobal, FrictionModel
 from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
+from hydrolib.core.io.inifield.models import IniFieldModel, InitialField
 from hydrolib.core.io.mdu.models import FMModel
+from hydrolib.core.io.onedfield.models import OneDFieldBranch, OneDFieldGlobal, OneDFieldModel
+from hydrolib.core.io.polyfile.models import Description, Metadata, Point, PolyFile, PolyObject
 from hydrolib.core.io.structure.models import StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
@@ -17,13 +21,75 @@ from hydrolib.dhydamo.geometry import mesh
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 from shapely.geometry import LineString, Polygon
 
-from data_structures.dhydamo_data_model import DHydamoDataModel
+from data_structures.dhydro_data_model import ROIDataModel as DataModel
+
+FM_FOLDER = "dflowfm"
 
 
-def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None):
+def to_dhydro(
+    self,
+    config: str,
+    extent: Union[gpd.GeoDataFrame, Polygon] = None,
+    initial_1D_waterdepth: float = 1,
+    output_folder=None,
+):
     """ """
 
-    def add_branches(ddm: DHydamoDataModel, features: List[str], hydamo: HyDAMO) -> HyDAMO:
+    def add_1D_initial_waterdepth(fm: FMModel, fm_path: Path, initial_1D_waterdepth: float):
+        globalwd = OneDFieldGlobal(quantity="waterdepth", unit="m", value=initial_1D_waterdepth)
+        onedfile_wd = OneDFieldModel(global_=globalwd)
+        onedfile_wd.filepath = fm_path / "Initialwaterdepth.ini"
+        onedfile_wd.save()
+
+        initialwd = InitialField(
+            quantity="waterdepth",
+            datafile=DiskOnlyFileModel(filepath=Path("Initialwaterdepth.ini")),
+            datafiletype="1dField",
+            locationtype="1d",
+        )
+
+        inifieldmodel = IniFieldModel(initial=[initialwd])
+        fm.geometry.inifieldfile = inifieldmodel
+
+        return fm
+
+    def add_1D_initial_waterlevel(
+        fm: FMModel, fm_path: Path, ddm: DataModel = None, initial_1D_waterlevl=0
+    ):
+        branches_gdf = ddm.waterloop
+        branch_field_list = []
+        for name, branch in branches_gdf.iterrows():
+            if np.isnan(branch["peil"]):
+                continue
+
+            branch_field_list.append(
+                OneDFieldBranch(
+                    branchid=branch["code"],
+                    numlocations=2,  # zero locations does not work
+                    chainage=[
+                        np.around(branch["geometry"].length * 0.1, 3),
+                        np.around(branch["geometry"].length * 0.9, 3),
+                    ],
+                    values=[np.around(branch["peil"], 3), np.around(branch["peil"], 3)],
+                )
+            )
+
+        globalwl = OneDFieldGlobal(quantity="waterlevel", unit="m", value=initial_1D_waterlevl)
+        onedfile_wl = OneDFieldModel(branch=branch_field_list, global_=globalwl)
+        onedfile_wl.filepath = fm_path / "Initialwaterlevels.ini"
+        onedfile_wl.save()
+
+        initialwl = InitialField(
+            quantity="waterlevel",
+            datafile=DiskOnlyFileModel(filepath=Path("Initialwaterlevels.ini")),
+            datafiletype="1dField",
+            locationtype="1d",
+        )
+        inifieldmodel = IniFieldModel(initial=[initialwl])
+        fm.geometry.inifieldfile = inifieldmodel
+        return fm
+
+    def add_branches(ddm: DataModel, features: List[str], hydamo: HyDAMO) -> HyDAMO:
         hydamo.branches.set_data(
             ddm.waterloop, index_col="code", check_geotype=False
         )  # using globalid leads to errors in D-HYDRO. Probably too long name
@@ -113,7 +179,7 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
         return hydamo
 
     def add_bridges(
-        ddm: DHydamoDataModel, hydamo: HyDAMO, default_height=10, max_snap_dist: float = 5
+        ddm: DataModel, hydamo: HyDAMO, default_height=10, max_snap_dist: float = 5
     ) -> HyDAMO:
 
         hydamo.bridges.set_data(ddm.brug, index_col="code")
@@ -136,7 +202,7 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
 
         return hydamo
 
-    def add_culverts(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+    def add_culverts(ddm: DataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
         hydamo.culverts.set_data(ddm.duiker)
         hydamo.culverts.snap_to_branch(
             hydamo.branches, snap_method="overal", maxdist=max_snap_dist
@@ -162,7 +228,28 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
 
         return hydamo
 
-    def add_pumps(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+    def add_fixed_weirs(ddm: DataModel, fm=FMModel, data: List = [0, 0, 5, 4, 4, 0]) -> FMModel:
+        fw_gdf = ddm.keringen
+
+        line_list = []
+        for name, row in fw_gdf.iterrows():
+            coord_list = row.geometry.coords[:]
+            point_list = []
+            for (x, y, z) in coord_list:
+                point_list.append(Point(x=x, y=y, z=z, data=data))
+
+            metadata = Metadata(name=str(row["code"]), n_rows=len(coord_list), n_columns=9)
+            polyline = PolyObject(
+                description=Description(content=str(row["code"])),
+                metadata=metadata,
+                points=point_list,
+            )
+            line_list.append(polyline)
+
+        fm.geometry.fixedweirfile = [PolyFile(has_z_values=True, objects=line_list)]
+        return fm
+
+    def add_pumps(ddm: DataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
         hydamo.pumpstations.set_data(ddm.gemaal)
         # hydamo.pumps.set_data(ddm.pomp)
         hydamo.pumpstations.snap_to_branch(
@@ -179,7 +266,7 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
 
         return hydamo
 
-    def add_river_profiles(ddm: DHydamoDataModel, hydamo: HyDAMO) -> HyDAMO:
+    def add_river_profiles(ddm: DataModel, hydamo: HyDAMO) -> HyDAMO:
 
         for name, prof in ddm.rivier_profielen_data.iterrows():
             profile = ddm.rivier_profielen[ddm.rivier_profielen["name"] == prof["name"]]
@@ -212,7 +299,7 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
 
         return hydamo
 
-    def add_river_roughness(ddm: DHydamoDataModel, fm=FMModel) -> FMModel:
+    def add_river_roughness(ddm: DataModel, fm=FMModel) -> FMModel:
         gdf = ddm.rivier_ruwheid
         sections = gdf.section.unique()
 
@@ -285,7 +372,7 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
             fm.geometry.frictfile.append(friction_model)
         return fm
 
-    def add_weirs(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+    def add_weirs(ddm: DataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
         hydamo.weirs.set_data(ddm.stuw)
         hydamo.opening.set_data(ddm.kunstwerkopening)
         hydamo.management_device.set_data(ddm.regelmiddel)
@@ -387,20 +474,27 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
         return fm, hydamo
 
     def build_2D_model(
+        coupling_type: str,
         dx: float,
         dy: float,
+        elevation_raster_path: str,
         extent: gpd.GeoDataFrame,
         fm: FMModel,
-        coupling: str = None,
-        elevation_raster_path: str = None,
+        initial_peil_raster_path: str,
+        two_d_buffer: float,
         one_d=False,
     ) -> FMModel:
 
         network = fm.geometry.netfile.network
 
-        mesh.mesh2d_add_rectilinear(
-            network=network, polygon=extent.geometry.values[0], dx=dx, dy=dy
-        )
+        if two_d_buffer is None:
+            polygon = extent.geometry.values[0]
+        elif isinstance(two_d_buffer, (int, float)):
+            polygon = extent.geometry.values[0].buffer(two_d_buffer)
+        else:
+            raise ValueError("not supported buffer")
+
+        mesh.mesh2d_add_rectilinear(network=network, polygon=polygon, dx=dx, dy=dy)
 
         if elevation_raster_path is not None:
             mesh.mesh2d_altitude_from_raster(
@@ -413,16 +507,32 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
                 window_size=int(dx + dy),
             )
 
-        branchids = network._mesh1d.network1d_branch_id
-        branchids = [x for x in branchids if not x.startswith(r"rijn_")]
+        if initial_peil_raster_path is not None:
+            initial_wl = InitialField(
+                quantity="waterlevel",
+                datafile=DiskOnlyFileModel(filepath=Path(initial_peil_raster_path)),
+                datafiletype="GeoTIFF",
+                interpolationmethod="averaging",
+                locationtype="2d",
+            )
+            if hasattr(fm.geometry, "inifieldfile") and isinstance(
+                fm.geometry.inifieldfile, IniFieldModel
+            ):
+                fm.geometry.inifieldfile.initial.append(initial_wl)
+            else:
+                fm.geometry.inifieldfile = IniFieldModel(initial=[initial_wl])
+
+        # branchids = network._mesh1d.network1d_branch_id
+        # branchids = [x for x in branchids if not x.startswith(r"rijn_")]
+        branchids = None
         if one_d:
-            if coupling == "1Dto2D":
+            if coupling_type == "1Dto2D":
                 mesh.links1d2d_add_links_1d_to_2d(
-                    branchids=branchids, network=network, within=extent.geometry.values[0]
+                    branchids=branchids, network=network, within=polygon
                 )
-            elif coupling == "2Dto1D":
+            elif coupling_type == "2Dto1D":
                 mesh.links1d2d_add_links_2d_to_1d_embedded(
-                    branchids=branchids, network=network, within=extent.geometry.values[0]
+                    branchids=branchids, network=network, within=polygon
                 )
             else:
                 print("No 1D to 2D links have been set")
@@ -523,10 +633,25 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
             if "rivier_ruwheid" in self.features:
                 self.fm = add_river_roughness(ddm=self.ddm, fm=self.fm)
 
+            if ("peil" in self.ddm.waterloop.columns) and (output_folder is not None):
+                fm_path = Path(output_folder) / FM_FOLDER
+                self.fm = add_1D_initial_waterlevel(
+                    ddm=self.ddm,
+                    fm=self.fm,
+                    fm_path=fm_path,
+                )
+            else:
+                self.fm = add_1D_initial_waterdepth(
+                    fm=self.fm,
+                    fm_path=fm_path,
+                    initial_1D_waterdepth=initial_1D_waterdepth,
+                )
+
         # build 2D model
         if model_config.FM.two_d_bool:
             # compute extent of 1D network
             # Add to gpgk?
+
             if hasattr(model_config.FM.two_d, "extent_path") and (
                 model_config.FM.two_d.extent_path is not None
             ):
@@ -536,58 +661,48 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
                     model_config.FM.two_d.two_d_buffer
                 )
 
+            option_list = [
+                "coupling_type",
+                "elevation_raster_path",
+                "initial_peil_raster_path",
+                "two_d_buffer",
+            ]
+            kwargs = {}
+            for option in option_list:
+                if hasattr(model_config.FM.two_d, option) and (
+                    getattr(model_config.FM.two_d, option) is not None
+                ):
+                    kwargs[option] = getattr(model_config.FM.two_d, option)
+                else:
+                    kwargs[option] = None
+
             # add 2D model
             print("\nBuilding 2D model grid\n")
             self.fm = build_2D_model(
-                coupling=model_config.FM.two_d.coupling_type,
                 dx=model_config.FM.two_d.dx,
                 dy=model_config.FM.two_d.dy,
-                elevation_raster_path=model_config.FM.two_d.elevation_raster_path,
                 extent=extent,
                 fm=self.fm,
                 one_d=model_config.FM.one_d_bool,
+                **kwargs,
             )
+
+            if "keringen" in self.features:
+                self.fm = add_fixed_weirs(ddm=self.ddm, fm=self.fm)
 
         if hasattr(model_config.FM, "hydrolib_core_options"):
             self.fm = set_hydrolib_core_options(
                 fmmodel=self.fm, options=model_config.FM.hydrolib_core_options
             )
 
-    # save D-HYDRO model
-    # write_dimr(fm=self.fm, output_folder=output_folder, one_d=model_config.FM.one_d)
-
 
 def write_dimr(fm: FMModel, output_folder: str):
 
-    # if one_d:
-    #     models = Df2HydrolibModel(hydamo)
-    #     # Export to DIMR configuration
-    #     fm.geometry.structurefile = [StructureModel(structure=models.structures)]
-    #     fm.geometry.crosslocfile = CrossLocModel(crosssection=models.crosslocs)
-    #     fm.geometry.crossdeffile = CrossDefModel(definition=models.crossdefs)
-
-    #     fm.geometry.frictfile = []
-    #     for i, fric_def in enumerate(models.friction_defs):
-    #         fric_model = FrictionModel(global_=fric_def)
-    #         fric_model.filepath = f"roughness_{i}.ini"
-    #         fm.geometry.frictfile.append(fric_model)
-
-    # fm.output.obsfile = [ObservationPointModel(observationpoint=models.obspoints)]
-
-    # extmodel = ExtModel()
-    # extmodel.boundary = models.boundaries_ext
-    # extmodel.lateral = models.laterals_ext
-    # fm.external_forcing.extforcefilenew = extmodel
-
-    # fm.geometry.inifieldfile = IniFieldModel(initial=models.inifields)
-    # for ifield, onedfield in enumerate(models.onedfieldmodels):
-    #     fm.geometry.inifieldfile.initial[ifield].datafile = OneDFieldModel(
-    #         global_= onedfield
-    #     )
-    # Now we write the file structure:
     output_path = Path(output_folder)
     output_path.mkdir(exist_ok=True, parents=True)
-    fm.filepath = Path(output_folder) / "dflowfm" / "test.mdu"
+    fm_path = Path(output_folder) / FM_FOLDER
+    fm.filepath = fm_path / "test.mdu"
+
     dimr = DIMR()
     dimr.component.append(
         FMComponent(
@@ -595,8 +710,6 @@ def write_dimr(fm: FMModel, output_folder: str):
         )
     )
     dimr.save(recurse=True)
-    # import shutil
-    # shutil.copy(data_path / "initialWaterDepth.ini", folder / "fm")
     dimr_path = r"C:\Program Files\Deltares\D-HYDRO Suite 2023.01 1D2D\plugins\DeltaShell.Dimr\kernels\x64\dimr\scripts\run_dimr.bat"
     dimr = DIMRWriter(dimr_path=dimr_path, output_path=output_path)
     dimr.write_dimrconfig(fm=fm)  # , rr_model=drrmodel, rtc_model=drtcmodel)

@@ -26,8 +26,8 @@ class Bridges:
 class Culverts:
     breedteopening = 0.5
     gesloten = 1
-    hoogtebinnenonderkantbene = -10
-    hoogtebinnenonderkantbov = -10
+    hoogtebinnenonderkantbene = 0
+    hoogtebinnenonderkantbov = 0
     hoogteopening = 0.5
     intreeverlies = 0.6
     lengte = 1
@@ -35,6 +35,10 @@ class Culverts:
     typeruwheid = "StricklerKn"
     uittreeverlies = 0.8
     vormkoker = 1
+
+
+class FixedWeirs:
+    pass
 
 
 class MeasuredProfiles:
@@ -57,9 +61,9 @@ class Weirs:
     afvoercoefficient_stuw = 1
     afvoercoefficient_opening = 0.85
     hoogstedoorstroombreedte = None
-    hoogstedoorstroomhoogte = 20
-    laagstedoorstroombreedte = 0.1
-    laagstedoorstroomhoogte = 20
+    hoogstedoorstroomhoogte = 0
+    laagstedoorstroombreedte = 1
+    laagstedoorstroomhoogte = 0
     overlaatonderlaat = "Overlaat"
     soortregelbaarheid = 1
     soortstuw = 11

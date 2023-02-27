@@ -42,7 +42,7 @@ def check_more_branches(sdm_array, base_idx, min_idx):
     return check_min_idx
 
 
-def merge_networks(data_base_input, data_match_input, max_dist, outputfile_path=None):
+def merge_networks(data_base_input, data_match_input, max_dist=1, outputfile_path=None):
     """
     This function snaps geometries from the base dataset to the matching dataset if they are within
     a specified distance from eachother.

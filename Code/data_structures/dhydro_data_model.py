@@ -68,10 +68,11 @@ class StuwSchema(hdm.StuwSchema):
 
 
 class WaterloopSchema(hdm.WaterloopSchema):
+    peil: Optional[Series[float]] = pa.Field(nullable=True)
     typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)  # addition to confluence
 
 
-class DHydamoDataModel(BaseModel):
+class ROIDataModel(BaseModel):
     """
     Datamodel that validates attributes using pydantic and pandera, using pandera SchemaModels.
     The former only checks for type (i.e. DataFrame), the latter checks the content of the DataFrames
@@ -99,6 +100,7 @@ class DHydamoDataModel(BaseModel):
     duiker: Optional[DataFrame[DuikerSchema]]
     gemaal: Optional[DataFrame[GemaalSchema]]
     hydroobject_normgp: Optional[DataFrame[Hydroobject_normgpSchema]]
+    keringen: Optional[Any]
     kunstwerkopening: Optional[DataFrame[KunstwerkopeningSchema]]
     normgeparamprofielwaarde: Optional[DataFrame[NormgeparamprofielwaardeSchema]]
     pomp: Optional[DataFrame[PompSchema]]
@@ -109,7 +111,6 @@ class DHydamoDataModel(BaseModel):
     rivier_profielen: Optional[Any]
     rivier_profielen_data: Optional[Any]
     rivier_ruwheid: Optional[Any]
-    rivier_ruwheid_data: Optional[Any]
     ruwheidsprofiel: Optional[DataFrame[RuwheidsprofielSchema]]
     sturing: Optional[DataFrame[SturingSchema]]
     stuw: Optional[DataFrame[StuwSchema]]
@@ -118,14 +119,14 @@ class DHydamoDataModel(BaseModel):
     @root_validator(pre=False)
     def validate_codes(cls, values):
         """
-        Validate that codes are unique between structures
+        Validate that codes are unique amongst structures
         """
 
         return validate_codes(values)
 
     class Config:
-        extra = "forbid"  # do not allow extra fields to be assigned
-        validate_assignment = True  # validates new fields that are assigned
+        extra = "forbid"  # do not allow non-specified fields to be assigned
+        validate_assignment = True  # validates new fields upon assignment
 
     def to_gpkg(self, output_gpkg: str) -> None:
         """
@@ -148,11 +149,3 @@ class DHydamoDataModel(BaseModel):
                     getattr(self, key).to_file(output_gpkg, layer=key, driver="GPKG")
                 except:
                     print("\nfailed to save {}\n".format(key))
-
-
-class FixedWeirDataModel(BaseModel):
-    primaire_keringen: Optional[Any]
-    regionale_keringen: Optional[Any]
-    overige_keringen: Optional[Any]
-    hoofdwegen: Optional[Any]
-    spoorwegen: Optional[Any]

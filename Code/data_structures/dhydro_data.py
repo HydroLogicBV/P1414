@@ -3,11 +3,9 @@ import pandas as pd
 from geo_tools.clip_tools import _clip_structures_by_branches
 from geo_tools.merge_networks import merge_networks
 
-# from data_structures.dhydro_data_model import DHydroDataModel
-from data_structures.dhydro_data_model import (DHydamoDataModel,
-                                               FixedWeirDataModel)
-from data_structures.hydamo_helpers import (check_and_fix_duplicate_code,
-                                            convert_to_dhydamo_data)
+from data_structures.dhydro_data_model import ROIDataModel as DataModel
+from data_structures.fixedweirs_helpers import create_fixed_weir_data
+from data_structures.hydamo_helpers import check_and_fix_duplicate_code, convert_to_dhydamo_data
 from data_structures.to_dhydro_helpers import to_dhydro, write_dimr
 
 
@@ -45,8 +43,15 @@ class DHydroData:
 
         self.ddm = _clip_structures_by_branches(self, buffer=buffer, min_overlap=min_overlap)
 
+    def fixed_weirs_from_raw_data(self, config: str, defaults: str, min_length: float = None):
+        ddm = DataModel()
+        ddm = create_fixed_weir_data(
+            config=config, defaults=defaults, ddm=ddm, min_length=min_length
+        )
+        self._set_ddm(ddm=ddm)
+
     def hydamo_from_raw_data(
-        self, defaults: str, config: str, branch_snap_dist: float = 10
+        self, config: str, defaults: str, branch_snap_dist: float = 10
     ) -> None:
         """
         Class method to load raw_data into a DHydamoDataModel. This datamodel validates data against expected values
@@ -59,10 +64,10 @@ class DHydroData:
             None
         """
         # load features and add to DHydamoDataModel
-        ddm = DHydamoDataModel()
+        ddm = DataModel()
         ddm = convert_to_dhydamo_data(ddm=ddm, defaults=defaults, config=config)
 
-        self._set_data(ddm=ddm, branch_snap_dist=branch_snap_dist)
+        self._set_ddm(branch_snap_dist=branch_snap_dist, ddm=ddm)
 
     def hydamo_from_gpkg(self, gpkg_path: str, branch_snap_dist: float = 10) -> None:
         """
@@ -79,7 +84,7 @@ class DHydroData:
         # self.gpkg_path = gpkg_path
 
         # initialize datamodel
-        ddm = DHydamoDataModel()
+        ddm = DataModel()
 
         # loop over datamodel attributes and check if they are presentin the geopackage
         # if so, set them to the datamodel
@@ -95,7 +100,7 @@ class DHydroData:
             setattr(ddm, attribute, data)
 
         # set datamodel to self
-        self._set_data(ddm=ddm, branch_snap_dist=branch_snap_dist)
+        self._set_ddm(branch_snap_dist=branch_snap_dist, ddm=ddm)
 
     def hydamo_to_gpkg(self, output_gpkg: str) -> None:
         """
@@ -126,7 +131,7 @@ class DHydroData:
             raise AttributeError("Modeldatabase not loaded")
 
         else:
-            to_dhydro(self=self, config=config)
+            to_dhydro(self=self, config=config, output_folder=output_folder)
 
         if write:
             self.write_dimr(output_folder=output_folder)
@@ -134,7 +139,7 @@ class DHydroData:
     def write_dimr(self, output_folder: str):
         return write_dimr(fm=self.fm, output_folder=output_folder)
 
-    def _set_data(self, ddm: DHydamoDataModel, branch_snap_dist: float) -> None:
+    def _set_ddm(self, ddm: DataModel, branch_snap_dist: float = None) -> None:
         """
         Class method to add a DHydamoDataModel to self while checking for pre-existing data.
         This method simply assigns the data if there is no pre-existing data.

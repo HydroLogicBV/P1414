@@ -8,10 +8,9 @@ import networkx as nx
 import numpy as np
 from scipy.spatial import KDTree
 from shapely.geometry import LineString, MultiPoint, Point
-from shapely.ops import linemerge
 from tqdm import tqdm
 
-from networkx_tools import gdf_to_nx
+from networkx_tools import combine_straight_branches, gdf_to_nx
 
 
 def check_branch_overlap(
@@ -37,39 +36,6 @@ def check_branch_overlap(
                                         number of replaced branches, number of dropped branches]
 
     """
-
-    def combine_straight_branches(G: nx.Graph):
-        # Select all nodes with only 2 neighbors
-        nodes_to_remove = [n for n in G.nodes if len(list(G.neighbors(n))) == 2]
-
-        for node in nodes_to_remove:
-            edges = G.edges(node, data=True)
-            if len(edges) == 1:
-                continue
-            else:
-                (_, _, data1), (_, _, data2) = edges
-            data_new = {}
-            for key, value in data1.items():
-                if isinstance(value, (int, float)):
-                    data_new[key] = np.nanmean([value, data2[key]])
-
-                elif isinstance(value, str):
-                    data_new[key] = value
-
-                elif isinstance(value, LineString):
-                    data_new[key] = linemerge([data1[key], data2[key]])
-
-                elif value is None:
-                    data_new[key] = None
-
-                else:
-                    print(value)
-                    print(type(value))
-                    raise TypeError("Unimplemented type")
-
-            G.add_edge(*G.neighbors(node), **data_new)
-            G.remove_node(node)
-        return G
 
     # print("Checking for split branches and fixing them")
 
