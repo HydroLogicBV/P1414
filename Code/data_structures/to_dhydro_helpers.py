@@ -7,7 +7,7 @@ import geopandas as gpd
 import numpy as np
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
-from hydrolib.core.io.friction.models import FrictionModel
+from hydrolib.core.io.friction.models import FrictBranch, FrictGlobal, FrictionModel
 from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
 from hydrolib.core.io.mdu.models import FMModel
 from hydrolib.core.io.structure.models import StructureModel
@@ -162,7 +162,24 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
 
         return hydamo
 
-    def add_profiles_river(ddm: DHydamoDataModel, hydamo: HyDAMO) -> HyDAMO:
+    def add_pumps(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+        hydamo.pumpstations.set_data(ddm.gemaal)
+        # hydamo.pumps.set_data(ddm.pomp)
+        hydamo.pumpstations.snap_to_branch(
+            hydamo.branches, snap_method="overal", maxdist=max_snap_dist
+        )
+        hydamo.pumpstations.dropna(axis=0, inplace=True, subset=["branch_offset"])
+
+        hydamo.pumps.set_data(ddm.pomp[ddm.pomp["gemaalid"].isin(hydamo.pumpstations["globalid"])])
+        hydamo.management.set_data(ddm.sturing)
+
+        hydamo.structures.convert.pumps(
+            hydamo.pumpstations, pumps=hydamo.pumps, management=hydamo.management
+        )
+
+        return hydamo
+
+    def add_river_profiles(ddm: DHydamoDataModel, hydamo: HyDAMO) -> HyDAMO:
 
         for name, prof in ddm.rivier_profielen_data.iterrows():
             profile = ddm.rivier_profielen[ddm.rivier_profielen["name"] == prof["name"]]
@@ -181,7 +198,7 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
                 mainwidth=prof["mainwidth"],
                 fp1width=prof["fp1width"],
                 fp2width=prof["fp2width"],
-                frictionids=None,
+                frictionids=prof["frictionids"].split(","),
                 frictiontypes=None,
                 frictionvalues=None,
             )
@@ -195,22 +212,78 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
 
         return hydamo
 
-    def add_pumps(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
-        hydamo.pumpstations.set_data(ddm.gemaal)
-        # hydamo.pumps.set_data(ddm.pomp)
-        hydamo.pumpstations.snap_to_branch(
-            hydamo.branches, snap_method="overal", maxdist=max_snap_dist
-        )
-        hydamo.pumpstations.dropna(axis=0, inplace=True, subset=["branch_offset"])
+    def add_river_roughness(ddm: DHydamoDataModel, fm=FMModel) -> FMModel:
+        gdf = ddm.rivier_ruwheid
+        sections = gdf.section.unique()
 
-        hydamo.pumps.set_data(ddm.pomp[ddm.pomp["gemaalid"].isin(hydamo.pumpstations["globalid"])])
-        hydamo.management.set_data(ddm.sturing)
+        friction_file_list = []
+        for section in sections:
+            frict_list = []
 
-        hydamo.structures.convert.pumps(
-            hydamo.pumpstations, pumps=hydamo.pumps, management=hydamo.management
-        )
+            fric_def_global = FrictGlobal(
+                frictionid=section, frictiontype="Chezy", frictionvalue=45
+            )
 
-        return hydamo
+            section_slice = gdf.loc[gdf["section"] == section, :]
+            for ix, (name, row) in enumerate(section_slice.iterrows()):
+                kwargs = copy(
+                    row[
+                        [
+                            "branchid",
+                            "frictiontype",
+                            "functiontype",
+                            "numlevels",
+                            "levels",
+                            "numlocations",
+                            "chainage",
+                            "frictionvalues",
+                        ]
+                    ]
+                )
+
+                if kwargs["chainage"] is not None:
+                    chainage = [float(i) for i in kwargs["chainage"].split(",")]
+                    numlocations = int(kwargs["numlocations"])
+                else:
+                    chainage = [1]
+                    numlocations = 1
+                kwargs = kwargs.drop("chainage")
+                kwargs = kwargs.drop("numlocations")
+
+                if kwargs["levels"] is not None:
+                    levels = [float(i) for i in kwargs["levels"].split(",")]
+                    numlevels = int(kwargs["numlevels"])
+                else:
+                    levels = None
+                    numlevels = 1
+                kwargs = kwargs.drop("levels")
+                kwargs = kwargs.drop("numlevels")
+
+                frictionvalues = [float(i) for i in kwargs["frictionvalues"].split(",")]
+                frictionvalues = (
+                    np.reshape(
+                        frictionvalues,
+                        (numlocations, numlevels),
+                    )
+                    .T.astype(float)
+                    .tolist()
+                )
+                kwargs = kwargs.drop("frictionvalues")
+
+                frict_branch = FrictBranch(
+                    **kwargs,
+                    chainage=chainage,
+                    frictionvalues=frictionvalues,
+                    levels=levels,
+                    numlevels=numlevels,
+                    numlocations=numlocations,
+                )
+
+                frict_list.append(frict_branch)
+            friction_model = FrictionModel(branch=frict_list, global_=fric_def_global)
+            friction_model.filepath = r"roughness_{}.ini".format(section)
+            fm.geometry.frictfile.append(friction_model)
+        return fm
 
     def add_weirs(ddm: DHydamoDataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
         hydamo.weirs.set_data(ddm.stuw)
@@ -340,14 +413,16 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
                 window_size=int(dx + dy),
             )
 
+        branchids = network._mesh1d.network1d_branch_id
+        branchids = [x for x in branchids if not x.startswith(r"rijn_")]
         if one_d:
             if coupling == "1Dto2D":
                 mesh.links1d2d_add_links_1d_to_2d(
-                    network=network, within=extent.geometry.values[0]
+                    branchids=branchids, network=network, within=extent.geometry.values[0]
                 )
             elif coupling == "2Dto1D":
                 mesh.links1d2d_add_links_2d_to_1d_embedded(
-                    network=network, within=extent.geometry.values[0]
+                    branchids=branchids, network=network, within=extent.geometry.values[0]
                 )
             else:
                 print("No 1D to 2D links have been set")
@@ -391,10 +466,6 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
         fm.time.dtmax = dtmax
         return fm
 
-    # check if data has been loaded and correct attributes are set
-    if (not hasattr(self, "ddm")) | (not hasattr(self, "features")):
-        raise AttributeError("Modeldatabase not loaded")
-
     # load configuration file
     model_config = getattr(importlib.import_module("dataset_configs." + config), "Models")
 
@@ -420,7 +491,7 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
                 "rivier_profielen" in self.features
             ):
                 print("\nworking on river profiles\n")
-                self.hydamo = add_profiles_river(ddm=self.ddm, hydamo=self.hydamo)
+                self.hydamo = add_river_profiles(ddm=self.ddm, hydamo=self.hydamo)
 
             # Loop over structures and add when present in the data
             struct_functions = {
@@ -448,6 +519,9 @@ def to_dhydro(self, config: str, extent: Union[gpd.GeoDataFrame, Polygon] = None
                 node_distance=model_config.FM.one_d.node_distance,
                 max_dist_to_struct=model_config.FM.one_d.max_dist_to_struct,
             )
+
+            if "rivier_ruwheid" in self.features:
+                self.fm = add_river_roughness(ddm=self.ddm, fm=self.fm)
 
         # build 2D model
         if model_config.FM.two_d_bool:

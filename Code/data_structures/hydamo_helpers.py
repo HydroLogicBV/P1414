@@ -12,6 +12,7 @@ from shapely.geometry import LineString, MultiPoint, Point
 
 from data_structures.dhydamo_data_model import DHydamoDataModel
 from data_structures.hydamo_globals import (
+    BRANCH_FRICTION_FUNCTION,
     MANAGEMENT_DEVICE_TYPES,
     ROUGHNESS_MAPPING_LIST,
     WEIR_MAPPING,
@@ -60,7 +61,7 @@ def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAP
     return type_ruwheid
 
 
-def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
+def convert_to_dhydamo_data(ddm: DHydamoDataModel, defaults: str, config: str) -> DHydamoDataModel:
     """ """
 
     def create_bridge_data(bridge_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -989,6 +990,164 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
         return pump_station_gdf, _pump_gdf, management_gdf
 
     def create_river_profiles(
+        branches_gdf: gpd.GeoDataFrame,
+        riv_prof_df: pd.DataFrame,
+        code_padding: str,
+        rough_df: pd.DataFrame = None,
+    ) -> gpd.GeoDataFrame:
+
+        riv_prof_df["id"] = riv_prof_df["id"].astype(str)
+        unique_ids = riv_prof_df["id"].unique()
+
+        geom_list = []
+        meta_list = []
+
+        for u_id in unique_ids:
+            slice = riv_prof_df.loc[riv_prof_df["id"] == u_id, :]
+            meta_data = slice.loc[slice["Data_type"] == "meta", :]
+            geom_data = slice.loc[slice["Data_type"] == "geom", :]
+
+            branch = meta_data["branch"].values[0]
+            name = code_padding + u_id
+
+            if np.sum(branches_gdf["code"].str.contains(branch)) == 0:
+                continue
+
+            total_width = (
+                meta_data["width main channel"].values[0]
+                + meta_data["width floodplain 1"].values[0]
+                + meta_data["width floodplain 2"].values[0]
+            )
+            max_width = geom_data["Flow width"].values[0].max()
+            if total_width > max_width:
+                diff = total_width - max_width
+            else:
+                diff = None
+
+            for ix in range(geom_data.shape[0]):
+                flow_width = geom_data["Flow width"].values[ix]
+                total_width = geom_data["Total width"].values[ix]
+
+                if (flow_width == max_width) and (diff is not None):
+                    flow_width = max_width + diff
+                    total_width = max_width + diff + 0.1
+
+                geom_dict = dict(
+                    [
+                        ("name", name),
+                        ("ix", ix),
+                        ("levels", geom_data["level"].values[ix]),
+                        ("flowWidths", flow_width),
+                        ("totalWidths", total_width),
+                        ("geometry", None),
+                    ]
+                )
+                geom_list.append(geom_dict)
+
+            branchid = branches_gdf.loc[
+                branches_gdf["code"].str.contains(meta_data["branch"].values[0]),
+                "code",
+            ].values[0]
+
+            meta_dict = dict(
+                [
+                    ("numLevels", geom_data.shape[0]),
+                    ("name", name),
+                    ("thalweg", 0),
+                    ("leveecrestLevel", meta_data["Crest level summerdike"].values[0]),
+                    (
+                        "leveebaselevel",
+                        meta_data["Floodplain baselevel behind summerdike"].values[0],
+                    ),
+                    ("leveeflowarea", meta_data["Flow area behind summerdike"].values[0]),
+                    ("leveetotalarea", meta_data["Total area behind summerdike"].values[0]),
+                    ("mainwidth", meta_data["width main channel"].values[0]),
+                    ("fp1width", meta_data["width floodplain 1"].values[0]),
+                    ("fp2width", meta_data["width floodplain 2"].values[0]),
+                    ("branchid", branchid),
+                    ("chainage", meta_data["chainage"].values[0]),
+                    ("geometry", None),
+                    ("frictionids", "Main,FloodPlain1,FloodPlain1"),
+                ]
+            )
+
+            meta_list.append(meta_dict)
+
+        geom_gdf = gpd.GeoDataFrame(geom_list, geometry="geometry", crs="epsg:28992")
+        meta_gdf = gpd.GeoDataFrame(meta_list, geometry="geometry", crs="epsg:28992")
+
+        if rough_df is not None:
+            rough_list = []
+            branches = riv_prof_df.loc[riv_prof_df["Data_type"] == "meta", "branch"].unique()
+            for ix, branch in enumerate(branches):
+                if np.sum(branches_gdf["code"].str.contains(branch)) == 0:
+                    continue
+
+                rough_slice = rough_df.loc[rough_df["Name"] == branch, :]
+                sections = ["Main", "FloodPlain1", "FloodPlain2"]
+                branchid = branches_gdf.loc[
+                    branches_gdf["code"].str.contains(branch),
+                    "code",
+                ].values[0]
+
+                for jx, section in enumerate(sections):
+                    section_slice = rough_slice.loc[rough_slice["SectionType"] == section, :]
+
+                    if section_slice.empty:
+                        continue
+
+                    function_type = BRANCH_FRICTION_FUNCTION[section_slice["Dependance"].values[0]]
+                    values = ",".join(map(str, section_slice["R_pos_constant"].values[:]))
+                    slice_dict = dict(
+                        [
+                            ("branchid", branchid),
+                            ("frictiontype", section_slice["RoughnessType"].values[0]),
+                            ("functiontype", function_type),
+                            ("geometry", None),
+                            ("section", section),
+                            ("frictionvalues", values),
+                        ]
+                    )
+
+                    chainages = section_slice["Chainage"]
+                    n_levels = chainages.value_counts().max()
+                    locations = chainages.value_counts()
+
+                    if n_levels > 1:
+                        chainage_slice = section_slice.loc[
+                            section_slice["Chainage"] == chainages.iloc[0], :
+                        ]
+
+                        slice_dict["numlevels"] = n_levels
+
+                        if function_type == "absDischarge":
+                            levels = chainage_slice["Q_pos"].values[:]
+                            values = section_slice["R_pos_f(Q)"].values[:]
+                            slice_dict["levels"] = ",".join(map(str, levels))
+                            slice_dict["frictionvalues"] = ",".join(map(str, values))
+                        elif function_type == "waterLevel":
+                            levels = chainage_slice["H_pos"].values[:]
+                            values = section_slice["R_pos__f(h)"].values[:]
+                            slice_dict["levels"] = ",".join(map(str, levels))
+                            slice_dict["frictionvalues"] = ",".join(map(str, values))
+                        else:
+                            print(function_type)
+                            raise ValueError("unknown function type")
+
+                    if locations.shape[0] > 1:
+                        slice_dict["numlocations"] = locations.shape[0]
+                        slice_dict["chainage"] = ",".join(map(str, locations.index))
+
+                    rough_list.append(slice_dict)
+
+            rough_gdf = gpd.GeoDataFrame(rough_list, geometry="geometry", crs="epsg:28992")
+
+        else:
+            rough_gdf = None
+
+        return geom_gdf, meta_gdf, rough_gdf
+
+    def create_river_profiles_old(
         branches_gdf: gpd.GeoDataFrame, riv_prof_df: pd.DataFrame, code_padding: str
     ) -> gpd.GeoDataFrame:
         ## TODO build list of dicts
@@ -1502,7 +1661,7 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
         return ddm
 
-    ddm = DHydamoDataModel()
+    # ddm = DHydamoDataModel()
     defaults = importlib.import_module("dataset_configs." + defaults)
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
     code_padding = config[:4] + r"_"  # add prefix of length 4 to all objects with codes
@@ -1663,11 +1822,24 @@ def convert_to_dhydamo_data(defaults: str, config: str) -> DHydamoDataModel:
 
     if hasattr(data_config, "river_profile_path"):
         if data_config.river_profile_path is not None:
+
+            if hasattr(data_config, "river_roughness_path") and (
+                data_config.river_roughness_path is not None
+            ):
+                rough_df = pd.read_csv(data_config.river_roughness_path)
+            else:
+                rough_df = None
+
             riv_prof_df = pd.read_csv(data_config.river_profile_path)
-            ddm.rivier_profielen, ddm.rivier_profielen_data = create_river_profiles(
+            (
+                ddm.rivier_profielen,
+                ddm.rivier_profielen_data,
+                ddm.rivier_ruwheid,
+            ) = create_river_profiles(
                 branches_gdf=branches_gdf,
                 riv_prof_df=riv_prof_df,
                 code_padding=code_padding,
+                rough_df=rough_df,
             )
 
     if hasattr(data_config, "sluice_path"):

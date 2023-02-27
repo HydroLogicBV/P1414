@@ -23,6 +23,7 @@ class RawData:
     p_folder = r"D:\Work\Project\P1414\GIS"
     branches_path = p_folder + r"\Rijntakken\without_waal\RTK_Branches.shp"
     river_profile_path = p_folder + r"\Rijntakken\without_waal\ZW_cross.csv"
+    river_roughness_path = p_folder + r"\Rijntakken\without_waal\roughness.csv"
     weir_path = p_folder + r"\Rijntakken\without_waal\RTK_Weirs.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"

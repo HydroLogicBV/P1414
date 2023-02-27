@@ -111,9 +111,7 @@ class INIBasedModel(BaseModel, ABC):
     @classmethod
     def validate(cls: Type["INIBasedModel"], value: Any) -> "INIBasedModel":
         if isinstance(value, Section):
-            value = value.flatten(
-                cls._duplicate_keys_as_list(), cls._supports_comments()
-            )
+            value = value.flatten(cls._duplicate_keys_as_list(), cls._supports_comments())
 
         return super().validate(value)
 
@@ -126,7 +124,20 @@ class INIBasedModel(BaseModel, ABC):
         if isinstance(v, bool):
             return str(int(v))
         elif isinstance(v, list):
-            return cls.get_list_field_delimiter(key).join([str(x) for x in v])
+            if isinstance(v[0], list):
+                lines = ""
+                for ix, values in enumerate(v):
+                    if ix + 1 == len(v):
+                        line = cls._convert_value(key, values)
+                    else:
+                        line = (
+                            cls._convert_value(key, values) + "\n"
+                        )  # + "\n                     "
+                    lines += line
+                return lines
+            else:
+                return cls.get_list_field_delimiter(key).join([str(x) for x in v])
+
         elif v is None:
             return ""
         else:
