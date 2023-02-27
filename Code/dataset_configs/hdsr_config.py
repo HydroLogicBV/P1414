@@ -1,3 +1,7 @@
+from hydrolib.core.io.bc.models import ForcingBase, ForcingModel, QuantityUnitPair
+from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
+
+
 class Models:
     class FM:
         one_d_bool = True
@@ -8,14 +12,67 @@ class Models:
         class one_d:
             max_dist_to_struct = 3
             max_snap_dist = 1
-            node_distance = 100
+            node_distance = 500
 
         class two_d:
             coupling_type = "2Dto1D"
             dx = 500
             dy = 500
-            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\peilen_jp_25m_full.tif"
             two_d_buffer = 100
+
+        class hydrolib_core_options:
+            class external_forcing:
+                __fb1 = ForcingBase(
+                    name="109975.000000_446940.000000",
+                    function="constant",
+                    quantityunitpair=[QuantityUnitPair(quantity="waterlevelbnd", unit="m\n0")],
+                )
+                __boundaries = [
+                    Boundary(
+                        quantity="waterlevelbnd",
+                        nodeid="109975.000000_446940.000000",
+                        forcingfile=ForcingModel(forcing=[__fb1]),
+                    ),
+                ]
+                __laterals = [
+                    Lateral(
+                        id="LateralSource_1D_1",
+                        name="LateralSource_1D_1",
+                        branchId="hdsr_wl_H012375",
+                        chainage=30,
+                        discharge=3000,
+                    )
+                ]
+                extforcefilenew = ExtModel(boundary=__boundaries, lateral=__laterals)
+
+            class geometry:
+                dxmin1d = 500
+                usecaching = 1
+
+            class numerics:
+                cflmax = 0.7
+
+            class output:
+                hisinterval = [0]
+
+            class time:
+                dtmax = 60
+
+
+class FixedWeirs:
+    ## PATHS
+    p_folder = r"D:\Work\Project\P1414\GIS"
+    flood_defences_path = p_folder + r"\Keringen_met_hoogte\hdsr.shp"
+
+    fixed_weir_index_mapping = dict(
+        [
+            ("code", "OBJECTID"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+        ]
+    )
 
 
 class RawData:
@@ -26,7 +83,9 @@ class RawData:
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
     norm_profile_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
+    peil_gebieden_path = p_folder + r"\HDSR\Legger\Peilgebieden\BR_Peilgebieden.shp"
     pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"
+    sluice_path = p_folder + r"\HDSR\Legger\Sluizen_Lijnen\Sluizen_Lijnen.shp"
     weir_path = p_folder + r"\HDSR\Legger\Stuwen\BR_Stuwen.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
@@ -106,6 +165,15 @@ class RawData:
             ("water_width_index", "IWS_W_WATB"),
         ]
     )
+    ## Peil gebied
+    peil_index_mapping = dict(
+        [
+            ("boven peil", "ZOMERPEIL"),
+            ("geometry", "geometry"),
+            ("onder peil", "WINTERPEIL"),
+            ("vast peil", "VASTPEIL"),
+        ]
+    )
 
     ## Pumps
     pump_index_mapping = dict(
@@ -117,6 +185,25 @@ class RawData:
             ("maximalecapaciteit", "MAXIMALECA"),
             ("streefwaarde", "streefpeil"),
             ("peil_marge", None),
+        ]
+    )
+
+    ## Sluice
+    sluice_index_mapping = dict(
+        [
+            ("afvoercoefficient_stuw", None),
+            ("afvoercoefficient_opening", None),
+            ("code", "CODE"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("hoogstedoorstroombreedte", "DOORVAARTB"),
+            ("hoogstedoorstroomhoogte", None),
+            ("laagstedoorstroombreedte", "DOORVAARTB"),
+            ("laagstedoorstroomhoogte", "KERENDEHOO"),
+            ("overlaatonderlaat", None),
+            ("soortregelbaarheid", None),
+            ("soortstuw", "SOORTSLUIS"),
+            ("vormopening", None),
         ]
     )
 

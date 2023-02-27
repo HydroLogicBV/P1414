@@ -51,4 +51,13 @@ json_download_rijnland(
     geometry_type="esriGeometryPoint",
 )
 
+# %% AGV Peil
+agv_peil_path = r"https://maps.waternet.nl/arcgis/rest/services/AGV_Legger/Vastgestelde_Waterpeilen/MapServer?f=pjson"
+output_file = r"D:\Work\Project\P1414\GIS\WAGV\peilen.shp"
+json_download_rijnland(url=agv_peil_path, output_file_path=output_file)
 
+# %%
+from requests.utils import DEFAULT_CA_BUNDLE_PATH
+
+print(DEFAULT_CA_BUNDLE_PATH)
+# %%

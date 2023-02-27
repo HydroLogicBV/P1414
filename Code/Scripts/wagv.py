@@ -22,6 +22,8 @@ if build_database:
     # 2. convert raw data to hydamo data
     dhd.hydamo_from_raw_data(defaults=defaults, config=config)
     dhd.clip_structures_by_branches()
+    dhd.fixed_weirs_from_raw_data(config=config, defaults=defaults)
+
 
     # 3. save data to gpkg
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)

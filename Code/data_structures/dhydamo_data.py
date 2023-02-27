@@ -54,7 +54,8 @@ class DHydamoData:
             None
         """
         # load features and add to DHydamoDataModel
-        ddm = convert_to_dhydamo_data(defaults=defaults, config=config)
+        ddm = DHydamoDataModel()
+        ddm = convert_to_dhydamo_data(ddm=ddm, defaults=defaults, config=config)
 
         self._set_data(ddm=ddm, branch_snap_dist=branch_snap_dist)
 
@@ -115,7 +116,12 @@ class DHydamoData:
         Returns:
             None
         """
-        to_dhydro(self=self, config=config)
+        # check if data has been loaded and correct attributes are set
+        if (not hasattr(self, "ddm")) | (not hasattr(self, "features")):
+            raise AttributeError("Modeldatabase not loaded")
+
+        else:
+            to_dhydro(self=self, config=config)
 
         if write:
             self.write_dimr(output_folder=output_folder)

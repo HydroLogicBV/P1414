@@ -12,13 +12,9 @@ from flowmeshreader import load_map_data, mesh_to_tiff
 from plotting import raster_plot_with_context
 
 # set paths
-input_file_path = (
-    r"D:\Work\Project\P1414\Models\Combined\V5\run_model_lat\dflowfm\output\DFM_map.nc"
-)
-output_gif_path = (
-    r"D:\Work\Project\P1414\Models\Combined\V5\run_model_lat\dflowfm\output\waterdepth.webp"
-)
-output_fig_path = r"D:\Work\Project\P1414\Models\Combined\V5\run_model_lat\dflowfm\output\fig"
+input_file_path = r"D:\Work\Project\P1414\Models\Combined\V7.5\run_model\dflowfm\output\DFM_map.nc"
+output_gif_path = r"D:\Work\Project\P1414\Models\Combined\V7.5\run_model\dflowfm\output\wd.webp"
+output_fig_path = r"D:\Work\Project\P1414\Models\Combined\V7.5\run_model\dflowfm\output\fig_wd"
 Path(output_fig_path).mkdir(exist_ok=True)
 
 # raster options
@@ -28,18 +24,22 @@ distance_tol = np.ceil(np.sqrt(2 * dhydro_resolution**2))  # m
 interpolation = r"nearest"
 
 # bounds of colorbar
-vmin = 1
-vmax = 1.6
+vmin = 0
+vmax = 10
 
 
 # load mesh coordinates and data from netCDF
+# variable = r"Mesh2d_s1"
 variable = r"Mesh2d_waterdepth"
+var_str = "Water depth"
 map_data = load_map_data(input_file_path, variable)
-map_data[map_data < 0.01] = np.nan
+# map_data[map_data < 0.01] = np.nan
 
 # Loop over frames and check if png exist.
 # If not, check if tiff exists to make png from.
 # If both don't exist, create both
+# cmap = "RdBu_r"
+cmap = "Reds"
 frames = []
 for ix in tqdm(range(5, 505, 25)):
     output_png_file_path = output_fig_path + r"\{}.png".format(ix)
@@ -53,9 +53,9 @@ for ix in tqdm(range(5, 505, 25)):
         fig, ax = raster_plot_with_context(
             raster_path=output_tiff_file_path,
             epsg=28992,
-            clabel="water depth (m)",
-            cmap="Reds",
-            title="Water depth",
+            clabel=var_str,
+            cmap=cmap,
+            title=var_str,
             vmin=vmin,
             vmax=vmax,
         )
@@ -77,9 +77,9 @@ for ix in tqdm(range(5, 505, 25)):
         fig, ax = raster_plot_with_context(
             raster_path=output_tiff_file_path,
             epsg=28992,
-            clabel="water depth (m)",
-            cmap="Reds",
-            title="Water depth",
+            clabel=var_str,
+            cmap=cmap,
+            title=var_str,
             vmin=vmin,
             vmax=vmax,
         )
@@ -95,7 +95,7 @@ frames[0].save(
     append_images=frames[1:],
     disposal=2,
     duration=500,
-    loop=1,
+    loop=0,
     optimize=True,
     save_all=True,
     transparency=1,

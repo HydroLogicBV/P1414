@@ -28,6 +28,9 @@ class RawData:
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
+    class Peil:
+        default_peil = 0
+
     ## Branches
     branch_index_mapping = dict(
         [
