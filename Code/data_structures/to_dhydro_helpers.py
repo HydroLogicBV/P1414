@@ -8,20 +8,26 @@ import numpy as np
 from hydrolib.core.basemodel import DiskOnlyFileModel
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
-from hydrolib.core.io.friction.models import FrictBranch, FrictGlobal, FrictionModel
+from hydrolib.core.io.friction.models import (FrictBranch, FrictGlobal,
+                                              FrictionModel)
 from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
 from hydrolib.core.io.inifield.models import IniFieldModel, InitialField
 from hydrolib.core.io.mdu.models import FMModel
-from hydrolib.core.io.onedfield.models import OneDFieldBranch, OneDFieldGlobal, OneDFieldModel
-from hydrolib.core.io.polyfile.models import Description, Metadata, Point, PolyFile, PolyObject
-from hydrolib.core.io.structure.models import StructureModel
+from hydrolib.core.io.onedfield.models import (OneDFieldBranch,
+                                               OneDFieldGlobal, OneDFieldModel)
+from hydrolib.core.io.polyfile.models import (Description, Metadata, Point,
+                                              PolyFile, PolyObject)
+from hydrolib.core.io.structure.models import Dambreak, StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
 from hydrolib.dhydamo.geometry import mesh
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
-from shapely.geometry import LineString, Polygon
+from scipy.spatial import KDTree
+from shapely.geometry import LineString
+from shapely.geometry import Point as sPoint
+from shapely.geometry import Polygon
 
-from data_structures.dhydro_data_model import ROIDataModel as DataModel
+from data_structures.roi_data_model import ROIDataModel as DataModel
 
 FM_FOLDER = "dflowfm"
 
@@ -48,8 +54,14 @@ def to_dhydro(
             locationtype="1d",
         )
 
-        inifieldmodel = IniFieldModel(initial=[initialwd])
-        fm.geometry.inifieldfile = inifieldmodel
+        # inifieldmodel = IniFieldModel(initial=[initialwd])
+        # fm.geometry.inifieldfile = inifieldmodel
+        if hasattr(fm.geometry, "inifieldfile") and isinstance(
+            fm.geometry.inifieldfile, IniFieldModel
+        ):
+            fm.geometry.inifieldfile.initial.append(initialwd)
+        else:
+            fm.geometry.inifieldfile = IniFieldModel(initial=[initialwd])
 
         return fm
 
@@ -85,8 +97,16 @@ def to_dhydro(
             datafiletype="1dField",
             locationtype="1d",
         )
-        inifieldmodel = IniFieldModel(initial=[initialwl])
-        fm.geometry.inifieldfile = inifieldmodel
+        # inifieldmodel = IniFieldModel(initial=[initialwl])
+        # fm.geometry.inifieldfile = inifieldmodel
+
+        if hasattr(fm.geometry, "inifieldfile") and isinstance(
+            fm.geometry.inifieldfile, IniFieldModel
+        ):
+            fm.geometry.inifieldfile.initial.append(initialwl)
+        else:
+            fm.geometry.inifieldfile = IniFieldModel(initial=[initialwl])
+
         return fm
 
     def add_branches(ddm: DataModel, features: List[str], hydamo: HyDAMO) -> HyDAMO:
@@ -179,7 +199,7 @@ def to_dhydro(
         return hydamo
 
     def add_bridges(
-        ddm: DataModel, hydamo: HyDAMO, default_height=10, max_snap_dist: float = 5
+        ddm: DataModel, hydamo: HyDAMO, default_height=0, max_snap_dist: float = 5
     ) -> HyDAMO:
 
         hydamo.bridges.set_data(ddm.brug, index_col="code")
@@ -227,6 +247,67 @@ def to_dhydro(
             )
 
         return hydamo
+
+    def add_dambreaks(ddm: DataModel, fm=FMModel, max_dist=100, z_default=0) -> FMModel:
+        db_gdf = ddm.doorbraak
+        fw_gdf = ddm.keringen
+
+        fw_point_list = []
+        for ix, branch in fw_gdf.iterrows():
+            coords = branch.geometry.coords[:]
+
+            for x, y, z in coords:
+                fw_point_list.append([x, y, z])
+
+        fw_kdtree = KDTree(data=fw_point_list)
+
+        for name, db in db_gdf.iterrows():
+            geom = db.geometry
+            if not isinstance(geom, LineString):
+                raise ValueError("I need a LineString...")
+
+            coords = np.array(geom.coords[:])
+            centroid = geom.interpolate(0.5, normalized=True)
+            if len(coords[0]) == 2:
+                mid_point = [centroid.x, centroid.y, z_default]
+            elif len(coords[0]) == 3:
+                mid_point = [centroid.x, centroid.y, centroid.z]
+            else:
+                raise ValueError("can't cope with {} coordinates".format(len(coords[0])))
+
+            _, ix_point_in_kering = fw_kdtree.query(mid_point, distance_upper_bound=max_dist)
+            point_in_kering = fw_point_list[ix_point_in_kering]
+
+            dambreak = Dambreak(
+                algorithm=db.algorithm,
+                breachwidthini=db.breachwidthini,
+                crestlevelini=point_in_kering[2] - db.crestlevelini,
+                crestlevelmin=db.crestlevelmin,
+                f1=db.f1,
+                f2=db.f2,
+                id=db.code,
+                name=db.globalid,
+                numcoordinates=coords.shape[0],
+                startlocationx=point_in_kering[0],
+                startlocationy=point_in_kering[1],
+                t0=db.t0,
+                timetobreachtomaximumdepth=db.timetobreachtomaximumdepth,
+                ucrit=db.ucrit,
+                waterleveldownstreamlocationx=coords[-1, 0],
+                waterleveldownstreamlocationy=coords[-1, 1],
+                waterlevelupstreamlocationx=coords[0, 0],
+                waterlevelupstreamlocationy=coords[0, 1],
+                xcoordinates=coords[:, 0].tolist(),
+                ycoordinates=coords[:, 1].tolist(),
+            )
+            if hasattr(fm.geometry, "structurefile") and isinstance(
+                fm.geometry.structurefile[0], StructureModel
+            ):
+                fm.geometry.structurefile[0].structure.append(dambreak)
+            else:
+                fm.geometry.structurefile = StructureModel(structure=[dambreak])
+
+        return fm
 
     def add_fixed_weirs(ddm: DataModel, fm=FMModel, data: List = [0, 0, 5, 4, 4, 0]) -> FMModel:
         fw_gdf = ddm.keringen
@@ -393,38 +474,63 @@ def to_dhydro(
         max_snap_dist: float = 5,
         node_distance=20,
         max_dist_to_struct=3,
+        min_dist_between_struct=50,
     ) -> HyDAMO:
         # # Add observation points (empty for now)
         # hydamo.observationpoints.add_points(
         #     [], [], locationTypes=["1d", "1d"], snap_distance=max_snap_dist
         # )
-
+        kwargs = {}
         if "brug" in features:
-            bbrug = True
+            # bbrug = True
+            kwargs["bridges"] = True
         else:
-            bbrug = False
+            kwargs["bridges"] = False
 
         if "duiker" in features:
-            bduiker = True
+            kwargs["culverts"] = True
         else:
-            bduiker = False
+            kwargs["culverts"] = False
 
         if "gemaal" in features:
-            bgemaal = True
+            kwargs["pumps"] = True
         else:
-            bgemaal = False
+            kwargs["pumps"] = False
 
         if "stuw" in features:
-            brstuw = True
-            bustuw = True
+            kwargs["rweirs"] = True
+            kwargs["uweirs"] = True
         else:
-            brstuw = False
-            bustuw = False
+            kwargs["rweirs"] = False
+            kwargs["uweirs"] = False
 
         # Collect all structures in a Structures dataframe
-        structures = hydamo.structures.as_dataframe(
-            bridges=bbrug, culverts=bduiker, pumps=bgemaal, rweirs=brstuw, uweirs=bustuw
-        )
+        structures = hydamo.structures.as_dataframe(**kwargs)
+
+        # if min_dist_between_struct > 0:
+        #     for branchid, branch in hydamo.branches.iterrows():
+        #         struct_bool = structures["branchid"] == branchid
+        #         slice = structures.loc[struct_bool, :]
+        #         if slice.shape[0] > 1:
+        #             chainages = slice["chainage"]
+
+        #             branch_length = hydamo.branches.at[branchid, "geometry"].length
+        #             if branch_length < (min_dist_between_struct * 2):
+        #                 struct_chainage = branch_length / 2
+        #                 structures.loc[struct_bool, "chainage"] = struct_chainage
+        #             else:
+        #                 for structid, struct in slice.iterrows():
+        #                     struct_chainage = struct["chainage"]
+
+        #                     if struct_chainage > min_dist_between_struct:
+        #                         new_chainage = np.around(
+        #                             (struct_chainage // min_dist_between_struct)
+        #                             * min_dist_between_struct
+        #                         )
+        #                     else:
+        #                         new_chainage = np.around(min_dist_between_struct)
+
+        #                     structures.at[structid, "chainage"] = new_chainage
 
         mesh.mesh1d_add_branches_from_gdf(
             fm.geometry.netfile.network,
@@ -689,6 +795,9 @@ def to_dhydro(
 
             if "keringen" in self.features:
                 self.fm = add_fixed_weirs(ddm=self.ddm, fm=self.fm)
+
+            if "doorbraak" in self.features:
+                self.fm = add_dambreaks(ddm=self.ddm, fm=self.fm)
 
         if hasattr(model_config.FM, "hydrolib_core_options"):
             self.fm = set_hydrolib_core_options(
