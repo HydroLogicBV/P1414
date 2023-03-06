@@ -2,17 +2,17 @@ import importlib
 
 import geopandas as gpd
 
-from data_structures.dhydro_data_model import ROIDataModel
 from data_structures.hydamo_helpers import load_geo_file, map_columns, merge_to_dm
+from data_structures.roi_data_model import ROIDataModel as DataModel
 
 
-def merge_to_fddm(ddm: ROIDataModel, feature: str, feature_gdf: gpd.GeoDataFrame):
+def merge_to_fddm(ddm: DataModel, feature: str, feature_gdf: gpd.GeoDataFrame):
     return merge_to_dm(dm=ddm, feature=feature, feature_gdf=feature_gdf)
 
 
 def create_fixed_weir_data(
-    config: str, defaults: str, ddm: ROIDataModel, min_length: float = None
-) -> ROIDataModel:
+    config: str, defaults: str, dm: DataModel, min_length: float = None
+) -> DataModel:
 
     defaults = importlib.import_module("dataset_configs." + defaults)
     fw_data_config = getattr(importlib.import_module("dataset_configs." + config), "FixedWeirs")
@@ -32,6 +32,25 @@ def create_fixed_weir_data(
             # fd_gdf = fd_gdf.loc[fd_gdf.geometry.length > min_length, :]
             fd_gdf = fd_gdf.drop(fd_gdf[fd_gdf.geometry.length < min_length].index)
 
-        ddm.keringen = fd_gdf
+        dm.keringen = fd_gdf
 
-    return ddm
+    return dm
+
+
+def create_dambreak_data(config: str, defaults: str, dm: DataModel):
+    defaults = importlib.import_module("dataset_configs." + defaults)
+    db_data_config = getattr(importlib.import_module("dataset_configs." + config), "Dambreak")
+
+    code_padding = config[:4] + r"_"  # add prefix of length 4 to all objects with codes
+    if hasattr(db_data_config, "dambreak_path") and (db_data_config.dambreak_path is not None):
+        db_gdf = load_geo_file(db_data_config.dambreak_path, layer="flood_defence")
+        db_gdf, _ = map_columns(
+            code_pad=code_padding,
+            defaults=defaults.Dambreak,
+            gdf=db_gdf,
+            index_mapping=db_data_config.dambreak_index_mapping,
+        )
+
+        dm.doorbraak = db_gdf
+
+    return dm

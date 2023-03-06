@@ -15,7 +15,8 @@ class Models:
             node_distance = 500
 
         class two_d:
-            coupling_type = "2Dto1D"
+            # coupling_type = "2Dto1D"
+            coupling_type = "1Dto2D"
             dx = 500
             dy = 500
             elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
@@ -54,7 +55,7 @@ class Models:
                 extforcefilenew = ExtModel(boundary=__boundaries, lateral=__laterals)
 
             class geometry:
-                dxmin1d = 500
+                # dxmin1d = 500
                 usecaching = 1
 
             class numerics:
