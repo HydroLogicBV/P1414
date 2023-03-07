@@ -11,7 +11,7 @@ from hydrolib.core.io.dimr.models import DIMR, FMComponent
 from hydrolib.core.io.friction.models import (FrictBranch, FrictGlobal,
                                               FrictionModel)
 from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
-from hydrolib.core.io.inifield.models import IniFieldModel, InitialField
+from hydrolib.core.io.inifield.models import IniFieldModel, InitialField, ParameterField
 from hydrolib.core.io.mdu.models import FMModel
 from hydrolib.core.io.onedfield.models import (OneDFieldBranch,
                                                OneDFieldGlobal, OneDFieldModel)
@@ -587,6 +587,7 @@ def to_dhydro(
         extent: gpd.GeoDataFrame,
         fm: FMModel,
         initial_peil_raster_path: str,
+        roughness_2d_raster_path: str,
         two_d_buffer: float,
         one_d=False,
     ) -> FMModel:
@@ -627,6 +628,23 @@ def to_dhydro(
                 fm.geometry.inifieldfile.initial.append(initial_wl)
             else:
                 fm.geometry.inifieldfile = IniFieldModel(initial=[initial_wl])
+
+
+        if roughness_2d_raster_path is not None:
+            initial_rn = ParameterField(
+                quantity="frictioncoefficient",
+                datafile=DiskOnlyFileModel(filepath=Path(roughness_2d_raster_path)),
+                datafiletype="GeoTIFF",
+                interpolationmethod="averaging",
+                locationtype="2d",
+                ifrctyp=7, #StricklerNikuradse
+            )
+            if hasattr(fm.geometry, "inifieldfile") and isinstance(
+                fm.geometry.inifieldfile, IniFieldModel
+            ):
+                fm.geometry.inifieldfile.initial.append(initial_rn)
+            else:
+                fm.geometry.inifieldfile = IniFieldModel(parameter=[initial_rn])
 
         # branchids = network._mesh1d.network1d_branch_id
         # branchids = [x for x in branchids if not x.startswith(r"rijn_")]
@@ -771,6 +789,7 @@ def to_dhydro(
                 "coupling_type",
                 "elevation_raster_path",
                 "initial_peil_raster_path",
+                "roughness_2d_raster_path",
                 "two_d_buffer",
             ]
             kwargs = {}

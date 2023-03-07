@@ -131,12 +131,21 @@ def map_columns(
 
             else:
                 if isinstance(value, list):
-                    _gdf[key] = (
-                        gdf[value]
-                        .replace(to_replace=[None, "n.v.t."], value=np.nan)
-                        .astype(float)
-                        .apply(np.nanmean, axis=1)
-                    )
+                    try:
+                        _gdf[key] = (
+                            gdf[value]
+                            .replace(to_replace=[None, "n.v.t."], value=np.nan)
+                            .astype(float)
+                            .apply(np.nanmean, axis=1)
+                        )
+                    except: # Handles columns that are not float
+                        _gdf[key] = (
+                            gdf[value]
+                            .replace(to_replace=[None, "n.v.t."], value=np.nan)
+                            .astype(str)
+                            .bfill(axis=1).iloc[:, 0] # Select the non-nan values
+                        )
+
                 else:
                     _gdf[key] = gdf[value]
 

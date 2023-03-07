@@ -35,7 +35,7 @@ class Models:
 
 class FixedWeirs:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = r"D:\work\P1414_ROI\GIS"
     flood_defences_path = dict(
         [
             ("base", p_folder + r"\Keringen_met_hoogte\hhd_zeewering.shp"),
@@ -56,14 +56,24 @@ class FixedWeirs:
 
 class RawData:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
-    # p_folder = r"D:\work\P1414_ROI\GIS"
+    # p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = r"D:\work\P1414_ROI\GIS"
     branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v2.2_test.shp"  # Corrected from V7
-    # branches_path = (
-    #     p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
-    # )
+    branches_path = (
+         p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
+    )
     # bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
-    # culvert_path = p_folder + r"\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen_edited.shp"
+
+    culvert_path = dict(
+        [
+            ("base", p_folder + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Open duiker.shp"),
+            ("concat_1", p_folder + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Sifon.shp"),
+            ("concat_2", p_folder + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Stuwende duiker.shp"),
+            ("concat_3", p_folder + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Vispassageduiker.shp"),
+            ("concat_4", p_folder + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Inlaatduiker.shp"),
+        ]
+    )
+    
     norm_profile_path = (
         p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water_ww.shp"
     )
@@ -133,24 +143,24 @@ class RawData:
     # )
 
     ## Culverts
-    # culvert_index_mapping = dict(
-    #     [
-    #         ("breedteopening", "BREEDTEOPE"),
-    #         ("code", "CODE"),
-    #         ("geometry", "geometry"),
-    #         ("gesloten", None),
-    #         ("globalid", "globalid"),
-    #         ("hoogtebinnenonderkantbene", "HOOGTEBOKB"),
-    #         ("hoogtebinnenonderkantbov", "HOOGTEBO_1"),
-    #         ("hoogteopening", "HOOGTEOPEN"),
-    #         ("intreeverlies", None),
-    #         ("lengte", "LENGTE"),
-    #         ("typeruwheid", None),
-    #         ("ruwheid", None),
-    #         ("uittreeverlies", None),
-    #         ("vormkoker", "VORMKOKER"),
-    #     ]
-    # )
+    culvert_index_mapping = dict(
+        [
+            ("breedteopening", "BREEDTEOPE"),           # Check
+            ("code", "CODE"),                           # Check
+            ("geometry", "geometry"),                   # Check
+            ("gesloten", None),                         # Check
+            ("globalid", "globalid"),                   # Check
+            ("hoogtebinnenonderkantbene", ["HOOGBOKBEN","HOOGTEBI00"]),
+            ("hoogtebinnenonderkantbov", ["HOOGBOKBOV","HOOGTEBINN"]),
+            ("hoogteopening", "HOOGTEOPEN"),
+            ("intreeverlies", None),                    # Check
+            ("lengte", "LENGTE"),
+            ("typeruwheid", None),                      # Check
+            ("ruwheid", None),                          # Check
+            ("uittreeverlies", None),                   # Check
+            ("vormkoker", ["VORMKOKER_","VORM"]),        # Check
+        ]
+    )
 
     ## Normprofielen
     np_index_mapping = dict(
