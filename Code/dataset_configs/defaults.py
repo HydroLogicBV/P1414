@@ -37,6 +37,14 @@ class Culverts:
     vormkoker = 1
 
 
+class Dambreak:
+    algorithm = 2
+    timetobreachtomaximumdepth = 360  # s
+    f1 = 1.3
+    f2 = 0.04
+    ucrit = 0.2
+
+
 class FixedWeirs:
     pass
 

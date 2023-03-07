@@ -3,7 +3,7 @@ import pandas as pd
 from geo_tools.clip_tools import _clip_structures_by_branches
 from geo_tools.merge_networks import merge_networks
 
-from data_structures.dhydamo_data_model import DHydamoDataModel
+from data_structures.dhydamo_data_model_old import DHydamoDataModel
 from data_structures.hydamo_helpers import check_and_fix_duplicate_code, convert_to_dhydamo_data
 from data_structures.to_dhydro_helpers import to_dhydro, write_dimr
 

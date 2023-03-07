@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 
 from add_ahn_height_to_fw import add_height_to_linestrings
-from networkx_tools import combine_straight_branches, gdf_to_nx
+from network_tools import combine_straight_branches, gdf_to_nx
 
 if __name__ == "__main__":
     ahn_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_merged.tif"
@@ -26,5 +26,5 @@ if __name__ == "__main__":
 
     _gdf = gpd.GeoDataFrame(data=out_branches_list, geometry="geometry", crs=in_gdf.crs)
 
-    out_gdf = add_height_to_linestrings(gdf=_gdf, ahn_path=ahn_path)
+    out_gdf = add_height_to_linestrings(gdf=_gdf, ahn_path=ahn_path, buffer=11)
     out_gdf.to_file(output_path)

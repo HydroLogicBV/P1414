@@ -33,7 +33,7 @@ vmax = 10
 variable = r"Mesh2d_waterdepth"
 var_str = "Water depth"
 map_data = load_map_data(input_file_path, variable)
-# map_data[map_data < 0.01] = np.nan
+map_data[map_data < 0.01] = np.nan
 
 # Loop over frames and check if png exist.
 # If not, check if tiff exists to make png from.

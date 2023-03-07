@@ -10,13 +10,13 @@ import pandas as pd
 from shapely import affinity
 from shapely.geometry import LineString, MultiPoint, Point
 
-from data_structures.dhydro_data_model import ROIDataModel as Datamodel
 from data_structures.hydamo_globals import (
     BRANCH_FRICTION_FUNCTION,
     MANAGEMENT_DEVICE_TYPES,
     ROUGHNESS_MAPPING_LIST,
     WEIR_MAPPING,
 )
+from data_structures.roi_data_model import ROIDataModel as Datamodel
 
 warnings.filterwarnings(action="ignore", message="Mean of empty slice")
 
@@ -488,6 +488,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             def_height: float = 2,
             rect_offset: float = 0.1,
             interp_range: float = 0.1,
+            thalweg_offset: float = None,
         ) -> List[Point]:
 
             bwidth = params["bodembreedte"]
@@ -532,11 +533,17 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             # centroid = rotated_line.centroid
             c_x, c_y = centroid.x, centroid.y
 
+            if (thalweg_offset is not None) and (thalweg_offset > 0) and (thalweg_offset < 1):
+                offset_l = thalweg_offset
+                offset_r = 1 - thalweg_offset
+            else:
+                offset_l = offset_r = 0.5
+
             list_of_points = [
-                Point(c_x - 0.5 * dx_2, c_y - 0.5 * dy_2),
-                Point(c_x - 0.5 * dx_1, c_y - 0.5 * dy_1),
-                Point(c_x + 0.5 * dx_1, c_y + 0.5 * dy_1),
-                Point(c_x + 0.5 * dx_2, c_y + 0.5 * dy_2),
+                Point(c_x - offset_l * dx_2, c_y - offset_l * dy_2),
+                Point(c_x - offset_l * dx_1, c_y - offset_l * dy_1),
+                Point(c_x + offset_r * dx_1, c_y + offset_r * dy_1),
+                Point(c_x + offset_r * dx_2, c_y + offset_r * dy_2),
             ]
 
             bheight = np.nanmean(
@@ -576,6 +583,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             profiel_nummer: str,
             params: dict,
             interp_range: float = 0.1,
+            thalweg_offset: float = None,
         ) -> List[Point]:
 
             bheight = np.nanmean(
@@ -638,11 +646,17 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             # centroid = rotated_line.centroid
             c_x, c_y = centroid.x, centroid.y
 
+            if (thalweg_offset is not None) and (thalweg_offset > 0) and (thalweg_offset < 1):
+                offset_l = thalweg_offset
+                offset_r = 1 - thalweg_offset
+            else:
+                offset_l = offset_r = 0.5
+
             list_of_points = [
-                Point(c_x - 0.5 * dx_2, c_y - 0.5 * dy_2),
-                Point(c_x - 0.5 * dx_1, c_y - 0.5 * dy_1),
-                Point(c_x + 0.5 * dx_1, c_y + 0.5 * dy_1),
-                Point(c_x + 0.5 * dx_2, c_y + 0.5 * dy_2),
+                Point(c_x - offset_l * dx_2, c_y - offset_l * dy_2),
+                Point(c_x - offset_l * dx_1, c_y - offset_l * dy_1),
+                Point(c_x + offset_r * dx_1, c_y + offset_r * dy_1),
+                Point(c_x + offset_r * dx_2, c_y + offset_r * dy_2),
             ]
 
             p_list = []
@@ -708,7 +722,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         pp_list = []
         # Loop over the grouped profile points to create a line from the points
         for jx, ix_1 in enumerate(branches_gdf.index):
-            branch = branches_gdf.loc[ix_1, :]
+            branch = copy(branches_gdf.loc[ix_1, :])
             # Dont use jx with numerical index column
 
             # # Create unique ident for branch and add to branch
@@ -772,6 +786,14 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                 # print("no profile for branch {}".format(branch_gid))
                 continue
 
+            if (
+                (not branch[["bodembreedte", "water_width_index"]].isna().values.any())
+                and (not branch[["bodembreedte"]].empty)
+                and (not branch[["water_width_index"]].empty)
+            ):
+                if branch["bodembreedte"] > branch["water_width_index"]:
+                    branch["bodembreedte"] = np.nan
+
             # Check if all parameters are present for trapezium profile. If not, use rectangular profile
             width_ix = "bodembreedte"
             if np.isnan(branch["bodembreedte"]):
@@ -790,8 +812,8 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             width = branch[width_ix]
             if width < 0:
                 width = 0
-            elif width > 200:
-                width = 0
+            # elif width > 200:
+            #     width = 0
 
             # set required parameters for either rectangle or trapezium profile
             if prof_type == "rectangle":
@@ -814,8 +836,18 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                 if check_is_not_na_number(branch["hoogte insteek rechterzijde"]):
                     params["hoogte insteek rechterzijde"] = branch["hoogte insteek rechterzijde"]
 
+                if ("thalweg offset" in branch) and check_is_not_na_number(
+                    branch["thalweg offset"]
+                ):
+                    thalweg_offset = branch["thalweg offset"]
+                else:
+                    thalweg_offset = None
+
                 p_list = rectangular_point_profile(
-                    branch=branch, profiel_nummer=ix_1, params=params
+                    branch=branch,
+                    profiel_nummer=ix_1,
+                    params=params,
+                    thalweg_offset=thalweg_offset,
                 )
                 pp_list += p_list
             elif prof_type == "trapezium":
@@ -867,7 +899,19 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                         params["bodemhoogte bovenstrooms"],
                     )
 
-                p_list = trapezium_point_profile(branch=branch, profiel_nummer=ix_1, params=params)
+                if ("thalweg offset" in branch) and check_is_not_na_number(
+                    branch["thalweg offset"]
+                ):
+                    thalweg_offset = branch["thalweg offset"]
+                else:
+                    thalweg_offset = None
+
+                p_list = trapezium_point_profile(
+                    branch=branch,
+                    profiel_nummer=ix_1,
+                    params=params,
+                    thalweg_offset=thalweg_offset,
+                )
                 pp_list += p_list
 
         # Create GeoDataFrame from list of dicts
@@ -934,7 +978,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         # for ix_1, branch in tqdm(branches_gdf.iterrows(), total=branches_gdf.shape[0]):
         # for jx, (ix_1, branch) in enumerate(branches_gdf.iterrows()):
         for jx, ix_1 in enumerate(branches_gdf.index):
-            branch = branches_gdf.loc[ix_1, :]
+            branch = copy(branches_gdf.loc[ix_1, :])
             # Dont use jx with numerical index column
 
             # # Create unique ident for branch and add to branch
@@ -994,17 +1038,13 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                 # print("no profile for branch {}".format(branch_gid))
                 continue
 
-            # add entry to hydroobject_normgp tabel
-            ngp_gid = str(uuid.uuid4())
-            ngp = dict(
-                [
-                    ("hydroobjectid", branch_gid),
-                    ("normgeparamprofielid", ngp_gid),
-                    ("globalid", ngp_gid),
-                    ("geometry", None),
-                ]
-            )
-            ho_ngp_list.append(ngp)
+            if (
+                (not branch[["bodembreedte", "water_width_index"]].isna().values.any())
+                and (not branch[["bodembreedte"]].empty)
+                and (not branch[["water_width_index"]].empty)
+            ):
+                if branch["bodembreedte"] > branch["water_width_index"]:
+                    branch["bodembreedte"] = np.nan
 
             # Check if all parameters are present for trapezium profile. If not, use rectangular profile
             width_ix = "bodembreedte"
@@ -1044,8 +1084,20 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             width = branch[width_ix]
             if width < 0:
                 width = 0
-            elif width > 200:
-                width = 0
+            # elif width > 200:
+            #     width = 0
+
+            # add entry to hydroobject_normgp tabel
+            ngp_gid = str(uuid.uuid4())
+            ngp = dict(
+                [
+                    ("hydroobjectid", branch_gid),
+                    ("normgeparamprofielid", ngp_gid),
+                    ("globalid", ngp_gid),
+                    ("geometry", None),
+                ]
+            )
+            ho_ngp_list.append(ngp)
 
             # set required parameters for either rectangle or trapezium profile
             if prof_type == "rectangle":

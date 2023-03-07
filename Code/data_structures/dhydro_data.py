@@ -3,9 +3,11 @@ import pandas as pd
 from geo_tools.clip_tools import _clip_structures_by_branches
 from geo_tools.merge_networks import merge_networks
 
-from data_structures.dhydro_data_model import ROIDataModel as DataModel
-from data_structures.fixedweirs_helpers import create_fixed_weir_data
-from data_structures.hydamo_helpers import check_and_fix_duplicate_code, convert_to_dhydamo_data
+from data_structures.fixedweirs_helpers import (create_dambreak_data,
+                                                create_fixed_weir_data)
+from data_structures.hydamo_helpers import (check_and_fix_duplicate_code,
+                                            convert_to_dhydamo_data)
+from data_structures.roi_data_model import ROIDataModel as DataModel
 from data_structures.to_dhydro_helpers import to_dhydro, write_dimr
 
 
@@ -43,12 +45,18 @@ class DHydroData:
 
         self.ddm = _clip_structures_by_branches(self, buffer=buffer, min_overlap=min_overlap)
 
+    def dambreaks_from_config(self, config: str, defaults: str):
+        dm = DataModel()
+        dm = create_dambreak_data(config=config, defaults=defaults, dm=dm)
+
+        self._set_ddm(ddm=dm)
+
     def fixed_weirs_from_raw_data(self, config: str, defaults: str, min_length: float = None):
-        ddm = DataModel()
-        ddm = create_fixed_weir_data(
-            config=config, defaults=defaults, ddm=ddm, min_length=min_length
+        dm = DataModel()
+        dm = create_fixed_weir_data(
+            config=config, defaults=defaults, dm=dm, min_length=min_length
         )
-        self._set_ddm(ddm=ddm)
+        self._set_ddm(ddm=dm)
 
     def hydamo_from_raw_data(
         self, config: str, defaults: str, branch_snap_dist: float = 10

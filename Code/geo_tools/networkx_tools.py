@@ -5,12 +5,10 @@ import math
 import warnings
 
 import geopandas as gpd
-# import libpysal
 import networkx as nx
 import numpy as np
 from numpy.lib import NumpyVersion
-from shapely.geometry import LineString, Point
-from shapely.ops import linemerge
+from shapely.geometry import Point
 
 __all__ = [
     "unique_id",
@@ -479,47 +477,3 @@ def _azimuth(point1, point2):
     """azimuth between 2 shapely points (interval 0 - 180)"""
     angle = np.arctan2(point2[0] - point1[0], point2[1] - point1[1])
     return np.degrees(angle) if angle > 0 else np.degrees(angle) + 180
-
-
-def combine_straight_branches(G: nx.Graph):
-    # Select all nodes with only 2 neighbors
-    nodes_to_remove = [n for n in G.nodes if len(list(G.neighbors(n))) == 2]
-
-    for node in nodes_to_remove:
-        edges = G.edges(node, data=True)
-        if len(edges) == 1:
-            continue
-        else:
-            try:
-                (_, _, data1), (_, _, data2) = edges
-            except:
-                print(edges)
-                print(G(node))
-                raise
-        data_new = {}
-        for key, value in data1.items():
-            if isinstance(value, (int, float)):
-                data_new[key] = np.nanmean([value, data2[key]])
-
-            elif isinstance(value, str):
-                data_new[key] = value
-
-            elif isinstance(value, LineString):
-                try:
-                    data_new[key] = linemerge([data1[key], data2[key]])
-                except:
-                    print(data1[key])
-                    print(data2[key])
-                    raise
-
-            elif value is None:
-                data_new[key] = None
-
-            else:
-                print(value)
-                print(type(value))
-                raise TypeError("Unimplemented type")
-
-        G.add_edge(*G.neighbors(node), **data_new)
-        G.remove_node(node)
-    return G
