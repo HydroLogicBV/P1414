@@ -8,7 +8,7 @@ class Models:
         class one_d:
             max_dist_to_struct = 3
             max_snap_dist = 0.1
-            node_distance = 50
+            node_distance = 500
 
         class two_d:
             coupling_type = "1Dto2D"
@@ -29,9 +29,9 @@ class RawData:
     river_profile_path = p_folder + r"\ARK NZK\ZW_cross.csv"
     weir_path = p_folder + r"\ARK NZK\netwerk_watergangen_boezemmodel_Weirs.shp"
 
-
     class Peil:
         default_peil = -0.3
+
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches

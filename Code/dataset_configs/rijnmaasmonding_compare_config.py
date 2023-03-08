@@ -21,15 +21,15 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
-    branches_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Branches.shp"
-    river_profile_path = p_folder + r"\Rijn Maasmonding\without_lek\ZW_cross.csv"
-    river_roughness_path = p_folder + r"\Rijn Maasmonding\without_lek\roughness.csv"
-    weir_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Weirs.shp"
+    branches_path = p_folder + r"\Rijn Maasmonding\RMM_Branches_edited.shp"
+    river_profile_path = p_folder + r"\Rijn Maasmonding\ZW_cross.csv"
+    river_roughness_path = p_folder + r"\Rijn Maasmonding\roughness.csv"
+    weir_path = p_folder + r"\Rijn Maasmonding\RMM_Weirs.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     class Peil:
-        default_peil = 0.0
+        default_peil = 0
 
     ## Branches
     branch_index_mapping = dict(

@@ -25,7 +25,7 @@ class Bridges:
 ## Culverts
 class Culverts:
     breedteopening = 0.5
-    gesloten = 1
+    gesloten = "yes"
     hoogtebinnenonderkantbene = 0
     hoogtebinnenonderkantbov = 0
     hoogteopening = 0.5
