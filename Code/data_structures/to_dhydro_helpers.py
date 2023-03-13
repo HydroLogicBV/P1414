@@ -2,6 +2,7 @@ import importlib
 from copy import copy
 from pathlib import Path
 from typing import List, Union
+import os 
 
 import geopandas as gpd
 import numpy as np
@@ -25,6 +26,8 @@ from shapely.geometry import Point as sPoint
 from shapely.geometry import Polygon
 
 from data_structures.roi_data_model import ROIDataModel as DataModel
+from geo_tools.roughness_to_mesh import create_roughness_xyz
+
 
 FM_FOLDER = "dflowfm"
 
@@ -690,13 +693,24 @@ def to_dhydro(
 
 
         if roughness_2d_raster_path is not None:
+            path_f = os.path.split(roughness_2d_raster_path)[0]
+            create_roughness_xyz(
+                xnodes = network._mesh2d.mesh2d_node_x,
+                ynodes = network._mesh2d.mesh2d_node_y,
+                dx = dx,
+                dy = dy,
+                roughness_tif_path = roughness_2d_raster_path,
+                roughness_mesh_name = path_f + "\\roughness_mesh_v2.tif",
+                roughness_xyz_name = path_f + "\\roughness_sample.xyz"
+            )
+
             initial_rn = ParameterField(
                 quantity="frictioncoefficient",
-                datafile=DiskOnlyFileModel(filepath=Path(roughness_2d_raster_path)),
-                datafiletype="GeoTIFF",
+                datafile=DiskOnlyFileModel(filepath=Path(path_f + "\\roughness_sample.xyz")),
+                datafiletype="sample",
                 interpolationmethod="averaging",
                 locationtype="2d",
-                ifrctyp=7, #StricklerNikuradse
+                #ifrctyp=7, #StricklerNikuradse
             )
             if hasattr(fm.geometry, "inifieldfile") and isinstance(
                 fm.geometry.inifieldfile, IniFieldModel
