@@ -10,12 +10,10 @@ import pandas as pd
 from shapely import affinity
 from shapely.geometry import LineString, MultiPoint, Point
 
-from data_structures.hydamo_globals import (
-    BRANCH_FRICTION_FUNCTION,
-    MANAGEMENT_DEVICE_TYPES,
-    ROUGHNESS_MAPPING_LIST,
-    WEIR_MAPPING,
-)
+from data_structures.hydamo_globals import (BRANCH_FRICTION_FUNCTION,
+                                            MANAGEMENT_DEVICE_TYPES,
+                                            ROUGHNESS_MAPPING_LIST,
+                                            WEIR_MAPPING)
 from data_structures.roi_data_model import ROIDataModel as Datamodel
 
 warnings.filterwarnings(action="ignore", message="Mean of empty slice")
@@ -1342,9 +1340,12 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                     ("branchid", branchid),
                     ("chainage", meta_data["chainage"].values[0]),
                     ("geometry", None),
-                    ("frictionids", "Main,FloodPlain1,FloodPlain1"),
                 ]
             )
+            if rough_df is not None:
+                meta_dict["frictionids"] = "Main,FloodPlain1,FloodPlain1"
+            else:
+                meta_dict["frictionids"] = None
 
             meta_list.append(meta_dict)
 

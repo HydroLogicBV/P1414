@@ -8,7 +8,7 @@ class Models:
         class one_d:
             max_dist_to_struct = 3
             max_snap_dist = 0.1
-            node_distance = 100
+            node_distance = 500
 
         class two_d:
             coupling_type = "1Dto2D"

@@ -8,15 +8,12 @@ import numpy as np
 from hydrolib.core.basemodel import DiskOnlyFileModel
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
-from hydrolib.core.io.friction.models import (FrictBranch, FrictGlobal,
-                                              FrictionModel)
+from hydrolib.core.io.friction.models import FrictBranch, FrictGlobal, FrictionModel
 from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
 from hydrolib.core.io.inifield.models import IniFieldModel, InitialField, ParameterField
 from hydrolib.core.io.mdu.models import FMModel
-from hydrolib.core.io.onedfield.models import (OneDFieldBranch,
-                                               OneDFieldGlobal, OneDFieldModel)
-from hydrolib.core.io.polyfile.models import (Description, Metadata, Point,
-                                              PolyFile, PolyObject)
+from hydrolib.core.io.onedfield.models import OneDFieldBranch, OneDFieldGlobal, OneDFieldModel
+from hydrolib.core.io.polyfile.models import Description, Metadata, Point, PolyFile, PolyObject
 from hydrolib.core.io.structure.models import Dambreak, StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
@@ -348,39 +345,73 @@ def to_dhydro(
         return hydamo
 
     def add_river_profiles(ddm: DataModel, hydamo: HyDAMO) -> HyDAMO:
-
+        branches = ddm.waterloop
         for name, prof in ddm.rivier_profielen_data.iterrows():
+            if not branches["code"].str.contains(prof["branchid"]).any():
+                print("branch for profile not found")
+                continue
+
+            branch = branches.loc[branches["code"] == prof["branchid"], :]
+
+            if prof["chainage"] > np.ceil(branch.geometry.length.values[:]):
+                print("profile too far on branch")
+                continue
+
             profile = ddm.rivier_profielen[ddm.rivier_profielen["name"] == prof["name"]]
             profile = profile.sort_values(by="levels", ascending=True)
-            hydamo.crosssections.add_zw_river_definition(
-                name=prof["name"],
-                numLevels=prof["numLevels"],
-                levels=profile["levels"].values.tolist(),
-                flowWidths=profile["flowWidths"].values.tolist(),
-                totalWidths=profile["totalWidths"].values.tolist(),
-                thalweg=prof["thalweg"],
-                leveecrestLevel=prof["leveecrestLevel"],
-                leveebaselevel=prof["leveebaselevel"],
-                leveeflowarea=prof["leveeflowarea"],
-                leveetotalarea=prof["leveetotalarea"],
-                mainwidth=prof["mainwidth"],
-                fp1width=prof["fp1width"],
-                fp2width=prof["fp2width"],
-                frictionids=prof["frictionids"].split(","),
-                frictiontypes=None,
-                frictionvalues=None,
+
+            kwargs = dict(
+                [
+                    ("flowWidths", profile["flowWidths"].values.tolist()),
+                    ("fp1width", prof["fp1width"]),
+                    ("fp2width", prof["fp2width"]),
+                    ("frictiontypes", None),
+                    ("frictionvalues", None),
+                    ("mainwidth", prof["mainwidth"]),
+                    ("name", prof["name"]),
+                    ("numLevels", prof["numLevels"]),
+                    ("leveebaselevel", prof["leveebaselevel"]),
+                    ("leveecrestLevel", prof["leveecrestLevel"]),
+                    ("leveeflowarea", prof["leveeflowarea"]),
+                    ("leveetotalarea", prof["leveetotalarea"]),
+                    ("levels", profile["levels"].values.tolist()),
+                    ("thalweg", prof["thalweg"]),
+                    ("totalWidths", profile["totalWidths"].values.tolist()),
+                ]
             )
+            if prof["frictionids"] is None:
+                kwargs["frictionids"] = None
+            else:
+                kwargs["frictionids"] = prof["frictionids"].split(",")
+
+            hydamo.crosssections.add_zw_river_definition(**kwargs)
+
+            # hydamo.crosssections.add_zw_river_definition(
+            #     name=prof["name"],
+            #     numLevels=prof["numLevels"],
+            #     levels=profile["levels"].values.tolist(),
+            #     flowWidths=profile["flowWidths"].values.tolist(),
+            #     totalWidths=profile["totalWidths"].values.tolist(),
+            #     thalweg=prof["thalweg"],
+            #     leveecrestLevel=prof["leveecrestLevel"],
+            #     leveebaselevel=prof["leveebaselevel"],
+            #     leveeflowarea=prof["leveeflowarea"],
+            #     leveetotalarea=prof["leveetotalarea"],
+            #     mainwidth=prof["mainwidth"],
+            #     fp1width=prof["fp1width"],
+            #     fp2width=prof["fp2width"],
+            #     frictionids=prof["frictionids"].split(","),
+            #     frictiontypes=None,
+            #     frictionvalues=None,
+            # )
             hydamo.crosssections.add_crosssection_location(
                 branchid=prof["branchid"], chainage=prof["chainage"], definition=prof["name"]
             )
 
-            # TODO add friction
-            # requires id and new function in df2hydrolibmodel.py (similar to friction_definitions_to_dhydro)
-            # but for non-global frictions
-
         return hydamo
 
-    def add_river_roughness(ddm: DataModel, fm=FMModel) -> FMModel:
+    def add_river_roughness(ddm: DataModel, fm=FMModel, default=45) -> FMModel:
+        branches = ddm.waterloop
         gdf = ddm.rivier_ruwheid
         sections = gdf.section.unique()
 
@@ -389,11 +420,22 @@ def to_dhydro(
             frict_list = []
 
             fric_def_global = FrictGlobal(
-                frictionid=section, frictiontype="Chezy", frictionvalue=45
+                frictionid=section, frictiontype="Chezy", frictionvalue=default
             )
 
             section_slice = gdf.loc[gdf["section"] == section, :]
             for ix, (name, row) in enumerate(section_slice.iterrows()):
+                if not branches["code"].str.contains(row["branchid"]).any():
+                    print("branch for roughness not found")
+                    continue
+
+                branch = branches.loc[branches["code"] == row["branchid"], :]
+                if row["chainage"] is not None:
+                    chainage = np.amax([float(c) for c in row["chainage"].split(",")])
+                    if chainage > np.ceil(branch.geometry.length.values[:]):
+                        print("roughness too far on branch")
+                        continue
+
                 kwargs = copy(
                     row[
                         [
@@ -418,25 +460,33 @@ def to_dhydro(
                 kwargs = kwargs.drop("chainage")
                 kwargs = kwargs.drop("numlocations")
 
+                frictionvalues = [float(i) for i in kwargs["frictionvalues"].split(",")]
                 if kwargs["levels"] is not None:
                     levels = [float(i) for i in kwargs["levels"].split(",")]
                     numlevels = int(kwargs["numlevels"])
+                    frictionvalues = (
+                        np.reshape(
+                            frictionvalues,
+                            (numlocations, numlevels),
+                        )
+                        .T.astype(float)
+                        .tolist()
+                    )
                 else:
                     levels = None
-                    numlevels = 1
+                    numlevels = None
+                    frictionvalues = (
+                        np.reshape(
+                            frictionvalues,
+                            (numlocations, 1),
+                        )
+                        .T.astype(float)
+                        .tolist()
+                    )
+
+                kwargs = kwargs.drop("frictionvalues")
                 kwargs = kwargs.drop("levels")
                 kwargs = kwargs.drop("numlevels")
-
-                frictionvalues = [float(i) for i in kwargs["frictionvalues"].split(",")]
-                frictionvalues = (
-                    np.reshape(
-                        frictionvalues,
-                        (numlocations, numlevels),
-                    )
-                    .T.astype(float)
-                    .tolist()
-                )
-                kwargs = kwargs.drop("frictionvalues")
 
                 frict_branch = FrictBranch(
                     **kwargs,
@@ -451,6 +501,15 @@ def to_dhydro(
             friction_model = FrictionModel(branch=frict_list, global_=fric_def_global)
             friction_model.filepath = r"roughness_{}.ini".format(section)
             fm.geometry.frictfile.append(friction_model)
+        return fm
+
+    def add_river_roughness_default(fm: FMModel, default=45, section: str = "Main") -> FMModel:
+        fric_def_global = FrictGlobal(
+            frictionid=section, frictiontype="Chezy", frictionvalue=default
+        )
+        friction_model = FrictionModel(global_=fric_def_global)
+        friction_model.filepath = r"roughness_{}.ini".format(section)
+        fm.geometry.frictfile.append(friction_model)
         return fm
 
     def add_weirs(ddm: DataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
@@ -557,7 +616,7 @@ def to_dhydro(
         default = hydamo.crosssections.add_rectangle_definition(
             height=5.0,
             width=5.0,
-            closed=False,
+            closed="no",
             roughnesstype="StricklerKs",
             roughnessvalue=30,
             name="default",
@@ -753,9 +812,13 @@ def to_dhydro(
                 node_distance=model_config.FM.one_d.node_distance,
                 max_dist_to_struct=model_config.FM.one_d.max_dist_to_struct,
             )
-
-            if "rivier_ruwheid" in self.features:
-                self.fm = add_river_roughness(ddm=self.ddm, fm=self.fm)
+            if ("rivier_profielen_data" in self.features) and (
+                "rivier_profielen" in self.features
+            ):
+                if "rivier_ruwheid" in self.features:
+                    self.fm = add_river_roughness(ddm=self.ddm, fm=self.fm)
+                else:
+                    self.fm = add_river_roughness_default(fm=self.fm)
 
             if ("peil" in self.ddm.waterloop.columns) and (output_folder is not None):
                 fm_path = Path(output_folder) / FM_FOLDER
