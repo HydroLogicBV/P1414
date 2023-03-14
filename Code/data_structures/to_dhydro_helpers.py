@@ -710,7 +710,7 @@ def to_dhydro(
                 datafiletype="sample",
                 interpolationmethod="averaging",
                 locationtype="2d",
-                #ifrctyp=7, #StricklerNikuradse
+                ifrctyp=7, #StricklerNikuradse
             )
             if hasattr(fm.geometry, "inifieldfile") and isinstance(
                 fm.geometry.inifieldfile, IniFieldModel

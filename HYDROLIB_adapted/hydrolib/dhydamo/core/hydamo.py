@@ -819,7 +819,7 @@ class CrossSections:
             "thalweg": 0.0,
             "height": height,
             "width": width,
-            "closed": int(closed),
+            "closed": str(closed),
             "frictionid": roughnessname,
         }
 
