@@ -14,6 +14,19 @@ def create_fixed_weir_data(
     config: str, defaults: str, dm: DataModel, min_length: float = None
 ) -> DataModel:
 
+    """
+    Function loads a geospatial file with fixed weir data from the config file and adds the fixed weirs to the DataModel
+    
+    Args:
+      config (str): configuration file to use (should be in ./dataset_configs)
+      defaults (str): defaults file to use (should be in ./dataset_configs)
+      dm (DataModel): DataModel
+      min_length (float): minimum length of the fixed weir in meters. Defaults to None
+    
+    Returns:
+      A DataModel object with a keringen attribute.
+    """
+
     defaults = importlib.import_module("dataset_configs." + defaults)
     fw_data_config = getattr(importlib.import_module("dataset_configs." + config), "FixedWeirs")
 
@@ -38,6 +51,18 @@ def create_fixed_weir_data(
 
 
 def create_dambreak_data(config: str, defaults: str, dm: DataModel):
+    """
+    Function loads a geospatial file with dam break data from the config file and adds the fixed weirs to the DataModel
+    
+    Args:
+      config (str): configuration file to use (should be in ./dataset_configs)
+      defaults (str): defaults file to use (should be in ./dataset_configs)
+      dm (DataModel): DataModel
+          
+    Returns:
+      A DataModel object with a dambreak attribute.
+    """
+
     defaults = importlib.import_module("dataset_configs." + defaults)
     db_data_config = getattr(importlib.import_module("dataset_configs." + config), "Dambreak")
 

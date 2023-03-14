@@ -20,6 +20,18 @@ warnings.filterwarnings(action="ignore", message="Mean of empty slice")
 
 
 def check_and_fix_duplicate_code(gdf: gpd.GeoDataFrame, column="code") -> gpd.GeoDataFrame:
+    """
+    It takes a GeoDataFrame and a column name, checks if the column exists, and if it does, it checks if
+    there are any duplicate values in the column, and if there are, it pads the duplicate values with a
+    number
+    
+    Args:
+      gdf (gpd.GeoDataFrame): gpd.GeoDataFrame
+      column: the column to check for duplicates. Defaults to code
+    
+    Returns:
+      A GeoDataFrame with the duplicated codes fixed.
+    """
     if column in gdf.columns:
         gdf[column] = gdf[column].astype("str").str.strip()
         # _gdf = copy(gdf)
@@ -36,12 +48,31 @@ def check_and_fix_duplicate_code(gdf: gpd.GeoDataFrame, column="code") -> gpd.Ge
 
 
 def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    If the column is not a float or integer, convert it to a float
+    
+    Args:
+      gdf (gpd.GeoDataFrame): the GeoDataFrame that you want to check
+    
+    Returns:
+      A GeoDataFrame
+    """
     if (not isinstance(gdf, int)) | (not isinstance(gdf, float)):
         gdf = gdf.astype(float)
     return gdf
 
 
 def check_is_not_na_number(input, zero_allowed=False) -> bool:
+    """
+    If the input is not None and not NaN and (if zero_allowed is False) not zero, then return True
+    
+    Args:
+      input: The input value to check.
+      zero_allowed: If the input is zero, should it be considered a valid number?. Defaults to False
+    
+    Returns:
+      A boolean value
+    """
     if (input is None) or (np.isnan(input)):
         return False
 
@@ -52,7 +83,18 @@ def check_is_not_na_number(input, zero_allowed=False) -> bool:
 
 
 def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAPPING_LIST) -> str:
-    """ """
+    """
+    It takes a GeoSeries of structures and a list of roughness types, and returns the roughness type
+    of the structure as a str
+    
+    Args:
+      structure (gpd.GeoSeries): gpd.GeoSeries
+      rougness_map (List): Roughness types with indices
+    
+    Returns:
+      A string
+    """
+    
     type_ruwheid = structure["typeruwheid"]
     if isinstance(type_ruwheid, int) or isinstance(type_ruwheid, float):
         type_ruwheid = rougness_map[int(type_ruwheid) - 1]
@@ -60,6 +102,20 @@ def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAP
 
 
 def load_geo_file(file_path: Any, layer: str = None):
+    """
+    This function reads in a geospatial file and returns a geodataframe. When multiple paths are given, the files are combined. When given a list, a maximum of 
+    two files can be sjoined. When given a dict, multiple files can be sjoined or concatted, depending on the argument supplied in the dict. 
+    
+    Args:
+      file_path (Any): The path to the file you want to load. Can be multiple files (list or dict)
+      layer (str): the name of the layer in the geopackage (if file_path ends in .gpkg). Defaults to None
+    
+    Errors:
+      ValueError: when specific path does not end in either .shp or .gpkg, a ValueError is raised. 
+
+    Returns:
+      A GeoDataFrame
+    """
     """ """
     if isinstance(file_path, dict):
         for key, value in file_path.items():
@@ -109,12 +165,40 @@ def load_geo_file(file_path: Any, layer: str = None):
 def map_columns(
     defaults, gdf: gpd.GeoDataFrame, index_mapping: dict, code_pad: str = None
 ) -> gpd.GeoDataFrame:
-    """ """
+
+    """
+    Function checks for empty columns/values in columns and replaces them with defaults. 
+    Afterwards, possible erroneous geometries are fixed and filtered. 
+    
+    Args:
+      defaults: a module of classes with default values for the columns in the GeoDataFrame
+      gdf (gpd.GeoDataFrame): gpd.GeoDataFrame
+      index_mapping (dict): dict
+      code_pad (str): Padding used before a code. Defaults to None
+    
+    Returns:
+      A GeoDataFrame with filled values and fixed geometries
+    """
 
     def fill_empty_columns(
         defaults, gdf: gpd.GeoDataFrame, index_mapping: dict
     ) -> Tuple[gpd.GeoDataFrame, dict]:
-        """ """
+
+        """
+        It takes a GeoDataFrame, a dictionary with column names and a module of classes with default values. It then
+        checks if the column names in the dictionary are present in the GeoDataFrame. If not, it adds
+        the column with the default values. If the column is present, but contains missing values, it
+        fills the missing values with the default values
+        
+        Args:
+          defaults: a module with classes with default values for the columns that are not in the shapefile
+          gdf (gpd.GeoDataFrame): gpd.GeoDataFrame
+          index_mapping (dict): a dictionary with the DHYMAMO parameter name as key and the column name
+        in the shapefile as value.
+        
+        Returns:
+          A tuple of two objects: a GeoDataFrame and a dictionary.
+        """
 
         _index_mapping = copy(index_mapping)
         _gdf = copy(gdf)
@@ -182,7 +266,16 @@ def map_columns(
         return _gdf, _index_mapping
 
     def fix_geometry(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """drops values without geometry and sets corrects crs"""
+        """
+        It drops rows without geometry and sets the correct crs
+        
+        Args:
+          gdf (gpd.GeoDataFrame): GeoDataFrame to be fixed
+        
+        Returns:
+          A GeoDataFrame with the geometry column dropped and the crs set to epsg:28992.
+        """
+        
         gdf.dropna(axis=0, inplace=True, subset=["geometry"])
         try:
             gdf = gdf.to_crs("epsg:28992")
@@ -214,21 +307,22 @@ def map_columns(
 
 
 def merge_to_ddm(ddm: Datamodel, feature: str, feature_gdf: gpd.GeoDataFrame) -> Datamodel:
-    # if hasattr(ddm, feature):
-    #     new_gdf = gpd.GeoDataFrame(
-    #         data=pd.concat([getattr(ddm, feature), feature_gdf]),
-    #         geometry="geometry",
-    #         crs=feature_gdf.crs,
-    #     )
-    #     setattr(ddm, feature, new_gdf)
-    # else:
-    #     setattr(ddm, feature, feature_gdf)
-
-    # return ddm
     return merge_to_dm(dm=ddm, feature=feature, feature_gdf=feature_gdf)
 
 
 def merge_to_dm(dm, feature: str, feature_gdf: gpd.GeoDataFrame):
+    """
+    Function that merges a feature into the supplied DataModel. If the feature already exists in the data model,
+    then concatenate the new feature with the existing feature. Otherwise, add the new feature to the data model
+    
+    Args:
+      dm: the DataModel object object
+      feature (str): name of the feature to be added to the DataModel
+      feature_gdf (gpd.GeoDataFrame): the GeoDataFrame you want to merge into the DataModel
+    
+    Returns:
+      A DataModel object with the new feature added.
+    """
     if hasattr(dm, feature):
         new_gdf = gpd.GeoDataFrame(
             data=pd.concat([getattr(dm, feature), feature_gdf]),
@@ -243,9 +337,38 @@ def merge_to_dm(dm, feature: str, feature_gdf: gpd.GeoDataFrame):
 
 
 def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datamodel:
-    """ """
+    """
+    This function creates a full DHYDAMO DataModel, based on an empty DataModel and a defaults and config file. It creates the 
+    DataModel by adding elements in the following order.
+    - branches
+    - culverts and bridges
+    - measured profiles 
+    - peilgebieden or default peilen
+    - pumps
+    - river profiles 
+    - sluices and weirs
+    
+    Args:
+      ddm (Datamodel): empty DataModel, to be filled
+      defaults (str): The path to the default file (should be in ./dataset_configs/)
+      config (str): The path to the config file (should be in ./dataset_configs/).
+
+    Returns:
+      ddm (Datamodel): a fully HYDAMO compliant DataModel
+    """
+    
 
     def add_default_peil_to_branch(branches_gdf: gpd.GeoDataFrame, default_peil: float = None):
+        """
+        Add default peil values to branches.
+                
+        Args:
+          branches_gdf (gpd.GeoDataFrame): a GeoDataFrame with a column called "peil"
+          default_peil (float): value of default peil. Defaults to None
+        
+        Returns:
+          A GeoDataFrame with a column "peil"
+        """
         if default_peil is None:
             return branches_gdf
 
@@ -285,7 +408,16 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         return out_branches[in_cols]
 
     def create_bridge_data(bridge_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """ """
+        """
+        It takes a GeoDataFrame of bridges and returns a GeoDataFrame of bridges with the roughness type
+        converted to a string
+        
+        Args:
+          bridge_gdf (gpd.GeoDataFrame): gpd.GeoDataFrame including bridges
+        
+        Returns:
+          A GeoDataFrame including bridges with the roughness types as strings.
+        """
         _bridge_gdf = copy(bridge_gdf)
         for ix, bridge in bridge_gdf.iterrows():
             # turn numerical roughnes types to strings
@@ -293,7 +425,18 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         return _bridge_gdf
 
     def create_culvert_data(culvert_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """ """
+        """
+        It takes a GeoDataFrame with culvert data, and returns a GeoDataFrame with culvert data that fits the DataModel standard.
+        Empty columns are filled with default values, a check for numerical columns is performed and the shapes of the culvert
+        and the corresponding crosssections are added to the GeoDataFrame
+        
+        Args:
+          culvert_gdf (gpd.GeoDataFrame): culvert GeoDataFrame
+        
+        Returns:
+          A GeoDataFrame with the culvert data in the right formats.
+        """
+        
         culvert_gdf["doorstroomopening"] = None
 
         culvert_gdf["breedteopening"] = check_column_is_numerical(
@@ -358,6 +501,21 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         dist_tol: float = 0.25,
         roughness_mapping: List = ROUGHNESS_MAPPING_LIST,
     ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
+
+        """
+        This function creates profile data from a set of profile points.
+        It takes a GeoDataFrame with profile points, and returns 4 GeoDataFrames with profile groups,
+        lines, points and roughness profiles
+        
+        Args:
+          profile_points_gdf (gpd.GeoDataFrame): dataset with profile points
+          dist_tol (float): Minimum distance between two different profile points in meters. Defaults to 0.25,
+          roughness_mapping (List): list with roughness types and corresponding indices
+        
+        Returns:
+          A tuple of 4 GeoDataFrames with all profile information
+        """
+
         # Load shapefile with profile points & group them by metingprof attribute
         # profile_points = gpd.read_file(profile_points_path)
         grouped_points = profile_points_gdf.groupby(by="profiel nummer")
@@ -488,6 +646,21 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         min_water_width: float = 0.1,
         roughness_mapping: List = ROUGHNESS_MAPPING_LIST,
     ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
+
+        """
+        This function creates measured profile data from norm profile data. Based on the availability of different parameters, a trapezium or a rectangular profile
+        is created.
+        
+        Args:
+          branches_gdf (gpd.GeoDataFrame): DataFrame with branches
+          dist_tol (float): minimum distance between two profile points. Defaults to 0.25
+          min_water_width (float): minimum water width in meters. Defaults to 0.1
+          roughness_mapping (List): roughness types with corresponding indices
+        
+        Returns:
+          A tuple of 4 GeoDataFrames with profile_groups, profile_lines, profile_points and roughnes_profiles
+        """
+
         def rectangular_point_profile(
             branch: LineString,
             profiel_nummer: str,
@@ -497,6 +670,23 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             interp_range: float = 0.1,
             thalweg_offset: float = None,
         ) -> List[Point]:
+
+            """
+            This function creates a rectangular point profile. It takes a linestring, and returns a list of points that are the corners of a rectangle that
+            is rotated to be parallel to the linestring
+            
+            Args:
+              branch (LineString): branch geometry where profile point is located,
+              profiel_nummer (str): index number of the profile,
+              params (dict): Parameters that define profile information
+              def_height (float): Default height if insteekhoogte unavailable. Defaults to 2
+              rect_offset (float): offset of the rectangle. Defaults to 0.1,
+              interp_range (float): Range of interpolation. Defaults to 0.1
+              thalweg_offset (float): Offset of the thalweg. Defaults to None
+            
+            Returns:
+              A list of Points in a rectangular point profile
+            """
 
             bwidth = params["bodembreedte"]
 
@@ -592,6 +782,21 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             interp_range: float = 0.1,
             thalweg_offset: float = None,
         ) -> List[Point]:
+
+            """
+            This function creates a trapezium point profile. It takes a linestring, and returns a list of points that are the corners of a rectangle that
+            is rotated to be parallel to the linestring
+            
+            Args:
+              branch (LineString): branch geometry where profile point is located,
+              profiel_nummer (str): index number of the profile,
+              params (dict): Parameters that define profile information
+              interp_range (float): Range of interpolation. Defaults to 0.1
+              thalweg_offset (float): Offset of the thalweg. Defaults to None
+            
+            Returns:
+              A list of Points in a trapezium point profile
+            """
 
             bheight = np.nanmean(
                 [params["bodemhoogte benedenstrooms"], params["bodemhoogte bovenstrooms"]]
@@ -923,7 +1128,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
 
         # Create GeoDataFrame from list of dicts
         pp_gdf = gpd.GeoDataFrame(data=pp_list, geometry="geometry", crs=branches_gdf.crs)
-        return create_measured_profile_data(profile_points_gdf=pp_gdf, dist_tol=0)
+        return create_measured_profile_data(profile_points_gdf=pp_gdf, dist_tol=dist_tol)
 
     def create_norm_parm_profiles_v2(
         branches_gdf: gpd.GeoDataFrame, min_water_width: float = 0.1
@@ -933,6 +1138,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
 
         Args:
             branches_gdf (gpd.GeoDataFrame): input geodataframe containing branches
+            min_water_width (float): minimal water width to be converted to HYDAMO compliant format. Defaults to 0.1
             index_mapping (dict): dictionary containing a mapping from required keys to values present in branches_gdf
 
         Returns:
@@ -1211,6 +1417,18 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         )
 
     def create_pump_data(pump_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
+        """
+        Function takes a GeoDataFrame with pump data, and returns three GeoDataFrames with pump data in HYDAMO compliant format
+        
+        Args:
+          pump_gdf (gpd.GeoDataFrame): a GeoDataFrame with the pump data
+        
+        Returns:
+          pump_station_gdf (gpd.GeoDataFrame): dataframe with pump station information
+           _pump_gdf (gpd.GeoDataFrame): dataframe with pump information
+           management_gdf (gpd.GeoDataFrame): dataframe with management information for the pumping stations
+        
+        """
         pump_station_list = []
         pump_list = []
         management_list = []
@@ -1267,6 +1485,20 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         code_padding: str,
         rough_df: pd.DataFrame = None,
     ) -> gpd.GeoDataFrame:
+        """
+        Function creates river profile data in a HYDAMO compliant format and attaches it to the supplied branches.
+        
+        Args:
+          branches_gdf (gpd.GeoDataFrame): a GeoDataFrame containing the branches
+          riv_prof_df (pd.DataFrame): a DataFrame with the river profile information
+          code_padding (str): A possible padding before the code column
+          rough_df (pd.DataFrame): a DataFrame with the rough profile information. Defaults to None
+        
+        Returns:
+          geom_gdf (gpd.GeoDataFrames): GeoDataFrame with the branches and basic geometries information
+          meta_gdf (gpd.GeoDataFrames): GeoDataFrame with the meta data per branch 
+          rough_gdf (gpd.GeoDataFrames): GeoDataFrame with the rough data per branch
+        """
 
         riv_prof_df["id"] = riv_prof_df["id"].astype(str)
         unique_ids = riv_prof_df["id"].unique()
@@ -1424,6 +1656,18 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         return geom_gdf, meta_gdf, rough_gdf
 
     def create_weir_data(weir_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
+        """
+        It takes a GeoDataFrame with weir data, and returns three GeoDataFrames: one with weir data, one
+        with opening data, and one with management device data, all in HYDAMO compliant format
+        
+        Args:
+          weir_gdf (gpd.GeoDataFrame): the GeoDataFrame containing the weirs
+        
+        Returns:
+          _weir_gdf (gpd.GeoDataFrame): a GeoDataFrame with weir data
+          opening_gdf (gpd.GeoDataFrame): a GeoDataFrame with opening data
+          management_device_gdf (gpd.GeoDataFrame): a GeoDataFrame with management device data
+        """
         weir_list = []
         opening_list = []
         management_device_list = []
@@ -1538,9 +1782,38 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
     def fill_branch_norm_parm_profiles_data(
         defaults, in_branches_gdf: gpd.GeoDataFrame, data_config, insteek_marge=0.25
     ) -> gpd.GeoDataFrame:
-        """ """
-
+        """
+        Function fills branches with norm profile data based on peilvakken and watervlakken maps. If the information is not present, the input
+        GeoDataFrame is returned. 
+        
+        Args:
+          defaults: a dictionary with default values for the parameters
+          in_branches_gdf (gpd.GeoDataFrame): a GeoDataFrame with the branches
+          data_config: a file with config values (should be in ./data_configs/):
+          insteek_marge: the minimum distance between the water level and the bottom of the branch in meters. Defaults to 0.25
+        
+        Returns:
+          a GeoDataFrame with the same columns as the input GeoDataFrame, but with the columns that are
+          not filled in with values filled in with values.
+        """
+       
         def find_branch_width(branch_geom, buffer_list, name, watervlak_geometry):
+            """
+            It takes a line geometry, a list of buffer distances, a name, and a polygon geometry. It
+            then buffers the line geometry by each buffer distance in the list, and intersects the
+            resulting polygon with the polygon geometry. If the resulting intersection is less than 90%
+            of the buffered line geometry, it returns the previous buffer distance as the width. If the
+            intersection is 90% or more, it returns the current buffer distance as the width
+            
+            Args:
+              branch_geom: the geometry of the branch
+              buffer_list: a list of buffer distances to test
+              name: the name of the branch
+              watervlak_geometry: the geometry of the water body
+            
+            Returns:
+              A dictionary with the id, overlap and width of the branch.
+            """
             for jx, buffer in enumerate(buffer_list):
                 buffered_branches = branch_geom.buffer(buffer, cap_style=2)
                 polygon = buffered_branches.intersection(watervlak_geometry)
@@ -1754,7 +2027,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                 profiellijn,
                 profielpunt,
                 ruwheidsprofiel,
-            ) = create_mp_from_np(branches_gdf=np_gdf)
+            ) = create_mp_from_np(branches_gdf=np_gdf, dist_tol=0)
 
             ddm = merge_to_ddm(ddm=ddm, feature="profielgroep", feature_gdf=profielgroep)
             ddm = merge_to_ddm(ddm=ddm, feature="profiellijn", feature_gdf=profiellijn)

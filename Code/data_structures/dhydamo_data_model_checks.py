@@ -64,6 +64,17 @@ def none_geometry_check(geometry: gpd.GeoSeries) -> bool:
 
 
 def validate_codes(values: dict) -> dict:
+    """
+    It checks if the input dictionary contains a column called 'code' in any of the dataframes assigned
+    to the keys 'brug', 'duiker', 'gemaal' or 'stuw'. If so, it checks if there are any duplicate codes
+    in the combined dataframe. If there are, it prints the duplicate codes and raises a ValueError.
+    
+    Args:
+      values (dict): dict
+    
+    Returns:
+      the input dictionary.
+    """
     struct_list = ["brug", "duiker", "gemaal", "stuw"]
     codes = None
     # check if field is assigned and if so add code column to list of codes

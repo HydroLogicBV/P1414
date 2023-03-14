@@ -46,12 +46,35 @@ class DHydroData:
         self.ddm = _clip_structures_by_branches(self, buffer=buffer, min_overlap=min_overlap)
 
     def dambreaks_from_config(self, config: str, defaults: str):
+        """
+        Class method to create dambreaks from the config data in a DHydamoDataModel. This datamodel validates data against expected values
+
+        Args:
+            config (str): configuration file to use (should be in ./dataset_configs)
+            defaults (str): default settings to use (should be in ./dataset_configs)
+
+        Returns:
+            None
+        
+        """
         dm = DataModel()
         dm = create_dambreak_data(config=config, defaults=defaults, dm=dm)
 
         self._set_ddm(ddm=dm)
 
     def fixed_weirs_from_raw_data(self, config: str, defaults: str, min_length: float = None):
+        """
+        Class method to create fixed weir data from raw_data in a DHydamoDataModel. This datamodel validates data against expected values
+
+        Args:
+            config (str): configuration file to use (should be in ./dataset_configs)
+            defaults (str): default settings to use (should be in ./dataset_configs)
+            min_length (float): minimum length of a fixed weir to be included in the DHydamoDataModel in meters. Defaults to None
+
+        Returns:
+            None
+        
+        """
         dm = DataModel()
         dm = create_fixed_weir_data(
             config=config, defaults=defaults, dm=dm, min_length=min_length

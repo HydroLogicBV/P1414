@@ -39,9 +39,35 @@ def to_dhydro(
     initial_1D_waterdepth: float = 1,
     output_folder=None,
 ):
-    """ """
+    """
+    Wrapper function that builds a DHYDRO FM Model from a DataModel. The function does this in the following order:
+    - Initialize a simple FM model
+    - Add branches, structures and river profiles to 1D model
+    - Add the 1D model to the simple FM model
+    - Build the 2D model and add fixed weirs and dam breaks
+    - Set HydroLib core options
+
+    The specific items written to the 1D or 2D model are supplied in the config file and may differ per dataset. 
+
+    Args:
+      config (str): configuration file to be used for the DHYDRO model,
+      extent (Union[gpd.GeoDataFrame, Polygon]) = None: extent for the 2D model grid,
+      initial_1D_waterdepth (float): Initial 1D water depth. Defaults to 1
+      output_folder: The folder where the FM Model will be saved
+    """
 
     def add_1D_initial_waterdepth(fm: FMModel, fm_path: Path, initial_1D_waterdepth: float):
+        """
+        It adds a 1D initial waterdepth to the FMModel
+        
+        Args:
+          fm (FMModel): FMModel
+          fm_path (Path): Path to the folder where the FM is located
+          initial_1D_waterdepth (float): initial 1D waterdepth in all branches
+        
+        Returns:
+          The FMModel object with the new initial waterdepth.
+        """
         globalwd = OneDFieldGlobal(quantity="waterdepth", unit="m", value=initial_1D_waterdepth)
         onedfile_wd = OneDFieldModel(global_=globalwd)
         onedfile_wd.filepath = fm_path / "Initialwaterdepth.ini"
@@ -68,6 +94,18 @@ def to_dhydro(
     def add_1D_initial_waterlevel(
         fm: FMModel, fm_path: Path, ddm: DataModel = None, initial_1D_waterlevl=0
     ):
+        """
+        Add an initial 1D waterlevel to the FMModel, either specified in DataModel or as a global value. 
+        
+        Args:
+          fm (FMModel): FMModel
+          fm_path (Path): Path to the folder where the FM model is located
+          ddm (DataModel): DataModel including branch data 
+          initial_1D_waterlevl: the global initial water level in the 1D model when no specific peil is specified. Defaults to 0
+        
+        Returns:
+          the FMModel object with the initial waterlevel added.
+        """
         branches_gdf = ddm.waterloop
         branch_field_list = []
         for name, branch in branches_gdf.iterrows():
@@ -110,6 +148,17 @@ def to_dhydro(
         return fm
 
     def add_branches(ddm: DataModel, features: List[str], hydamo: HyDAMO) -> HyDAMO:
+        """
+        Add branch data from the DataModel to the HyDAMO object
+        
+        Args:
+          ddm (DataModel): DataModel
+          features (List[str]): branch features to be included in the HyDAMO object {["profielgroep","profielpunt","profiellijn","ruwheidsprofiel"], ["hydroobject_normgp", "normgeparamprofielwaarde"]}
+          hydamo (HyDAMO): HyDAMO model
+        
+        Returns:
+          HyDAMO object including branches and their features
+        """
         hydamo.branches.set_data(
             ddm.waterloop, index_col="code", check_geotype=False
         )  # using globalid leads to errors in D-HYDRO. Probably too long name
@@ -202,6 +251,18 @@ def to_dhydro(
         ddm: DataModel, hydamo: HyDAMO, default_height=0, max_snap_dist: float = 5
     ) -> HyDAMO:
 
+        """
+        Adds bridges  from the DataModel to the HyDAMO model
+        
+        Args:
+          ddm (DataModel): DataModel including bridges
+          hydamo (HyDAMO): HyDAMO
+          default_height: the height of the bridge above the water level. Defaults to 0
+          max_snap_dist (float): maximum distance (meters) to snap bridges to branches. Defaults to 5
+        
+        Returns:
+          the hydamo object.
+        """
         hydamo.bridges.set_data(ddm.brug, index_col="code")
         hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=max_snap_dist)
         hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
@@ -223,6 +284,18 @@ def to_dhydro(
         return hydamo
 
     def add_culverts(ddm: DataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+        """
+        Adds culverts from the DataModel to the HyDAMO model
+        
+        Args:
+          ddm (DataModel): DataModel including culverts
+          hydamo (HyDAMO): HyDAMO model
+          max_snap_dist (float): maximum distance (meters) to snap culverts to branches. Defaults to 5
+        
+        Returns:
+          HyDAMO object including culverts
+        """
+
         hydamo.culverts.set_data(ddm.duiker)
         hydamo.culverts.snap_to_branch(
             hydamo.branches, snap_method="overal", maxdist=max_snap_dist
@@ -249,6 +322,19 @@ def to_dhydro(
         return hydamo
 
     def add_dambreaks(ddm: DataModel, fm=FMModel, max_dist=100, z_default=0) -> FMModel:
+        """
+        Adds the dambreaks from the DataModel to the FMModel object
+        
+        Args:
+          ddm (DataModel): DataModel including dambreaks
+          fm: the FMModel object
+          max_dist: the maximum distance between the dambreak and the nearest node on a fixed weir. If the dambreak is
+        further away than this, it will not be added to the fixed weir. Defaults to 100
+          z_default: the default z-value for the dambreak. Defaults to 0
+        
+        Returns:
+          The FMModel object with the dambreaks added.
+        """
         db_gdf = ddm.doorbraak
         fw_gdf = ddm.keringen
 
@@ -310,6 +396,17 @@ def to_dhydro(
         return fm
 
     def add_fixed_weirs(ddm: DataModel, fm=FMModel, data: List = [0, 0, 5, 4, 4, 0]) -> FMModel:
+        """
+        Add fixed weirs from a DataModel to the supplied FMModel
+        
+        Args:
+          ddm (DataModel): DataModel including fixed weirs
+          fm (FMModel): FMModel
+          data (List): data to add to the points on the fixed weir. Defaults to [0, 0, 5, 4, 4, 0]
+        
+        Returns:
+          A FMModel object with the fixed weirs added.
+        """
         fw_gdf = ddm.keringen
 
         line_list = []
@@ -331,6 +428,19 @@ def to_dhydro(
         return fm
 
     def add_pumps(ddm: DataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+        """
+        It takes a DataModel object, a HyDAMO object, and a maximum snap distance, and returns a HyDAMO
+        object with pumps added
+        
+        Args:
+          ddm (DataModel): DataModel including pumps
+          hydamo (HyDAMO): HyDAMO object
+          max_snap_dist (float): the maximum distance in meters that a pump can be from a branch. Defaults to 5
+        
+        Returns:
+          HyDAMO object
+        """
+        
         hydamo.pumpstations.set_data(ddm.gemaal)
         # hydamo.pumps.set_data(ddm.pomp)
         hydamo.pumpstations.snap_to_branch(
@@ -348,6 +458,16 @@ def to_dhydro(
         return hydamo
 
     def add_river_profiles(ddm: DataModel, hydamo: HyDAMO) -> HyDAMO:
+        """
+        Adds river profiles to the HyDAMO model
+        
+        Args:
+          ddm (DataModel): DataModel with river profiles
+          hydamo (HyDAMO): HyDAMO model
+        
+        Returns:
+          HyDAMO object with river profiles
+        """
         branches = ddm.waterloop
         for name, prof in ddm.rivier_profielen_data.iterrows():
             if not branches["code"].str.contains(prof["branchid"]).any():
@@ -414,6 +534,17 @@ def to_dhydro(
         return hydamo
 
     def add_river_roughness(ddm: DataModel, fm=FMModel, default=45) -> FMModel:
+        """
+        Takes a DataModel and a FMModel object and returns a FMModel object with roughness values attached in a FrictionModel.
+        
+        Args:
+          ddm (DataModel): DataModel
+          fm: FMModel = FMModel()
+          default: default roughness value, type Chezy. Defaults to 45
+        
+        Returns:
+          the FMModel object.
+        """
         branches = ddm.waterloop
         gdf = ddm.rivier_ruwheid
         sections = gdf.section.unique()
@@ -507,6 +638,17 @@ def to_dhydro(
         return fm
 
     def add_river_roughness_default(fm: FMModel, default=45, section: str = "Main") -> FMModel:
+        """
+        It adds a roughness value of 45 to the main section of the model
+        
+        Args:
+          fm (FMModel): FMModel - the model object
+          default: the default roughness value to use for all river sections. Defaults to 45
+          section (str): The name of the section in the .ini file. Defaults to Main
+        
+        Returns:
+          the FMModel object.
+        """
         fric_def_global = FrictGlobal(
             frictionid=section, frictiontype="Chezy", frictionvalue=default
         )
@@ -516,6 +658,18 @@ def to_dhydro(
         return fm
 
     def add_weirs(ddm: DataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
+        """
+        It adds weirs to the HyDAMO model
+        
+        Args:
+          ddm (DataModel): DataModel
+          hydamo (HyDAMO): HyDAMO
+          max_snap_dist (float): the maximum distance in meters between the structure and the branch. If
+        the structure is further away than this, it will not be added to the model. Defaults to 5
+        
+        Returns:
+          the hydamo object.
+        """
         hydamo.weirs.set_data(ddm.stuw)
         hydamo.opening.set_data(ddm.kunstwerkopening)
         hydamo.management_device.set_data(ddm.regelmiddel)
@@ -538,6 +692,24 @@ def to_dhydro(
         max_dist_to_struct=3,
         min_dist_between_struct=50,
     ) -> HyDAMO:
+        """
+        It takes a list of features, and a FMModel and HyDAMO instance, and returns a FMModel and HyDAMO
+        instance with the 1D model added
+        
+        Args:
+          features (List): List of features to include in the model.
+          fm (FMModel): FMModel = the model object
+          hydamo (HyDAMO): HyDAMO object
+          max_snap_dist (float): the maximum distance in meters between the structure and the branch. If
+                                 the structure is further away than this, it will not be added to the model. Defaults to 5
+          node_distance: the distance between nodes in the 1D mesh. Defaults to 20
+          max_dist_to_struct: maximum distance between a node and a structure. Defaults to 3
+          min_dist_between_struct: minimum distance between structures. Defaults to 50
+        
+        Returns:
+          fm, hydamo
+        """
+
         # # Add observation points (empty for now)
         # hydamo.observationpoints.add_points(
         #     [], [], locationTypes=["1d", "1d"], snap_distance=max_snap_dist
@@ -654,6 +826,24 @@ def to_dhydro(
         one_d=False,
     ) -> FMModel:
 
+        """
+        Create a 2D mesh, adds elevation data, adds roughness data, and adds 1D to 2D links to the FMModel given
+        
+        Args:
+          coupling_type (str): type of coupling {"1Dto2D", "2Dto1D"},
+          dx (float): cell size in x direction in meters,
+          dy (float): cell size in y direction in meters,
+          elevation_raster_path (str): path to the elevation raster
+          extent (gpd.GeoDataFrame): the extent of the model
+          fm (FMModel): FMModel
+          initial_peil_raster_path (str): path to the raster with the initial water levels
+          roughness_2d_raster_path (str): path to the roughness raster
+          two_d_buffer (float): distance in meters to buffer around the given extent
+          one_d: boolean, if True, the 1D network will be coupled to the 2D mesh. Defaults to False
+        
+        Returns:
+          The FMModel object is being returned.
+        """
         network = fm.geometry.netfile.network
 
         if two_d_buffer is None:
@@ -767,6 +957,19 @@ def to_dhydro(
     def simple_fm_model(
         dtmax: int = 60, start_time: int = 20160601, stop_time: int = 2 * 86400
     ) -> FMModel:
+
+        """
+        This function creates a new FMModel object, sets the reference date, stop time and time step.
+        
+        Args:
+          dtmax (int): the maximum time step size. Defaults to 60 seconds.
+          start_time (int): the time at which the simulation starts in format YYYYMMDD. Defaults to 20160601
+          stop_time (int): The time at which the simulation will stop in seconds. Defaults to 2 * 86400
+        
+        Returns:
+          A FMModel object.
+        """
+
         fm = FMModel()
         fm.time.refdate = start_time
         fm.time.tstop = stop_time
@@ -902,6 +1105,13 @@ def to_dhydro(
 
 
 def write_dimr(fm: FMModel, output_folder: str):
+    """
+    Write a DIMR configuration file for a given FMModel and a run.bat file to the output folder
+    
+    Args:
+      fm (FMModel): FMModel
+      output_folder (str): the folder where the DIMR files will be written to.
+    """
 
     output_path = Path(output_folder)
     output_path.mkdir(exist_ok=True, parents=True)
