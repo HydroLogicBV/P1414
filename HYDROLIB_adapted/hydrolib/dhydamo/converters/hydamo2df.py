@@ -772,7 +772,7 @@ class StructuresIO:
                     "shape": "rectangle",
                     "height": culvert.hoogteopening,
                     "width": culvert.breedteopening,
-                    "closed": 1,
+                    "closed": "yes",
                 }
             else:
                 crosssection = {"shape": "circle", "diameter": 0.40}

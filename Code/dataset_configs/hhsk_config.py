@@ -1,7 +1,7 @@
 class Models:
     class FM:
         one_d_bool = True
-        two_d_bool = False
+        two_d_bool = True
         start_time = 20160601
         stop_time = 86400
 
@@ -11,11 +11,15 @@ class Models:
             node_distance = 500
 
         class two_d:
-            coupling_type = "2Dto1D"  # "1Dto2D"
+            coupling_type = "1Dto2D"  # "1Dto2D"
             dx = 500
             dy = 500
             # elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.tif"
+            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\peilen_jp_25m_full.tif"
+            roughness_2d_raster_path = (
+                r"D:\Work\Project\P1414\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
+            )
             two_d_buffer = 100
 
         class hydrolib_core_options:
@@ -56,7 +60,7 @@ class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v2.2_test.shp"  # From V7
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v3.shp"  # From V7
     culvert_path = p_folder + r"\HHSK\Legger\Duiker.shp"
     norm_profile_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Legger\Peilvakken.shp"
@@ -69,21 +73,10 @@ class RawData:
     ## Branches
     branch_index_mapping = dict(
         [
-            ("bodembreedte", "BODEMBREED"),
-            ("bodemhoogte benedenstrooms", None),
-            ("bodemhoogte bovenstrooms", None),
             ("code", "CODE"),
-            ("diepte", ["DIEPTE", "MAXIMALEWA"]),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", None),
-            ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", "TALUDLINKS"),
-            ("taludhelling rechterzijde", "TALUDRECHT"),
             ("typeruwheid", None),
-            ("ruwheidhoog", None),
-            ("ruwheidlaag", None),
-            ("water_width_index", "WATERBREED"),
         ]
     )
 
@@ -193,9 +186,9 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogstedoorstroombreedte", "KRUINBREED"),
-            ("hoogstedoorstroomhoogte", "KRUINHOOGT"),
+            ("hoogstedoorstroomhoogte", ["KRUINHOOGT", "MINIMAALPE", "MAXIMAALPE"]),
             ("laagstedoorstroombreedte", "KRUINBREED"),
-            ("laagstedoorstroomhoogte", "KRUINHOOGT"),
+            ("laagstedoorstroomhoogte", ["KRUINHOOGT", "MINIMAALPE", "MAXIMAALPE"]),
             ("overlaatonderlaat", None),
             ("soortregelbaarheid", None),
             ("soortstuw", None),

@@ -6,7 +6,7 @@ from hydrolib.core.io.ext.models import ExtModel, Lateral
 
 sys.path.append("D:\Work\git\GIS_tools\Code")
 
-from data_structures.dhydamo_data import DHydamoData
+from data_structures.dhydro_data import DHydroData
 
 
 def write_model(config_path: str, gpkg_file: str, output_path: str):

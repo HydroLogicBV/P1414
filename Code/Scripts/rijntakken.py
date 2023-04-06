@@ -12,7 +12,7 @@ config = r"rijntakken_config"
 defaults = r"defaults"
 
 build_database = True
-build_model = False
+build_model = True
 
 
 if build_database:
@@ -21,8 +21,36 @@ if build_database:
 
     # 2. convert raw data to hydamo data
     dhd.hydamo_from_raw_data(defaults=defaults, config=config)
-
     dhd.clip_structures_by_branches()
+
+    arksluis_list = [
+        "rijn_we_AR_62.0_C_HK_Keerschuif-Ravenswaaij",
+        "rijn_we_AR_61.9_L_SS_Prinses-Marijkesluis-west",
+    ]
+
+    for sluis in arksluis_list:
+        stuwid = dhd.ddm.stuw.loc[dhd.ddm.stuw.code == sluis, "globalid"].values[0]
+        dhd.ddm.kunstwerkopening.loc[
+            dhd.ddm.kunstwerkopening.stuwid == stuwid, "laagstedoorstroomhoogte"
+        ] = 9
+        dhd.ddm.kunstwerkopening.loc[
+            dhd.ddm.kunstwerkopening.stuwid == stuwid, "hoogstedoorstroomhoogte"
+        ] = 9
+
+    arksluis_list = [
+        "rijn_we_AR_71.2_L_SS_Prins-Bernhardsluis-oost",
+        "rijn_we_AR_71.2_R_SS_Prins-Bernhardsluis-west",
+    ]
+
+    for sluis in arksluis_list:
+        stuwid = dhd.ddm.stuw.loc[dhd.ddm.stuw.code == sluis, "globalid"].values[0]
+        dhd.ddm.kunstwerkopening.loc[
+            dhd.ddm.kunstwerkopening.stuwid == stuwid, "laagstedoorstroomhoogte"
+        ] = 11
+        dhd.ddm.kunstwerkopening.loc[
+            dhd.ddm.kunstwerkopening.stuwid == stuwid, "hoogstedoorstroomhoogte"
+        ] = 11
+
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
 
 if build_model:

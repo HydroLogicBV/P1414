@@ -7,7 +7,7 @@ class Models:
 
         class one_d:
             max_dist_to_struct = 3
-            max_snap_dist = 1
+            max_snap_dist = 5
             node_distance = 500
 
         class two_d:
@@ -15,7 +15,7 @@ class Models:
             dx = 500
             dy = 500
             # elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            elevation_raster_path = "D:\work\P1414_ROI\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
         class hydrolib_core_options:
@@ -55,36 +55,30 @@ class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v2.2_test.shp"  # From V7
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v3.shp"  # From V7
     bridges_path = p_folder + r"\HHRijnland\Niet legger\brug_edited.shp"
     culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
-    norm_profile_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as.shp"
+    norm_profile_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as_primair.shp"
     peil_gebieden_path = p_folder + r"\HHRijnland\Legger\Peilvakken\gerealiseerde_peilvakken.shp"
     pump_path = p_folder + r"\HHRijnland\Niet legger\gemaal_peil.shp"
-    sluice_path = p_folder + r"\HHRijnland\Legger\Sluis\sluis.shp"
+    sluice_path = _path = dict(
+        [
+            ("base", p_folder + r"\HHRijnland\Legger\Sluis\sluis.shp"),
+            ("concat", p_folder + r"\HHRijnland\Legger\Noodwaterkering\noodwaterkering.shp"),
+        ]
+    )
     weir_path = p_folder + r"\HHRijnland\Legger\Stuw\stuw.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
-    branch_selection = dict([("column", "CATEGORIEO"), ("value", "primair")])
+    # branch_selection = dict([("column", "CATEGORIEO"), ("value", "primair")])
     branch_index_mapping = dict(
         [
-            ("bodembreedte", "BODEMBREED"),
-            ("bodemhoogte benedenstrooms", None),
-            ("bodemhoogte bovenstrooms", None),
             ("code", "CODE"),
-            ("diepte", "WATERDIEPT"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", None),
-            ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", "TALUDHELLI"),
-            ("taludhelling rechterzijde", "TALUDHEL_1"),
             ("typeruwheid", "TYPERUWHEI"),
-            ("ruwheidhoog", "RUWHEIDSWA"),
-            ("ruwheidlaag", "RUWHEIDSWA"),
-            ("water_width_index", "BREEDTE"),
         ]
     )
 
@@ -123,7 +117,7 @@ class RawData:
     )
 
     ## Normprofielen
-    np_selection = dict([("column", "CATEGORIEO"), ("value", "primair")])
+    # np_selection = dict([("column", "CATEGORIEO"), ("value", "primair")])
     np_index_mapping = dict(
         [
             ("bodembreedte", None),

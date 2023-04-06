@@ -167,9 +167,7 @@ class Wind(INIBasedModel):
     _header: Literal["Wind"] = "Wind"
     icdtyp: int = Field(2, alias="icdTyp")
     cdbreakpoints: List[float] = Field([0.00063, 0.00723], alias="cdBreakpoints")
-    windspeedbreakpoints: List[float] = Field(
-        [0.0, 100.0], alias="windSpeedBreakpoints"
-    )
+    windspeedbreakpoints: List[float] = Field([0.0, 100.0], alias="windSpeedBreakpoints")
     rhoair: float = Field(1.205, alias="rhoAir")
     relativewind: float = Field(0.0, alias="relativeWind")
     windpartialdry: bool = Field(True, alias="windPartialDry")
@@ -365,9 +363,7 @@ class Output(INIBasedModel):
     wrihis_structure_orifice: bool = Field(True, alias="wrihis_structure_orifice")
     wrihis_structure_bridge: bool = Field(True, alias="wrihis_structure_bridge")
     wrihis_structure_culvert: bool = Field(True, alias="wrihis_structure_culvert")
-    wrihis_structure_longculvert: bool = Field(
-        True, alias="wrihis_structure_longCulvert"
-    )
+    wrihis_structure_longculvert: bool = Field(True, alias="wrihis_structure_longCulvert")
     wrihis_structure_dambreak: bool = Field(True, alias="wrihis_structure_damBreak")
     wrihis_structure_uniweir: bool = Field(True, alias="wrihis_structure_uniWeir")
     wrihis_structure_compound: bool = Field(True, alias="wrihis_structure_compound")
@@ -379,20 +375,12 @@ class Output(INIBasedModel):
     wrimap_waterlevel_s0: bool = Field(True, alias="wrimap_waterLevel_s0")
     wrimap_waterlevel_s1: bool = Field(True, alias="wrimap_waterLevel_s1")
     wrimap_evaporation: bool = Field(True, alias="wrimap_evaporation")
-    wrimap_velocity_component_u0: bool = Field(
-        True, alias="wrimap_velocity_component_u0"
-    )
-    wrimap_velocity_component_u1: bool = Field(
-        True, alias="wrimap_velocity_component_u1"
-    )
+    wrimap_velocity_component_u0: bool = Field(True, alias="wrimap_velocity_component_u0")
+    wrimap_velocity_component_u1: bool = Field(True, alias="wrimap_velocity_component_u1")
     wrimap_velocity_vector: bool = Field(True, alias="wrimap_velocity_vector")
-    wrimap_upward_velocity_component: bool = Field(
-        False, alias="wrimap_upward_velocity_component"
-    )
+    wrimap_upward_velocity_component: bool = Field(False, alias="wrimap_upward_velocity_component")
     wrimap_density_rho: bool = Field(True, alias="wrimap_density_rho")
-    wrimap_horizontal_viscosity_viu: bool = Field(
-        True, alias="wrimap_horizontal_viscosity_viu"
-    )
+    wrimap_horizontal_viscosity_viu: bool = Field(True, alias="wrimap_horizontal_viscosity_viu")
     wrimap_horizontal_diffusivity_diu: bool = Field(
         True, alias="wrimap_horizontal_diffusivity_diu"
     )
@@ -405,26 +393,14 @@ class Output(INIBasedModel):
     wrimap_rain: bool = Field(False, alias="wrimap_rain")
     wrimap_wind: bool = Field(True, alias="wrimap_wind")
     wrimap_heat_fluxes: bool = Field(False, alias="wrimap_heat_fluxes")
-    wrimap_wet_waterdepth_threshold: float = Field(
-        2e-5, alias="wrimap_wet_waterDepth_threshold"
-    )
-    wrimap_time_water_on_ground: bool = Field(
-        False, alias="wrimap_time_water_on_ground"
-    )
+    wrimap_wet_waterdepth_threshold: float = Field(2e-5, alias="wrimap_wet_waterDepth_threshold")
+    wrimap_time_water_on_ground: bool = Field(False, alias="wrimap_time_water_on_ground")
     wrimap_freeboard: bool = Field(False, alias="wrimap_freeboard")
-    wrimap_waterdepth_on_ground: bool = Field(
-        False, alias="wrimap_waterDepth_on_ground"
-    )
+    wrimap_waterdepth_on_ground: bool = Field(False, alias="wrimap_waterDepth_on_ground")
     wrimap_volume_on_ground: bool = Field(False, alias="wrimap_volume_on_ground")
-    wrimap_total_net_inflow_1d2d: bool = Field(
-        False, alias="wrimap_total_net_inflow_1d2d"
-    )
-    wrimap_total_net_inflow_lateral: bool = Field(
-        False, alias="wrimap_total_net_inflow_lateral"
-    )
-    wrimap_water_level_gradient: bool = Field(
-        False, alias="wrimap_water_level_gradient"
-    )
+    wrimap_total_net_inflow_1d2d: bool = Field(False, alias="wrimap_total_net_inflow_1d2d")
+    wrimap_total_net_inflow_lateral: bool = Field(False, alias="wrimap_total_net_inflow_lateral")
+    wrimap_water_level_gradient: bool = Field(False, alias="wrimap_water_level_gradient")
     wrimap_flow_analysis: bool = Field(False, alias="wrimap_flow_analysis")
     mapoutputtimevector: DiskOnlyFileModel = Field(
         default_factory=lambda: DiskOnlyFileModel(None), alias="mapOutputTimeVector"
@@ -476,9 +452,7 @@ class Geometry(INIBasedModel):
     )
 
     _header: Literal["Geometry"] = "Geometry"
-    netfile: Optional[NetworkModel] = Field(
-        default_factory=NetworkModel, alias="netFile"
-    )
+    netfile: Optional[NetworkModel] = Field(default_factory=NetworkModel, alias="netFile")
     bathymetryfile: Optional[XYZModel] = Field(None, alias="bathymetryFile")
     drypointsfile: Optional[List[Union[XYZModel, PolyFile]]] = Field(
         None, alias="dryPointsFile"
@@ -490,17 +464,13 @@ class Geometry(INIBasedModel):
     waterlevinifile: DiskOnlyFileModel = Field(
         default_factory=lambda: DiskOnlyFileModel(None), alias="waterLevIniFile"
     )
-    landboundaryfile: Optional[List[DiskOnlyFileModel]] = Field(
-        None, alias="landBoundaryFile"
-    )
+    landboundaryfile: Optional[List[DiskOnlyFileModel]] = Field(None, alias="landBoundaryFile")
     thindamfile: Optional[List[PolyFile]] = Field(None, alias="thinDamFile")
     fixedweirfile: Optional[List[PolyFile]] = Field(None, alias="fixedWeirFile")
     pillarfile: Optional[List[PolyFile]] = Field(None, alias="pillarFile")
     usecaching: bool = Field(False, alias="useCaching")
     vertplizfile: Optional[PolyFile] = Field(None, alias="vertPlizFile")
-    frictfile: Optional[List[FrictionModel]] = Field(
-        None, alias="frictFile", delimiter=";"
-    )
+    frictfile: Optional[List[FrictionModel]] = Field(None, alias="frictFile", delimiter=";")
     crossdeffile: Optional[CrossDefModel] = Field(None, alias="crossDefFile")
     crosslocfile: Optional[CrossLocModel] = Field(None, alias="crossLocFile")
     storagenodefile: Optional[StorageNodeModel] = Field(None, alias="storageNodeFile")
@@ -615,9 +585,7 @@ class GroundWater(INIBasedModel):
         InfiltrationMethod.NoInfiltration, alias="Infiltrationmodel"
     )
     hinterceptionlayer: Optional[float] = Field(None, alias="Hinterceptionlayer")
-    unifinfiltrationcapacity: Optional[float] = Field(
-        0.0, alias="UnifInfiltrationCapacity"
-    )
+    unifinfiltrationcapacity: Optional[float] = Field(0.0, alias="UnifInfiltrationCapacity")
     conductivity: Optional[float] = Field(0.0, alias="Conductivity")
     h_aquiferuni: Optional[float] = Field(20.0, alias="h_aquiferuni")
     bgrwuni: Optional[float] = Field(None, alias="bgrwuni")

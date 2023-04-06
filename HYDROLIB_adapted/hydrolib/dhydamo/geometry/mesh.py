@@ -629,7 +629,9 @@ def mesh2d_altitude_from_raster(
         facedata.index = np.arange(len(xy), dtype=np.uint32) + 1
         facedata["crds"] = [cell for cell in cells]
 
-        df = rasterstats.raster_stats_fine_cells(rasterpath, facedata, stats=[stat])
+        df = rasterstats.raster_stats_fine_cells(
+            rasterpath, facedata, stats=[stat], window_size=window_size
+        )
         # Get z values
         zvalues = df[stat].values
 

@@ -1,24 +1,30 @@
 import importlib
+import os
 from copy import copy
 from pathlib import Path
 from typing import List, Union
 
 import geopandas as gpd
 import numpy as np
+import rasterio
+from geo_tools.roughness_to_mesh import create_roughness_xyz
 from hydrolib.core.basemodel import DiskOnlyFileModel
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
 from hydrolib.core.io.friction.models import FrictBranch, FrictGlobal, FrictionModel
 from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
-from hydrolib.core.io.inifield.models import IniFieldModel, InitialField
+from hydrolib.core.io.inifield.models import IniFieldModel, InitialField, ParameterField
 from hydrolib.core.io.mdu.models import FMModel
 from hydrolib.core.io.onedfield.models import OneDFieldBranch, OneDFieldGlobal, OneDFieldModel
-from hydrolib.core.io.polyfile.models import Description, Metadata, Point, PolyFile, PolyObject
+from hydrolib.core.io.polyfile.models import Description, Metadata
+from hydrolib.core.io.polyfile.models import Point as hPoint
+from hydrolib.core.io.polyfile.models import PolyFile, PolyObject
 from hydrolib.core.io.structure.models import Dambreak, StructureModel
 from hydrolib.dhydamo.converters.df2hydrolibmodel import Df2HydrolibModel
 from hydrolib.dhydamo.core.hydamo import HyDAMO
 from hydrolib.dhydamo.geometry import mesh
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
+from rasterstats import zonal_stats
 from scipy.spatial import KDTree
 from shapely.geometry import LineString
 from shapely.geometry import Point as sPoint
@@ -203,6 +209,8 @@ def to_dhydro(
         hydamo.bridges.snap_to_branch(hydamo.branches, snap_method="overal", maxdist=max_snap_dist)
         hydamo.bridges.dropna(axis=0, inplace=True, subset=["branch_offset"])
         for i, bridge in hydamo.bridges.iterrows():
+            if bridge.lengte is None:
+                continue
             hydamo.structures.add_bridge(
                 id=bridge.code,
                 name=bridge.code,
@@ -314,7 +322,7 @@ def to_dhydro(
             coord_list = row.geometry.coords[:]
             point_list = []
             for (x, y, z) in coord_list:
-                point_list.append(Point(x=x, y=y, z=z, data=data))
+                point_list.append(hPoint(x=x, y=y, z=z, data=data))
 
             metadata = Metadata(name=str(row["code"]), n_rows=len(coord_list), n_columns=9)
             polyline = PolyObject(
@@ -512,6 +520,65 @@ def to_dhydro(
         fm.geometry.frictfile.append(friction_model)
         return fm
 
+    def add_tunnels(
+        hydamo: HyDAMO,
+        fm: FMModel,
+        node_distance=20,
+        max_dist_to_struct=3,
+        two_d: bool = False,
+    ) -> FMModel:
+        if "tunnel" in hydamo.branches.columns:
+            branches = hydamo.branches.loc[hydamo.branches.tunnel, :]
+        else:
+            return fm
+
+        network = fm.geometry.netfile.network
+
+        mesh.mesh1d_add_branches_from_gdf(
+            network,
+            branches=branches,
+            branch_name_col="code",
+            node_distance=1e6,
+            max_dist_to_struc=max_dist_to_struct,
+            structures=None,
+        )
+
+        # if two_d:
+        #     branch_list = branches["code"].values[:]
+        #     # node_mask = network._mesh1d.get_node_mask(branch_list)
+        #     # print(np.sum(node_mask))
+
+        #     # # If not provided, create a box from the maximum bounds
+        #     # xmin = network._mesh2d.mesh2d_node_x.min()
+        #     # xmax = network._mesh2d.mesh2d_node_x.max()
+        #     # ymin = network._mesh2d.mesh2d_node_y.min()
+        #     # ymax = network._mesh2d.mesh2d_node_y.max()
+
+        #     # within = box(xmin, ymin, xmax, ymax)
+        #     # geometrylist = GeometryList.from_geometry(within)
+        #     # network._link1d2d._link_from_1d_to_2d(node_mask, polygon=geometrylist)
+
+        #     for ix, branchid in enumerate(branch_list):
+        #         node_mask = network._mesh1d.get_node_mask(branchid)
+
+        #         point1 = sPoint(network._mesh1d.branches[branchid].node_xy[0, :])
+        #         point2 = sPoint(network._mesh1d.branches[branchid].node_xy[-1, :])
+        #         _within = point1.buffer(250).union(point2.buffer(250))
+        #         if ix == 0:
+        #             within = _within
+        #         else:
+        #             within = within.union(_within)
+        #         # mp = MultiPolygon(polygons=[point1.buffer(250), point2.buffer(250)])
+        #         # geometrylist = GeometryList.from_geometry(mp)
+        #         # network._link1d2d._link_from_1d_to_2d(node_mask, polygon=geometrylist)
+        #     mesh.links1d2d_add_links_2d_to_1d_embedded(
+        #         network=network, branchids=branch_list, within=within
+        #     )
+        #     # mesh.links1d2d_add_links_2d_to_1d_embedded(network=network, branchids=branch_list)
+        #     print(network._link1d2d.link1d2d.shape)
+
+        return fm
+
     def add_weirs(ddm: DataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
         hydamo.weirs.set_data(ddm.stuw)
         hydamo.opening.set_data(ddm.kunstwerkopening)
@@ -530,15 +597,10 @@ def to_dhydro(
         features: List,
         fm: FMModel,
         hydamo: HyDAMO,
-        max_snap_dist: float = 5,
         node_distance=20,
         max_dist_to_struct=3,
-        min_dist_between_struct=50,
     ) -> HyDAMO:
-        # # Add observation points (empty for now)
-        # hydamo.observationpoints.add_points(
-        #     [], [], locationTypes=["1d", "1d"], snap_distance=max_snap_dist
-        # )
+
         kwargs = {}
         if "brug" in features:
             # bbrug = True
@@ -591,9 +653,14 @@ def to_dhydro(
 
         #                     structures.at[structid, "chainage"] = new_chainage
 
+        if "tunnel" in hydamo.branches.columns:
+            branches = hydamo.branches.loc[~hydamo.branches.tunnel, :]
+        else:
+            branches = hydamo.branches
+
         mesh.mesh1d_add_branches_from_gdf(
             fm.geometry.netfile.network,
-            branches=hydamo.branches,
+            branches=branches,
             branch_name_col="code",
             node_distance=node_distance,
             max_dist_to_struc=max_dist_to_struct,
@@ -646,6 +713,7 @@ def to_dhydro(
         extent: gpd.GeoDataFrame,
         fm: FMModel,
         initial_peil_raster_path: str,
+        roughness_2d_raster_path: str,
         two_d_buffer: float,
         one_d=False,
     ) -> FMModel:
@@ -660,17 +728,49 @@ def to_dhydro(
             raise ValueError("not supported buffer")
 
         mesh.mesh2d_add_rectilinear(network=network, polygon=polygon, dx=dx, dy=dy)
+        print("created 2D mesh")
 
         if elevation_raster_path is not None:
-            mesh.mesh2d_altitude_from_raster(
-                network=network,
-                rasterpath=elevation_raster_path,
-                where="node",  # Face does not work
-                stat="nanmean",
-                fill_option="fill_value",
-                fill_value=-10,
-                window_size=int(dx + dy),
-            )
+            # mesh.mesh2d_altitude_from_raster(
+            #     network=network,
+            #     rasterpath=elevation_raster_path,
+            #     where="node",  # Face does not work
+            #     stat="nanmean",
+            #     fill_option="fill_value",
+            #     fill_value=-10,
+            #     window_size=int(dx + dy),
+            # )
+
+            xnodes = network._mesh2d.mesh2d_node_x
+            ynodes = network._mesh2d.mesh2d_node_y
+
+            with rasterio.open(elevation_raster_path) as src:
+                ahn = src.read(1)
+                z = []
+                for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
+                    p = sPoint(x, y)
+                    bp = p.buffer((dx + dy) // 2, cap_style=3)
+
+                    try:
+                        stats = zonal_stats(
+                            bp,
+                            ahn,
+                            affine=src.transform,
+                            stats="",
+                            add_stats={"nanmean": np.nanmean},
+                            nodata=np.nan,
+                        )
+                        heights = []
+                        for result in stats:
+                            heights.append(result["nanmean"])
+
+                        z.append(*[z for z in heights])
+                    except:
+                        z.append(-10)
+
+                network._mesh2d.mesh2d_node_z = np.array(z).flatten()
+
+            print("added elevation to 2D mesh")
 
         if initial_peil_raster_path is not None:
             initial_wl = InitialField(
@@ -686,6 +786,39 @@ def to_dhydro(
                 fm.geometry.inifieldfile.initial.append(initial_wl)
             else:
                 fm.geometry.inifieldfile = IniFieldModel(initial=[initial_wl])
+            print("added initial peilen to 2D mesh")
+
+        if roughness_2d_raster_path is not None:
+            path_f = os.path.split(roughness_2d_raster_path)[0]
+            xyz_path = path_f + "\\roughness_sample.xyz"
+            create_roughness_xyz(
+                xnodes=network._mesh2d.mesh2d_face_x,
+                ynodes=network._mesh2d.mesh2d_face_y,
+                dx=dx,
+                dy=dy,
+                roughness_tif_path=roughness_2d_raster_path,
+                roughness_mesh_name=path_f + "\\roughness_mesh_v2.tif",
+                roughness_xyz_name=xyz_path,
+                convert_to_manning=True,
+            )
+
+            initial_rn = ParameterField(
+                quantity="frictioncoefficient",
+                datafile=DiskOnlyFileModel(filepath=Path(xyz_path)),
+                datafiletype="sample",
+                interpolationmethod="averaging",
+                locationtype="2d",
+                ifrctyp=1,
+            )
+
+            if hasattr(fm.geometry, "inifieldfile") and isinstance(
+                fm.geometry.inifieldfile, IniFieldModel
+            ):
+                fm.geometry.inifieldfile.parameter.append(initial_rn)
+            else:
+                fm.geometry.inifieldfile = IniFieldModel(parameter=[initial_rn])
+
+            print("added roughness to 2D mesh")
 
         # branchids = network._mesh1d.network1d_branch_id
         # branchids = [x for x in branchids if not x.startswith(r"rijn_")]
@@ -816,9 +949,17 @@ def to_dhydro(
                     initial_1D_waterdepth=initial_1D_waterdepth,
                 )
 
+            if "tunnel" in self.ddm.waterloop.columns:
+                self.fm = add_tunnels(
+                    hydamo=self.hydamo,
+                    fm=self.fm,
+                    node_distance=model_config.FM.one_d.node_distance,
+                    max_dist_to_struct=model_config.FM.one_d.max_dist_to_struct,
+                    two_d=model_config.FM.two_d_bool,
+                )
+
         # build 2D model
-        if model_config.FM.two_d_bool:
-            # compute extent of 1D network
+        if model_config.FM.two_d_bool:  # compute extent of 1D network
             # Add to gpgk?
 
             if hasattr(model_config.FM.two_d, "extent_path") and (
@@ -834,6 +975,7 @@ def to_dhydro(
                 "coupling_type",
                 "elevation_raster_path",
                 "initial_peil_raster_path",
+                "roughness_2d_raster_path",
                 "two_d_buffer",
             ]
             kwargs = {}

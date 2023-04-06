@@ -1,12 +1,12 @@
+import importlib
+
 import geopandas as gpd
 import pandas as pd
 from geo_tools.clip_tools import _clip_structures_by_branches
 from geo_tools.merge_networks import merge_networks
 
-from data_structures.fixedweirs_helpers import (create_dambreak_data,
-                                                create_fixed_weir_data)
-from data_structures.hydamo_helpers import (check_and_fix_duplicate_code,
-                                            convert_to_dhydamo_data)
+from data_structures.fixedweirs_helpers import create_dambreak_data, create_fixed_weir_data
+from data_structures.hydamo_helpers import check_and_fix_duplicate_code, convert_to_dhydamo_data
 from data_structures.roi_data_model import ROIDataModel as DataModel
 from data_structures.to_dhydro_helpers import to_dhydro, write_dimr
 
@@ -29,7 +29,7 @@ class DHydroData:
     def __init__(self):
         pass
 
-    def clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0.5) -> None:
+    def clip_structures_by_branches(self, buffer: float = 2, min_overlap: float = 0.5) -> None:
         """
         Class method to drop structures from the data that are farther from a branch than "buffer"
         Structures that are linestring are required to overlap with a branch for at least "min_overlap"
@@ -53,9 +53,7 @@ class DHydroData:
 
     def fixed_weirs_from_raw_data(self, config: str, defaults: str, min_length: float = None):
         dm = DataModel()
-        dm = create_fixed_weir_data(
-            config=config, defaults=defaults, dm=dm, min_length=min_length
-        )
+        dm = create_fixed_weir_data(config=config, defaults=defaults, dm=dm, min_length=min_length)
         self._set_ddm(ddm=dm)
 
     def hydamo_from_raw_data(
@@ -123,7 +121,7 @@ class DHydroData:
         # self.gpkg_path = output_gpkg
         self.ddm.to_gpkg(output_gpkg=output_gpkg)
 
-    def to_dhydro(self, config: str, output_folder: str, write=True):
+    def to_dhydro(self, config: str, output_folder: str, defaults: str = "defaults", write=True):
         """
         Class method that converts a DHydamoDataModel to a D-HYDRO Model and saves unless write=False
 
@@ -138,8 +136,9 @@ class DHydroData:
         if (not hasattr(self, "ddm")) | (not hasattr(self, "features")):
             raise AttributeError("Modeldatabase not loaded")
 
-        else:
-            to_dhydro(self=self, config=config, output_folder=output_folder)
+        if hasattr(importlib.import_module("dataset_configs." + config), "Dambreak"):
+            self.dambreaks_from_config(config=config, defaults=defaults)
+        to_dhydro(self=self, config=config, output_folder=output_folder)
 
         if write:
             self.write_dimr(output_folder=output_folder)

@@ -1,7 +1,7 @@
 class Models:
     class FM:
         one_d_bool = True
-        two_d_bool = False
+        two_d_bool = True
         start_time = 20160601
         stop_time = 86400
 
@@ -9,6 +9,14 @@ class Models:
             max_dist_to_struct = 3
             max_snap_dist = 0.1
             node_distance = 50
+
+        class two_d:
+            coupling_type = None
+            dx = 500
+            dy = 500
+            elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\peilen_jp_25m_full.tif"
+            two_d_buffer = 100
 
 
 class RawData:
@@ -26,25 +34,15 @@ class RawData:
     ## Branches
     branch_index_mapping = dict(
         [
-            ("bodembreedte", None),
-            ("bodemhoogte benedenstrooms", None),
-            ("bodemhoogte bovenstrooms", None),
             ("code", "lokaalid"),
-            ("diepte", "height"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", None),
-            ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", None),
-            ("taludhelling rechterzijde", None),
+            ("tunnel", True),
             ("typeruwheid", None),
-            ("ruwheidhoog", None),
-            ("ruwheidlaag", None),
-            ("water_width_index", None),
         ]
     )
 
-    ## Branches
+    ## Norm Profiles
     np_index_mapping = dict(
         [
             ("bodembreedte", "width"),

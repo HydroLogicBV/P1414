@@ -8,7 +8,8 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely import affinity
-from shapely.geometry import LineString, MultiPoint, Point
+from shapely.geometry import LineString, MultiPoint, Point, Polygon
+from shapely.geometry.base import BaseGeometry
 
 from data_structures.hydamo_globals import (BRANCH_FRICTION_FUNCTION,
                                             MANAGEMENT_DEVICE_TYPES,
@@ -59,7 +60,9 @@ def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAP
     return type_ruwheid
 
 
-def load_geo_file(file_path: Any, layer: str = None):
+def load_geo_file(
+    file_path: Any, geom_type: str = None, has_z_coord: bool = None, layer: str = None
+):
     """ """
     if isinstance(file_path, dict):
         for key, value in file_path.items():
@@ -72,9 +75,10 @@ def load_geo_file(file_path: Any, layer: str = None):
                     crs=gdf.crs,
                 )
             elif "sjoin" in key:
-                gdf2 = load_geo_file(file_path=value)
-                gdf2.geometry = gdf2.geometry.buffer(1)
-                gdf = gdf.sjoin(gdf2, how="left", predicate="within")
+                gdf2 = load_geo_file(file_path=value).to_crs(gdf.crs)
+                gdf2.geometry = gdf2.geometry.buffer(5)
+                gdf = gdf.sjoin(gdf2, how="left", predicate="within", rsuffix="right")
+                gdf.columns = [column.replace("_right", "") for column in gdf.columns]
 
     elif isinstance(file_path, list):
         if len(file_path) <= 2:
@@ -103,6 +107,31 @@ def load_geo_file(file_path: Any, layer: str = None):
     # check for multi-element geometries
     if np.sum(gdf.geometry.type.isin(["MultiPoint", "MultiLine", "MultiLineString"])) > 0:
         gdf = gdf.explode(ignore_index=True, index_parts=False)
+
+    if geom_type is not None:
+        # space for additional checks
+        if geom_type == "Point":
+            if (gdf.geometry.type != "Point").any():
+                pass
+        elif geom_type == "LineString":
+            if (gdf.geometry.type != "LineString").any():
+                pass
+        elif geom_type == "Polygon":
+            if (gdf.geometry.type != "Polygon").any():
+                pass
+        else:
+            raise ValueError("Unkown geometry type provided: {}".format(geom_type))
+
+    if has_z_coord is not None:
+        if not has_z_coord:
+            if geom_type == "LineString":
+                out_gdf = copy(gdf)
+                for name, row in gdf.iterrows():
+                    if np.array(row.geometry.coords).shape[1] > 2:
+                        out_gdf.at[name, "geometry"] = LineString(
+                            [xy[0:2] for xy in list(row.geometry.coords)]
+                        )
+                gdf = out_gdf
     return gdf
 
 
@@ -129,18 +158,41 @@ def map_columns(
 
             else:
                 if isinstance(value, list):
-                    _gdf[key] = (
-                        gdf[value]
-                        .replace(to_replace=[None, "n.v.t."], value=np.nan)
-                        .astype(float)
-                        .apply(np.nanmean, axis=1)
-                    )
+                    try:
+                        _gdf[key] = (
+                            gdf[value]
+                            .replace(to_replace=[None, "n.v.t."], value=np.nan)
+                            .astype(float)
+                            .apply(np.nanmean, axis=1)
+                        )
+                    except:
+                        _gdf[key] = (
+                            gdf[value]
+                            .replace(to_replace=[None, "n.v.t."], value=np.nan)
+                            .astype(str)
+                            .bfill(axis=1)
+                            .iloc[:, 0]  # Select the non-nan values
+                        )
+                elif isinstance(value, (int, float, bool)):
+                    _gdf[key] = value
                 else:
                     _gdf[key] = gdf[value]
 
                 # if it is in shapefile, but contains missing values, fill them as well
-                if _gdf[key].dtype == "geometry":
-                    pass
+                if key == "code":
+                    duplicated = _gdf[key].duplicated(keep=False)
+                    codes = [str(uuid.uuid4())[:8] for _ in range(np.sum(duplicated))]
+                    _gdf.loc[duplicated, key] = codes
+
+                    nones = _gdf[key].isna()
+                    codes = [str(uuid.uuid4())[:8] for _ in range(np.sum(nones))]
+                    _gdf.loc[nones, key] = codes
+
+                elif _gdf[key].dtype == "geometry":
+                    continue
+
+                elif key == "globalid":
+                    continue
 
                 elif (_gdf[key].dtype == "int64") or (_gdf[key].dtype == "float64"):
                     if hasattr(defaults, _key):
@@ -167,6 +219,8 @@ def map_columns(
                     else:
                         n_nan = _gdf[key].isna().sum()
                         print("{}: entries with missing data: {}".format(key, n_nan))
+                elif _gdf[key].dtype == bool:
+                    pass
                 else:
                     raise ValueError("type not yet implemented: {}".format(_gdf[key].dtype))
 
@@ -205,17 +259,6 @@ def map_columns(
 
 
 def merge_to_ddm(ddm: Datamodel, feature: str, feature_gdf: gpd.GeoDataFrame) -> Datamodel:
-    # if hasattr(ddm, feature):
-    #     new_gdf = gpd.GeoDataFrame(
-    #         data=pd.concat([getattr(ddm, feature), feature_gdf]),
-    #         geometry="geometry",
-    #         crs=feature_gdf.crs,
-    #     )
-    #     setattr(ddm, feature, new_gdf)
-    # else:
-    #     setattr(ddm, feature, feature_gdf)
-
-    # return ddm
     return merge_to_dm(dm=ddm, feature=feature, feature_gdf=feature_gdf)
 
 
@@ -279,33 +322,43 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
         """ """
         _bridge_gdf = copy(bridge_gdf)
         for ix, bridge in bridge_gdf.iterrows():
+            if np.isnan(bridge["lengte"]):
+                _bridge_gdf.drop(index=ix, inplace=True)
+                continue
             # turn numerical roughnes types to strings
             _bridge_gdf.loc[ix, "typeruwheid"] = check_roughness(bridge)
         return _bridge_gdf
 
     def create_culvert_data(culvert_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """ """
-        culvert_gdf["doorstroomopening"] = None
 
+        culvert_gdf.set_index("code", inplace=True)
+        culvert_gdf["doorstroomopening"] = None
         culvert_gdf["breedteopening"] = check_column_is_numerical(
             gdf=culvert_gdf["breedteopening"]
         )
         culvert_gdf["hoogteopening"] = check_column_is_numerical(gdf=culvert_gdf["hoogteopening"])
-
         culvert_gdf["breedteopening"] = culvert_gdf["breedteopening"].replace(0, np.nan)
         culvert_gdf["hoogteopening"] = culvert_gdf["hoogteopening"].replace(0, np.nan)
+
         _culvert_gdf = copy(culvert_gdf)
 
         for ix, culvert in culvert_gdf.iterrows():
-            if np.isnan(culvert["breedteopening"]) or np.isnan(culvert["hoogteopening"]):
+            if np.isnan(culvert["breedteopening"]) and np.isnan(culvert["hoogteopening"]):
+                _culvert_gdf.drop(index=ix, inplace=True)
+                continue
+            elif np.isnan(culvert["breedteopening"]) or np.isnan(culvert["hoogteopening"]):
                 shape = "circle"
+                _culvert_gdf.loc[ix, "vormkoker"] = 1
 
             # elif (culvert["vormkoker"].dtype == "int64") or (culvert["vormkoker"].dtype == "float64"):
             elif isinstance(culvert["vormkoker"], int) | isinstance(culvert["vormkoker"], float):
                 if int(culvert["vormkoker"]) == 3:
                     shape = "rectangle"
+                    _culvert_gdf.loc[ix, "vormkoker"] = 3
                 else:
                     shape = "circle"
+                    _culvert_gdf.loc[ix, "vormkoker"] = 1
 
             elif isinstance(culvert["vormkoker"], str):  # dtype not a number, so assuming string
                 if str(culvert["vormkoker"]).lower() == "rechthoekig":
@@ -325,12 +378,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                     "closed": culvert["gesloten"],
                 }
             elif shape == "circle":
-                if not np.isnan(culvert["breedteopening"]):
-                    diameter = culvert["breedteopening"]
-                elif not np.isnan(culvert["breedteopening"]):
-                    diameter = culvert["breedteopening"]
-                else:
-                    raise ValueError("onbekende koker diameter")
+                diameter = np.nanmean(culvert[["breedteopening", "hoogteopening"]].values[:])
+                _culvert_gdf.loc[ix, "breedteopening"] = diameter
+                _culvert_gdf.loc[ix, "hoogteopening"] = diameter
 
                 crosssection = {
                     "shape": shape,
@@ -342,7 +392,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             _culvert_gdf.loc[ix, "typeruwheid"] = check_roughness(culvert)
 
         _culvert_gdf = _culvert_gdf.drop(columns="gesloten")
-        return _culvert_gdf
+        return _culvert_gdf.reset_index()
 
     def create_measured_profile_data(
         profile_points_gdf: gpd.GeoDataFrame,
@@ -758,30 +808,31 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                         .values.all()
                     )
                 )
-                or (
-                    (
-                        (branch[["bodembreedte", "bodemhoogte benedenstrooms"]].empty)
-                        or (
-                            branch[["bodembreedte", "bodemhoogte benedenstrooms"]]
-                            .isna()
-                            .values.all()
-                        )
-                    )
-                    and (
-                        (branch[["water_width_index", "bodemhoogte benedenstrooms"]].empty)
-                        or (
-                            branch[["water_width_index", "bodemhoogte benedenstrooms"]]
-                            .isna()
-                            .values.all()
-                        )
-                    )
-                )
+                # or (
+                #     (
+                #         (branch[["bodembreedte", "bodemhoogte benedenstrooms"]].empty)
+                #         or (
+                #             branch[["bodembreedte", "bodemhoogte benedenstrooms"]]
+                #             .isna()
+                #             .values.all()
+                #         )
+                #     )
+                #     and (
+                #         (branch[["water_width_index", "bodemhoogte benedenstrooms"]].empty)
+                #         or (
+                #             branch[["water_width_index", "bodemhoogte benedenstrooms"]]
+                #             .isna()
+                #             .values.all()
+                #         )
+                #     )
+                # )
                 or (
                     (branch[["bodembreedte", "water_width_index"]].empty)
                     or (branch[["bodembreedte", "water_width_index"]].isna().values.all())
                 )
             ):
                 # print("no profile for branch {}".format(branch_gid))
+                # print(branch)
                 continue
 
             if (
@@ -1010,24 +1061,24 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                         .values.all()
                     )
                 )
-                or (
-                    (
-                        (branch[["bodembreedte", "bodemhoogte benedenstrooms"]].empty)
-                        or (
-                            branch[["bodembreedte", "bodemhoogte benedenstrooms"]]
-                            .isna()
-                            .values.all()
-                        )
-                    )
-                    and (
-                        (branch[["water_width_index", "bodemhoogte benedenstrooms"]].empty)
-                        or (
-                            branch[["water_width_index", "bodemhoogte benedenstrooms"]]
-                            .isna()
-                            .values.all()
-                        )
-                    )
-                )
+                # or (
+                #     (
+                #         (branch[["bodembreedte", "bodemhoogte benedenstrooms"]].empty)
+                #         or (
+                #             branch[["bodembreedte", "bodemhoogte benedenstrooms"]]
+                #             .isna()
+                #             .values.all()
+                #         )
+                #     )
+                #     and (
+                #         (branch[["water_width_index", "bodemhoogte benedenstrooms"]].empty)
+                #         or (
+                #             branch[["water_width_index", "bodemhoogte benedenstrooms"]]
+                #             .isna()
+                #             .values.all()
+                #         )
+                #     )
+                # )
                 or (
                     (branch[["bodembreedte", "water_width_index"]].empty)
                     or (branch[["bodembreedte", "water_width_index"]].isna().values.all())
@@ -1437,9 +1488,36 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             weir_gdf["laagstedoorstroombreedte"], inplace=True
         )
         weir_gdf["hoogstedoorstroomhoogte"].fillna(
-            weir_gdf["laagstedoorstroomhoogte"] + 10, inplace=True
+            weir_gdf["laagstedoorstroomhoogte"], inplace=True
         )
         for ix, weir in weir_gdf.iterrows():
+            if np.isnan(weir["laagstedoorstroombreedte"]) and np.isnan(
+                weir["hoogstedoorstroombreedte"]
+            ):
+                continue
+            elif np.isnan(weir["laagstedoorstroombreedte"]) or np.isnan(
+                weir["hoogstedoorstroombreedte"]
+            ):
+                b_laag = b_hoog = np.nanmean(
+                    weir[["hoogstedoorstroombreedte", "laagstedoorstroombreedte"]].values[:]
+                )
+            else:
+                b_laag = weir["laagstedoorstroombreedte"]
+                b_hoog = weir["hoogstedoorstroombreedte"]
+            if np.isnan(weir["laagstedoorstroomhoogte"]) and np.isnan(
+                weir["hoogstedoorstroomhoogte"]
+            ):
+                continue
+            elif np.isnan(weir["laagstedoorstroomhoogte"]) or np.isnan(
+                weir["hoogstedoorstroomhoogte"]
+            ):
+                h_laag = h_hoog = np.nanmean(
+                    weir[["hoogstedoorstroomhoogte", "laagstedoorstroomhoogte"]].values[:]
+                )
+            else:
+                h_laag = weir["laagstedoorstroomhoogte"]
+                h_hoog = weir["hoogstedoorstroomhoogte"]
+
             geom = weir["geometry"]
             if not isinstance(geom, Point):
                 geom = geom.centroid
@@ -1480,10 +1558,10 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                     ("afvoercoefficient", weir["afvoercoefficient_opening"]),
                     ("geometry", None),
                     ("globalid", opening_gid),
-                    ("hoogstedoorstroombreedte", weir["hoogstedoorstroombreedte"]),
-                    ("hoogstedoorstroomhoogte", weir["hoogstedoorstroomhoogte"]),
-                    ("laagstedoorstroombreedte", weir["laagstedoorstroombreedte"]),
-                    ("laagstedoorstroomhoogte", weir["laagstedoorstroomhoogte"]),
+                    ("hoogstedoorstroombreedte", b_hoog),
+                    ("hoogstedoorstroomhoogte", h_hoog),
+                    ("laagstedoorstroombreedte", b_laag),
+                    ("laagstedoorstroomhoogte", h_laag),
                     ("stuwid", weir["globalid"]),
                     ("vormopening", shape),
                 ]
@@ -1572,8 +1650,8 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
 
         if (
             hasattr(data_config, "peil_gebieden_path")
-            and ("diepte" in data_config.branch_index_mapping)
-            and (data_config.branch_index_mapping["diepte"] is not None)
+            and ("diepte" in data_config.np_index_mapping)
+            and (data_config.np_index_mapping["diepte"] is not None)
         ):
             peil_gebieden_gdf = gpd.read_file(data_config.peil_gebieden_path)
             peil_gebieden_gdf, _ = map_columns(
@@ -1611,10 +1689,11 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                 elif (not check_is_not_na_number(branch["hoogte insteek linkerzijde"])) and (
                     not check_is_not_na_number(branch["hoogte insteek rechterzijde"])
                 ):
-                    if check_is_not_na_number(branch["vast peil"]):
-                        peil = branch["vast peil"]
-                    else:
-                        peil = np.nanmean([branch["boven peil"], branch["onder peil"]])
+                    # if check_is_not_na_number(branch["vast peil"]):
+                    #     peil = branch["vast peil"]
+                    # else:
+                    #     peil = np.nanmean([branch["boven peil"], branch["onder peil"]])
+                    peil = np.nanmean(branch[["boven peil", "onder peil", "vast peil"]])
 
                     insteek_hoogte = peil + insteek_marge
 
@@ -1637,13 +1716,16 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                     not check_is_not_na_number(branch["bodemhoogte bovenstrooms"])
                 ):
                     diepte = branch["diepte"]
-                    insteek_hoogte = out_branches_gdf.loc[bool_ix, "hoogte insteek linkerzijde"]
-
-                    bodem_hoogte = insteek_hoogte - diepte
+                    insteek_hoogte = np.nanmean(
+                        out_branches_gdf.loc[
+                            bool_ix, ["hoogte insteek linkerzijde", "hoogte insteek rechterzijde"]
+                        ].values[:]
+                    )
 
                     if diepte == -99:
                         diepte = np.nan
 
+                    bodem_hoogte = insteek_hoogte - diepte
                     out_branches_gdf.loc[bool_ix, "bodemhoogte benedenstrooms"] = bodem_hoogte
                     out_branches_gdf.loc[bool_ix, "bodemhoogte bovenstrooms"] = bodem_hoogte
 
@@ -1656,10 +1738,13 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             buffer_list = [1.25, 2.5, 5, 10, 15, 20, 25, 50, 100]
             # cpus = 8
             # pool = Pool(processes=cpus)
+            out_branches_gdf = copy(in_branches_gdf)
             results = []
             save = False
             for ix, (name, branch) in enumerate(in_branches_gdf.iterrows()):
-                if (branch["bodembreedte"] is None) and (branch["water_width_index"] is None):
+                if ((branch["bodembreedte"] is None) or np.isnan(branch["bodembreedte"])) and (
+                    (branch["water_width_index"] is None) or np.isnan(branch["water_width_index"])
+                ):
                     if not save:
                         save = True
                     branch_geom = branch.geometry
@@ -1697,7 +1782,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
 
     if hasattr(data_config, "branches_path") and (data_config.branches_path is not None):
         ## Branches
-        branches_gdf = load_geo_file(data_config.branches_path, layer="waterloop")
+        branches_gdf = load_geo_file(
+            data_config.branches_path, layer="waterloop", geom_type="LineString", has_z_coord=False
+        )
         if hasattr(data_config, "branch_selection"):
             column, value = (
                 data_config.branch_selection["column"],
@@ -1712,6 +1799,13 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             index_mapping=data_config.branch_index_mapping,
         )
 
+        branches_out_gdf = copy(branches_gdf)
+        for ix, branch in branches_gdf.iterrows():
+            type_ruwheid = check_roughness(branch)
+            branches_out_gdf.at[ix, "typeruwheid"] = type_ruwheid
+
+        branches_gdf = branches_out_gdf
+
         if hasattr(data_config, "norm_profile_path") and (
             data_config.norm_profile_path is not None
         ):
@@ -1725,20 +1819,14 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                 np_gdf = np_gdf.loc[np_gdf[column] == value, :]
 
             np_gdf, index_mapping = map_columns(
-                code_pad=code_padding + "wl_",
+                code_pad=code_padding + "np_",
                 defaults=defaults.Branches,
                 gdf=np_gdf,
                 index_mapping=data_config.np_index_mapping,
             )
             np_gdf = fill_branch_norm_parm_profiles_data(
                 defaults=defaults.Peil, in_branches_gdf=np_gdf, data_config=data_config
-            )
-
-            (
-                ddm.waterloop,
-                ddm.hydroobject_normgp,
-                ddm.normgeparamprofielwaarde,
-            ) = create_norm_parm_profiles_v2(branches_gdf=branches_gdf)
+            )            
 
             (
                 profielgroep,
@@ -1751,12 +1839,20 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             ddm = merge_to_ddm(ddm=ddm, feature="profiellijn", feature_gdf=profiellijn)
             ddm = merge_to_ddm(ddm=ddm, feature="profielpunt", feature_gdf=profielpunt)
             ddm = merge_to_ddm(ddm=ddm, feature="ruwheidsprofiel", feature_gdf=ruwheidsprofiel)
-        else:
+        # else:
+        # (
+        #     ddm.waterloop,
+        #     _,
+        #     _,
+        # ) = create_norm_parm_profiles_v2(branches_gdf=branches_gdf)
+        if "bodembreedte" in branches_gdf.columns:
             (
                 ddm.waterloop,
-                _,
-                _,
+                ddm.hydroobject_normgp,
+                ddm.normgeparamprofielwaarde,
             ) = create_norm_parm_profiles_v2(branches_gdf=branches_gdf)
+        else:
+            ddm.waterloop = branches_gdf
 
     if hasattr(data_config, "bridges_path") and (data_config.bridges_path is not None):
         ## Bridges

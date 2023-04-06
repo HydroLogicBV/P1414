@@ -26,20 +26,10 @@ class RawData:
     ## Branches
     branch_index_mapping = dict(
         [
-            ("bodembreedte", None),
-            ("bodemhoogte benedenstrooms", None),
-            ("bodemhoogte bovenstrooms", None),
             ("code", "Name"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", None),
-            ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", None),
-            ("taludhelling rechterzijde", None),
             ("typeruwheid", None),
-            ("ruwheidhoog", None),
-            ("ruwheidlaag", None),
-            ("water_width_index", None),
         ]
     )
 

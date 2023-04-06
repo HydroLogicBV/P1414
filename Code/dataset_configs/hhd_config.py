@@ -7,7 +7,7 @@ class Models:
 
         class one_d:
             max_dist_to_struct = 3
-            max_snap_dist = 1
+            max_snap_dist = 5
             node_distance = 500
 
         class two_d:
@@ -58,15 +58,51 @@ class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v2.2_test.shp"  # Corrected from V7
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHD_v3.shp"  # Corrected from V7
     # branches_path = (
     #     p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
     # )
     # bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     # culvert_path = p_folder + r"\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen_edited.shp"
-    norm_profile_path = (
-        p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water_ww.shp"
+    culvert_path = dict(
+        [
+            (
+                "base",
+                p_folder
+                + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Open duiker.shp",
+            ),
+            (
+                "concat_1",
+                p_folder + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Sifon.shp",
+            ),
+            (
+                "concat_2",
+                p_folder
+                + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Stuwende duiker.shp",
+            ),
+            (
+                "concat_3",
+                p_folder
+                + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Vispassageduiker.shp",
+            ),
+            (
+                "concat_4",
+                p_folder
+                + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Inlaatduiker.shp",
+            ),
+        ]
     )
+    norm_profile_path = p_folder + r"\Uitgesneden watergangen\HHD_v3_ww.shp"
+    # norm_profile_path = dict(
+    #     [
+    #         ("base", p_folder + r"\Uitgesneden watergangen\HHD_v3.shp"),
+    #         (
+    #             "sjoin",
+    #             p_folder
+    #             + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water_ww.shp",
+    #         ),
+    #     ]
+    # )
     peil_gebieden_path = p_folder + r"\HHDelfland\Peilbesluiten.shp\PeilgebiedPraktijk.shp"
     pump_path = p_folder + r"\HHDelfland\Niet legger\Gemaal_peil.shp"
     sluice_path = p_folder + r"\HHDelfland\Legger_Delfland_shp\Waterkeringen\Sluis.shp"
@@ -100,21 +136,10 @@ class RawData:
     # )
     branch_index_mapping = dict(
         [
-            ("bodembreedte", "bodembreed"),
-            ("bodemhoogte benedenstrooms", "bodemhoogt"),
-            ("bodemhoogte bovenstrooms", "bodemhoo_1"),
-            ("code", "code"),
-            ("diepte", "diepte"),
+            ("code", "CODE"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", "hoogte ins"),
-            ("hoogte insteek rechterzijde", "hoogte i_1"),
-            ("taludhelling linkerzijde", "taludhelli"),
-            ("taludhelling rechterzijde", "taludhel_1"),
-            ("typeruwheid", "typeruwhei"),
-            ("ruwheidhoog", "ruwheidhoo"),
-            ("ruwheidlaag", "ruwheidlaa"),
-            ("water_width_index", None),
+            ("typeruwheid", None),
         ]
     )
 
@@ -132,27 +157,26 @@ class RawData:
     #     ]
     # )
 
-    ## Culverts
-    # culvert_index_mapping = dict(
-    #     [
-    #         ("breedteopening", "BREEDTEOPE"),
-    #         ("code", "CODE"),
-    #         ("geometry", "geometry"),
-    #         ("gesloten", None),
-    #         ("globalid", "globalid"),
-    #         ("hoogtebinnenonderkantbene", "HOOGTEBOKB"),
-    #         ("hoogtebinnenonderkantbov", "HOOGTEBO_1"),
-    #         ("hoogteopening", "HOOGTEOPEN"),
-    #         ("intreeverlies", None),
-    #         ("lengte", "LENGTE"),
-    #         ("typeruwheid", None),
-    #         ("ruwheid", None),
-    #         ("uittreeverlies", None),
-    #         ("vormkoker", "VORMKOKER"),
-    #     ]
-    # )
+    culvert_index_mapping = dict(
+        [
+            ("breedteopening", "BREEDTEOPE"),  # Check
+            ("code", "CODE"),  # Check
+            ("geometry", "geometry"),  # Check
+            ("gesloten", None),  # Check
+            ("globalid", "globalid"),  # Check
+            ("hoogtebinnenonderkantbene", ["HOOGBOKBEN", "HOOGTEBI00"]),
+            ("hoogtebinnenonderkantbov", ["HOOGBOKBOV", "HOOGTEBINN"]),
+            ("hoogteopening", "HOOGTEOPEN"),
+            ("intreeverlies", None),  # Check
+            ("lengte", "LENGTE"),
+            ("typeruwheid", None),  # Check
+            ("ruwheid", None),  # Check
+            ("uittreeverlies", None),  # Check
+            ("vormkoker", ["VORMKOKER_", "VORM"]),  # Check
+        ]
+    )
 
-    ## Normprofielen
+    # ## Normprofielen
     np_index_mapping = dict(
         [
             ("bodembreedte", "bodembreed"),
@@ -172,6 +196,27 @@ class RawData:
             ("water_width_index", None),
         ]
     )
+
+    # ## Normprofielen
+    # np_index_mapping = dict(
+    #     [
+    #         ("bodembreedte", None),
+    #         ("bodemhoogte benedenstrooms", None),
+    #         ("bodemhoogte bovenstrooms", None),
+    #         ("code", "CODE"),
+    #         ("diepte", "LEGDIEPNUM"),
+    #         ("geometry", "geometry"),
+    #         ("globalid", "globalid"),
+    #         ("hoogte insteek linkerzijde", None),
+    #         ("hoogte insteek rechterzijde", None),
+    #         ("taludhelling linkerzijde", None),
+    #         ("taludhelling rechterzijde", None),
+    #         ("typeruwheid", None),
+    #         ("ruwheidhoog", None),
+    #         ("ruwheidlaag", None),
+    #         ("water_width_index", None),
+    #     ]
+    # )
 
     ## Peil gebied
     peil_index_mapping = dict(

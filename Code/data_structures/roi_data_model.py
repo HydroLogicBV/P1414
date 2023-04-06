@@ -7,7 +7,8 @@ from pydantic import BaseModel, root_validator
 
 from data_structures import hydamo_data_model as hdm
 from data_structures.dhydamo_data_model_checks import validate_codes
-from data_structures.hydamo_globals import HYDAMO_WEIR_TYPES, ROUGHNESS_MAPPING_LIST
+from data_structures.hydamo_globals import (HYDAMO_WEIR_TYPES,
+                                            ROUGHNESS_MAPPING_LIST)
 
 
 class BrugSchema(hdm.BrugSchema):
@@ -69,6 +70,7 @@ class StuwSchema(hdm.StuwSchema):
 
 class WaterloopSchema(hdm.WaterloopSchema):
     peil: Optional[Series[float]] = pa.Field(nullable=True)
+    tunnel: Optional[Series[bool]] = pa.Field(nullable=True)
     typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)  # addition to confluence
 
 

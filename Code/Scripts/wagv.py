@@ -5,14 +5,14 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydro_data import DHydroData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\WAGV_clipped.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\WAGV.gpkg"
 output_folder = folder + r"\Models\WAGV\V0"
 
 config = r"wagv_config"
 defaults = r"defaults"
 
 build_database = True
-build_model = True
+build_model = False
 
 
 if build_database:
@@ -24,7 +24,6 @@ if build_database:
     dhd.clip_structures_by_branches()
     dhd.fixed_weirs_from_raw_data(config=config, defaults=defaults)
 
-
     # 3. save data to gpkg
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
 
@@ -34,6 +33,10 @@ if build_model:
 
     # 2. load data
     dhd.hydamo_from_gpkg(gpkg_file)
+
+    # remove brug as it needs a cs
+    del dhd.ddm.brug
+    dhd.features.remove("brug")
 
     # 3. save as dhydro model
     dhd.to_dhydro(config=config, output_folder=output_folder)

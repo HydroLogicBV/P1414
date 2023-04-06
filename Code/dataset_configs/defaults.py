@@ -1,3 +1,6 @@
+import numpy as np
+
+
 ## Branches
 class Branches:
     bodembreedte = None
@@ -16,7 +19,7 @@ class Branches:
 ## Bridges
 class Bridges:
     intreeverlies = 0.5
-    lengte = 1
+    lengte = np.nan
     ruwheid = 75.0
     typeruwheid = "StricklerKn"
     uittreeverlies = 0.7
@@ -24,11 +27,11 @@ class Bridges:
 
 ## Culverts
 class Culverts:
-    breedteopening = 0.5
+    breedteopening = np.nan
     gesloten = "yes"
     hoogtebinnenonderkantbene = 0
     hoogtebinnenonderkantbov = 0
-    hoogteopening = 0.5
+    hoogteopening = np.nan
     intreeverlies = 0.6
     lengte = 1
     ruwheid = 75.0
@@ -54,7 +57,9 @@ class MeasuredProfiles:
 
 
 class Peil:
-    vast_peil = None
+    boven_peil = np.nan
+    onder_peil = np.nan
+    vast_peil = np.nan
 
 
 ## Pumps
@@ -68,9 +73,9 @@ class Pumps:
 class Weirs:
     afvoercoefficient_stuw = 1
     afvoercoefficient_opening = 0.85
-    hoogstedoorstroombreedte = None
-    hoogstedoorstroomhoogte = 0
-    laagstedoorstroombreedte = 1
+    hoogstedoorstroombreedte = np.nan
+    hoogstedoorstroomhoogte = np.nan
+    laagstedoorstroombreedte = 0.1
     laagstedoorstroomhoogte = 0
     overlaatonderlaat = "Overlaat"
     soortregelbaarheid = 1

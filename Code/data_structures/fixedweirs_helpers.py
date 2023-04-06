@@ -10,6 +10,25 @@ def merge_to_fddm(ddm: DataModel, feature: str, feature_gdf: gpd.GeoDataFrame):
     return merge_to_dm(dm=ddm, feature=feature, feature_gdf=feature_gdf)
 
 
+def create_dambreak_data(config: str, defaults: str, dm: DataModel):
+    defaults = importlib.import_module("dataset_configs." + defaults)
+    db_data_config = getattr(importlib.import_module("dataset_configs." + config), "Dambreak")
+
+    code_padding = config[:4] + r"_"  # add prefix of length 4 to all objects with codes
+    if hasattr(db_data_config, "dambreak_path") and (db_data_config.dambreak_path is not None):
+        db_gdf = load_geo_file(db_data_config.dambreak_path, layer="flood_defence")
+        db_gdf, _ = map_columns(
+            code_pad=code_padding,
+            defaults=defaults.Dambreak,
+            gdf=db_gdf,
+            index_mapping=db_data_config.dambreak_index_mapping,
+        )
+
+        dm.doorbraak = db_gdf
+
+    return dm
+
+
 def create_fixed_weir_data(
     config: str, defaults: str, dm: DataModel, min_length: float = None
 ) -> DataModel:
@@ -37,20 +56,5 @@ def create_fixed_weir_data(
     return dm
 
 
-def create_dambreak_data(config: str, defaults: str, dm: DataModel):
-    defaults = importlib.import_module("dataset_configs." + defaults)
-    db_data_config = getattr(importlib.import_module("dataset_configs." + config), "Dambreak")
-
-    code_padding = config[:4] + r"_"  # add prefix of length 4 to all objects with codes
-    if hasattr(db_data_config, "dambreak_path") and (db_data_config.dambreak_path is not None):
-        db_gdf = load_geo_file(db_data_config.dambreak_path, layer="flood_defence")
-        db_gdf, _ = map_columns(
-            code_pad=code_padding,
-            defaults=defaults.Dambreak,
-            gdf=db_gdf,
-            index_mapping=db_data_config.dambreak_index_mapping,
-        )
-
-        dm.doorbraak = db_gdf
-
-    return dm
+def create_underpass_data():
+    pass

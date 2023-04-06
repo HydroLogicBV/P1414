@@ -79,41 +79,19 @@ class Mesh2d(BaseModel):
 
     meshkernel: mk.MeshKernel = Field(default_factory=mk.MeshKernel)
 
-    mesh2d_node_x: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, dtype=np.double)
-    )
-    mesh2d_node_y: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, dtype=np.double)
-    )
-    mesh2d_node_z: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, dtype=np.double)
-    )
+    mesh2d_node_x: np.ndarray = Field(default_factory=lambda: np.empty(0, dtype=np.double))
+    mesh2d_node_y: np.ndarray = Field(default_factory=lambda: np.empty(0, dtype=np.double))
+    mesh2d_node_z: np.ndarray = Field(default_factory=lambda: np.empty(0, dtype=np.double))
 
-    mesh2d_edge_x: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, dtype=np.double)
-    )
-    mesh2d_edge_y: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, dtype=np.double)
-    )
-    mesh2d_edge_z: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, dtype=np.double)
-    )
-    mesh2d_edge_nodes: np.ndarray = Field(
-        default_factory=lambda: np.empty((0, 2), dtype=np.int32)
-    )
+    mesh2d_edge_x: np.ndarray = Field(default_factory=lambda: np.empty(0, dtype=np.double))
+    mesh2d_edge_y: np.ndarray = Field(default_factory=lambda: np.empty(0, dtype=np.double))
+    mesh2d_edge_z: np.ndarray = Field(default_factory=lambda: np.empty(0, dtype=np.double))
+    mesh2d_edge_nodes: np.ndarray = Field(default_factory=lambda: np.empty((0, 2), dtype=np.int32))
 
-    mesh2d_face_x: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, dtype=np.double)
-    )
-    mesh2d_face_y: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, dtype=np.double)
-    )
-    mesh2d_face_z: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, dtype=np.double)
-    )
-    mesh2d_face_nodes: np.ndarray = Field(
-        default_factory=lambda: np.empty((0, 0), dtype=np.int32)
-    )
+    mesh2d_face_x: np.ndarray = Field(default_factory=lambda: np.empty(0, dtype=np.double))
+    mesh2d_face_y: np.ndarray = Field(default_factory=lambda: np.empty(0, dtype=np.double))
+    mesh2d_face_z: np.ndarray = Field(default_factory=lambda: np.empty(0, dtype=np.double))
+    mesh2d_face_nodes: np.ndarray = Field(default_factory=lambda: np.empty((0, 0), dtype=np.int32))
 
     def is_empty(self) -> bool:
         """Determine whether this Mesh2d is empty.
@@ -164,13 +142,15 @@ class Mesh2d(BaseModel):
         xmin, ymin, xmax, ymax = extent
 
         # Generate mesh
-        mesh2d_input = mk.Mesh2dFactory.create( # Renamed function .create_rectilinear_mesh to .create
-            rows=int((ymax - ymin) / dy),
-            columns=int((xmax - xmin) / dx),
-            origin_x=xmin,
-            origin_y=ymin,
-            spacing_x=dx,
-            spacing_y=dy,
+        mesh2d_input = (
+            mk.Mesh2dFactory.create(  # Renamed function .create_rectilinear_mesh to .create
+                rows=int((ymax - ymin) / dy),
+                columns=int((xmax - xmin) / dx),
+                origin_x=xmin,
+                origin_y=ymin,
+                spacing_x=dx,
+                spacing_y=dy,
+            )
         )
 
         # Process
@@ -207,9 +187,7 @@ class Mesh2d(BaseModel):
         self.mesh2d_face_nodes = np.full(
             (len(self.mesh2d_face_x), max(npf)), np.iinfo(np.int32).min
         )
-        idx = (
-            np.ones_like(self.mesh2d_face_nodes) * np.arange(max(npf))[None, :]
-        ) < npf[:, None]
+        idx = (np.ones_like(self.mesh2d_face_nodes) * np.arange(max(npf))[None, :]) < npf[:, None]
         self.mesh2d_face_nodes[idx] = mesh2d_output.face_nodes
 
     def clip(
@@ -340,18 +318,12 @@ class Branch:
         self._y_coordinates = geometry[:, 1]
 
         # Calculate distance of coordinates along line
-        segment_distances = np.hypot(
-            np.diff(self._x_coordinates), np.diff(self._y_coordinates)
-        )
+        segment_distances = np.hypot(np.diff(self._x_coordinates), np.diff(self._y_coordinates))
         self._distance = np.concatenate([[0], np.cumsum(segment_distances)])
         self.length = segment_distances.sum()
 
         # Check if mask and branch offsets (if both given) have same shape
-        if (
-            mask is not None
-            and branch_offsets is not None
-            and branch_offsets.shape != mask.shape
-        ):
+        if mask is not None and branch_offsets is not None and branch_offsets.shape != mask.shape:
             raise ValueError("Mask and branch offset have different shape.")
 
         # Set branch offsets
@@ -416,21 +388,17 @@ class Branch:
                     # the mesh point will be too far away. Add a limit on the minimum of half the length and
                     # two times the max distance
                     dist_to_prev_limit = limits[i] - (
-                        max(additional[-1], limits[i - 1])
-                        if any(additional)
-                        else limits[i - 1]
+                        max(additional[-1], limits[i - 1]) if any(additional) else limits[i - 1]
                     )
                     if dist_to_prev_limit > 2 * max_dist_to_struc:
                         additional.append(
-                            limits[i]
-                            - min(2 * max_dist_to_struc, dist_to_prev_limit / 2)
+                            limits[i] - min(2 * max_dist_to_struc, dist_to_prev_limit / 2)
                         )
 
                     dist_to_next_limit = limits[i + 1] - limits[i]
                     if dist_to_next_limit > 2 * max_dist_to_struc:
                         additional.append(
-                            limits[i]
-                            + min(2 * max_dist_to_struc, dist_to_next_limit / 2)
+                            limits[i] + min(2 * max_dist_to_struc, dist_to_next_limit / 2)
                         )
 
                 # Join the limits
@@ -472,9 +440,7 @@ class Branch:
         return offsets
 
     @staticmethod
-    def _generate_1d_spacing(
-        anchor_pts: List[float], mesh1d_edge_length: float
-    ) -> np.ndarray:
+    def _generate_1d_spacing(anchor_pts: List[float], mesh1d_edge_length: float) -> np.ndarray:
         """
         Generates 1d distances, called by function generate offsets
         """
@@ -489,9 +455,7 @@ class Branch:
             nnodes = max(2, int(round(section_length / mesh1d_edge_length) + 1)) - 1
             # Add nodes
             offsets.extend(
-                np.linspace(
-                    anchor_pts[i], anchor_pts[i + 1], nnodes, endpoint=False
-                ).tolist()
+                np.linspace(anchor_pts[i], anchor_pts[i + 1], nnodes, endpoint=False).tolist()
             )
         # Add last node
         offsets.append(anchor_pts[-1])
@@ -540,9 +504,7 @@ class Link1d2d(BaseModel):
 
     link1d2d_id: np.ndarray = Field(default_factory=lambda: np.empty(0, object))
     link1d2d_long_name: np.ndarray = Field(default_factory=lambda: np.empty(0, object))
-    link1d2d_contact_type: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, np.int32)
-    )
+    link1d2d_contact_type: np.ndarray = Field(default_factory=lambda: np.empty(0, np.int32))
     link1d2d: np.ndarray = Field(default_factory=lambda: np.empty((0, 2), np.int32))
 
     def is_empty(self) -> bool:
@@ -597,9 +559,7 @@ class Link1d2d(BaseModel):
             np.array([f"{n1d:d}_{f2d:d}" for n1d, f2d in self.link1d2d]),
         )
 
-    def _link_from_1d_to_2d(
-        self, node_mask: np.ndarray, polygon: mk.GeometryList = None
-    ):
+    def _link_from_1d_to_2d(self, node_mask: np.ndarray, polygon: mk.GeometryList = None):
         """Connect 1d nodes to 2d face circumcenters. A list of branchid's can be given
         to indicate where the 1d-side of the connections should be made. A polygon can
         be given to indicate where the 2d-side of the connections should be made.
@@ -619,9 +579,7 @@ class Link1d2d(BaseModel):
         # Note that the function "contacts_compute_multiple" also computes the connections, but does not take into account
         # a bounding polygon or the end points of the 1d mesh.
 
-    def _link_from_2d_to_1d_embedded(
-        self, node_mask: np.ndarray, points: mk.GeometryList
-    ):
+    def _link_from_2d_to_1d_embedded(self, node_mask: np.ndarray, points: mk.GeometryList):
         """"""
         self.meshkernel.contacts_compute_with_points(node_mask=node_mask, points=points)
         self._process()
@@ -652,54 +610,30 @@ class Mesh1d(BaseModel):
     branches: Dict[str, Branch] = {}
 
     network1d_node_id: np.ndarray = Field(default_factory=lambda: np.empty(0, object))
-    network1d_node_long_name: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, object)
-    )
+    network1d_node_long_name: np.ndarray = Field(default_factory=lambda: np.empty(0, object))
     network1d_node_x: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
     network1d_node_y: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
     network1d_branch_id: np.ndarray = Field(default_factory=lambda: np.empty(0, object))
-    network1d_branch_long_name: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, object)
-    )
-    network1d_branch_length: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, np.double)
-    )
-    network1d_branch_order: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, np.int32)
-    )
-    network1d_edge_nodes: np.ndarray = Field(
-        default_factory=lambda: np.empty((0, 2), np.int32)
-    )
+    network1d_branch_long_name: np.ndarray = Field(default_factory=lambda: np.empty(0, object))
+    network1d_branch_length: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
+    network1d_branch_order: np.ndarray = Field(default_factory=lambda: np.empty(0, np.int32))
+    network1d_edge_nodes: np.ndarray = Field(default_factory=lambda: np.empty((0, 2), np.int32))
     network1d_geom_x: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
     network1d_geom_y: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
-    network1d_part_node_count: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, np.int32)
-    )
+    network1d_part_node_count: np.ndarray = Field(default_factory=lambda: np.empty(0, np.int32))
 
     mesh1d_node_x: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
     mesh1d_node_y: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
     mesh1d_node_id: np.ndarray = Field(default_factory=lambda: np.empty(0, object))
-    mesh1d_node_long_name: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, object)
-    )
-    mesh1d_node_branch_id: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, np.int32)
-    )
-    mesh1d_node_branch_offset: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, np.double)
-    )
+    mesh1d_node_long_name: np.ndarray = Field(default_factory=lambda: np.empty(0, object))
+    mesh1d_node_branch_id: np.ndarray = Field(default_factory=lambda: np.empty(0, np.int32))
+    mesh1d_node_branch_offset: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
 
-    mesh1d_edge_nodes: np.ndarray = Field(
-        default_factory=lambda: np.empty((0, 2), np.int32)
-    )
+    mesh1d_edge_nodes: np.ndarray = Field(default_factory=lambda: np.empty((0, 2), np.int32))
     mesh1d_edge_x: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
     mesh1d_edge_y: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
-    mesh1d_edge_branch_id: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, np.int32)
-    )
-    mesh1d_edge_branch_offset: np.ndarray = Field(
-        default_factory=lambda: np.empty(0, np.double)
-    )
+    mesh1d_edge_branch_id: np.ndarray = Field(default_factory=lambda: np.empty(0, np.int32))
+    mesh1d_edge_branch_offset: np.ndarray = Field(default_factory=lambda: np.empty(0, np.double))
 
     def is_empty(self) -> bool:
         return self.mesh1d_node_x.size == 0
@@ -766,9 +700,7 @@ class Mesh1d(BaseModel):
         # Calculate edge coordinates
         edge_x, edge_y = np.vstack(
             [
-                branch.interpolate(
-                    self.mesh1d_edge_branch_offset[self.mesh1d_edge_branch_id == i]
-                )
+                branch.interpolate(self.mesh1d_edge_branch_offset[self.mesh1d_edge_branch_id == i])
                 for i, branch in enumerate(self.branches.values())
             ]
         ).T
@@ -873,13 +805,9 @@ class Mesh1d(BaseModel):
 
         # Add branch administration
         self.network1d_branch_order = np.append(self.network1d_branch_order, -1)
-        self.network1d_branch_length = np.append(
-            self.network1d_branch_length, branch.length
-        )
+        self.network1d_branch_length = np.append(self.network1d_branch_length, branch.length)
         self.network1d_branch_id = np.append(self.network1d_branch_id, name)
-        self.network1d_branch_long_name = np.append(
-            self.network1d_branch_long_name, long_name
-        )
+        self.network1d_branch_long_name = np.append(self.network1d_branch_long_name, long_name)
 
         # Add branch geometry coordinates
         self.network1d_part_node_count = np.append(
@@ -943,18 +871,14 @@ class Mesh1d(BaseModel):
             nlinks += 1
             # Adjust branch object
             branch.branch_offsets = np.insert(branch.branch_offsets, 1, extra_offset)
-            branch.node_xy = np.insert(
-                branch.node_xy, 1, branch.interpolate(offsets), axis=0
-            )
+            branch.node_xy = np.insert(branch.node_xy, 1, branch.interpolate(offsets), axis=0)
             branch.mask = np.insert(branch.mask, 1, False)
 
         # Get the index of the first and last node, add as edge_nodes
         i_from = self._network1d_node_position(first_point[0], first_point[1])
         i_to = self._network1d_node_position(last_point[0], last_point[1])
         if i_from == i_to:
-            raise ValueError(
-                "Start and end node are the same. Ring geometries are not accepted."
-            )
+            raise ValueError("Start and end node are the same. Ring geometries are not accepted.")
 
         self.network1d_edge_nodes = np.append(
             self.network1d_edge_nodes,
@@ -983,17 +907,11 @@ class Mesh1d(BaseModel):
             new_edge_nodes[-1, 1] = self._mesh1d_node_position(*last_point)
 
         # Add to variables
-        self.mesh1d_node_x = np.append(
-            self.mesh1d_node_x, branch.node_xy[~branch.mask, 0]
-        )
-        self.mesh1d_node_y = np.append(
-            self.mesh1d_node_y, branch.node_xy[~branch.mask, 1]
-        )
+        self.mesh1d_node_x = np.append(self.mesh1d_node_x, branch.node_xy[~branch.mask, 0])
+        self.mesh1d_node_y = np.append(self.mesh1d_node_y, branch.node_xy[~branch.mask, 1])
 
         # Add to edge_nodes
-        self.mesh1d_edge_nodes = np.append(
-            self.mesh1d_edge_nodes, new_edge_nodes, axis=0
-        )
+        self.mesh1d_edge_nodes = np.append(self.mesh1d_edge_nodes, new_edge_nodes, axis=0)
         edge_coords = np.stack([self.mesh1d_node_x, self.mesh1d_node_y], axis=1)[
             new_edge_nodes
         ].mean(1)
@@ -1002,29 +920,21 @@ class Mesh1d(BaseModel):
         self.mesh1d_edge_branch_id = np.append(
             self.mesh1d_edge_branch_id, np.full(len(edge_coords), branch_nr)
         )
-        self.mesh1d_edge_branch_offset = np.append(
-            self.mesh1d_edge_branch_offset, edge_offsets
-        )
+        self.mesh1d_edge_branch_offset = np.append(self.mesh1d_edge_branch_offset, edge_offsets)
 
         self.mesh1d_edge_x = np.append(self.mesh1d_edge_x, edge_coords[:, 0])
         self.mesh1d_edge_y = np.append(self.mesh1d_edge_y, edge_coords[:, 1])
 
         # Update names of nodes
-        mesh_point_names = np.array(
-            [f"{name}_{offset:.2f}" for offset in offsets], dtype=object
-        )
+        mesh_point_names = np.array([f"{name}_{offset:.2f}" for offset in offsets], dtype=object)
         self.mesh1d_node_id = np.append(self.mesh1d_node_id, mesh_point_names)
-        self.mesh1d_node_long_name = np.append(
-            self.mesh1d_node_long_name, mesh_point_names
-        )
+        self.mesh1d_node_long_name = np.append(self.mesh1d_node_long_name, mesh_point_names)
 
         # Add mesh1d nodes
         self.mesh1d_node_branch_id = np.append(
             self.mesh1d_node_branch_id, np.full(len(offsets), branch_nr)
         )
-        self.mesh1d_node_branch_offset = np.append(
-            self.mesh1d_node_branch_offset, offsets
-        )
+        self.mesh1d_node_branch_offset = np.append(self.mesh1d_node_branch_offset, offsets)
         return name
 
     def get_node_mask(self, branchids: List[str] = None):
@@ -1106,9 +1016,7 @@ class Network:
 
         self._link1d2d._link_from_1d_to_2d(node_mask, polygon=polygon)
 
-    def mesh2d_create_rectilinear_within_extent(
-        self, extent: tuple, dx: float, dy: float
-    ) -> None:
+    def mesh2d_create_rectilinear_within_extent(self, extent: tuple, dx: float, dy: float) -> None:
         self._mesh2d.create_rectilinear(extent=extent, dx=dx, dy=dy)
 
     def mesh2d_create_triangular_within_polygon(self, polygon: mk.GeometryList) -> None:

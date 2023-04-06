@@ -89,9 +89,9 @@ class UgridWriter:
     def _init_1dnetwork(self, ncfile: nc.Dataset, mesh1d: Mesh1d) -> None:  # type: ignore[import]
         # dimensions of the network
         ncfile.createDimension("time", None)
-        ncfile.createDimension("network1d_nEdges", mesh1d.network1d_edge_nodes.shape[0])
-        ncfile.createDimension("network1d_nNodes", mesh1d.network1d_node_x.size)
-        ncfile.createDimension("network1d_nGeometryNodes", mesh1d.network1d_geom_x.size)
+        ncfile.createDimension("network_nEdges", mesh1d.network1d_edge_nodes.shape[0])
+        ncfile.createDimension("network_nNodes", mesh1d.network1d_node_x.size)
+        ncfile.createDimension("network_nGeometryNodes", mesh1d.network1d_geom_x.size)
         ncfile.createDimension("idstrlength", self.idstrlength)
         ncfile.createDimension("longstrlength", self.longstrlength)
         ncfile.createDimension("mesh1d_nEdges", mesh1d.mesh1d_edge_nodes.shape[0])
@@ -101,48 +101,48 @@ class UgridWriter:
 
     def _init_2dmesh(self, ncfile: nc.Dataset, mesh2d: Mesh2d) -> None:  # type: ignore[import]
         ncfile.createDimension(
-            "max_nmesh2d_face_nodes", mesh2d.mesh2d_face_nodes.shape[1]
+            "max_nMesh2d_face_nodes", mesh2d.mesh2d_face_nodes.shape[1]
         )
-        ncfile.createDimension("mesh2d_nEdges", mesh2d.mesh2d_edge_nodes.shape[0])
-        ncfile.createDimension("mesh2d_nFaces", mesh2d.mesh2d_face_nodes.shape[0])
-        ncfile.createDimension("mesh2d_nNodes", mesh2d.mesh2d_node_x.size)
+        ncfile.createDimension("Mesh2d_nEdges", mesh2d.mesh2d_edge_nodes.shape[0])
+        ncfile.createDimension("Mesh2d_nFaces", mesh2d.mesh2d_face_nodes.shape[0])
+        ncfile.createDimension("Mesh2d_nNodes", mesh2d.mesh2d_node_x.size)
         if "Two" not in ncfile.dimensions:
             ncfile.createDimension("Two", 2)
 
     def _init_1d2dlinks(self, ncfile: nc.Dataset, link1d2d: Link1d2d) -> None:  # type: ignore[import]
-        ncfile.createDimension("nLink1D2D_edge", link1d2d.link1d2d.shape[0])
+        ncfile.createDimension("nLinks_edge", link1d2d.link1d2d.shape[0])
 
         cm = ncfile.createVariable("composite_mesh", "i4", ())
         cm.cf_role = "parent_mesh_topology"
-        cm.meshes = "mesh1d mesh2d"
-        cm.mesh_contact = "link1d2d"
+        cm.meshes = "mesh1d Mesh2d"
+        cm.mesh_contact = "links"
 
     def _set_1dnetwork(self, ncfile: nc.Dataset, mesh1d: Mesh1d) -> None:  # type: ignore[import]
         #  network topology
-        ntw = ncfile.createVariable("network1d", "i4", ())
+        ntw = ncfile.createVariable("network", "i4", ())
         ntw.cf_role = "mesh_topology"
-        ntw.edge_dimension = "network1d_nEdges"
-        ntw.edge_geometry = "network1d_geometry"
-        ntw.edge_node_connectivity = "network1d_edge_nodes"
+        ntw.edge_dimension = "network_nEdges"
+        ntw.edge_geometry = "network_geometry"
+        ntw.edge_node_connectivity = "network_edge_nodes"
         ntw.long_name = "Topology data of 1D network"
-        ntw.node_coordinates = "network1d_node_x network1d_node_y"
-        ntw.node_dimension = "network1d_nNodes"
+        ntw.node_coordinates = "network_node_x network_node_y"
+        ntw.node_dimension = "network_nNodes"
         ntw.topology_dimension = 1
-        ntw.node_id = "network1d_node_id"
-        ntw.node_long_name = "network1d_node_long_name"
-        ntw.branch_id = "network1d_branch_id"
-        ntw.branch_long_name = "network1d_branch_long_name"
-        ntw.edge_length = "network1d_edge_length"
-        ntw.branch_order = "network1d_branch_order"
+        ntw.node_id = "network_node_id"
+        ntw.node_long_name = "network_node_long_name"
+        ntw.branch_id = "network_branch_id"
+        ntw.branch_long_name = "network_branch_long_name"
+        ntw.edge_length = "network_edge_length"
+        ntw.branch_order = "network_branch_order"
 
         ntw_node_id = ncfile.createVariable(
-            "network1d_node_id", "c", ("network1d_nNodes", "idstrlength")
+            "network_node_id", "c", ("network_nNodes", "idstrlength")
         )
         ntw_node_id.long_name = "ID of network nodes"
         ntw_node_id[:] = self.to_char_list(mesh1d.network1d_node_id, self.idstrlength)
 
         ntw_node_longname = ncfile.createVariable(
-            "network1d_node_long_name", "c", ("network1d_nNodes", "longstrlength")
+            "network_node_long_name", "c", ("network_nNodes", "longstrlength")
         )
         ntw_node_longname.long_name = "Long name of network nodes"
         ntw_node_longname[:] = self.to_char_list(
@@ -151,7 +151,7 @@ class UgridWriter:
 
         # network nodes
         ntw_node_x = ncfile.createVariable(
-            "network1d_node_x", np.float64, "network1d_nNodes"
+            "network_node_x", np.float64, "network_nNodes"
         )
         ntw_node_x.standard_name = "projection_x_coordinate"
         ntw_node_x.long_name = "x coordinates of network nodes"
@@ -159,7 +159,7 @@ class UgridWriter:
         ntw_node_x[:] = mesh1d.network1d_node_x
 
         ntw_node_y = ncfile.createVariable(
-            "network1d_node_y", np.float64, "network1d_nNodes"
+            "network_node_y", np.float64, "network_nNodes"
         )
         ntw_node_y.standard_name = "projection_y_coordinate"
         ntw_node_y.long_name = "y coordinates of network nodes"
@@ -167,7 +167,7 @@ class UgridWriter:
         ntw_node_y[:] = mesh1d.network1d_node_y
 
         ntw_branch_id_name = ncfile.createVariable(
-            "network1d_branch_id", "c", ("network1d_nEdges", "idstrlength")
+            "network_branch_id", "c", ("network_nEdges", "idstrlength")
         )
         ntw_branch_id_name.long_name = "ID of branch geometries"
         ntw_branch_id_name[:] = self.to_char_list(
@@ -175,7 +175,7 @@ class UgridWriter:
         )
 
         ntw_branch_id_longname = ncfile.createVariable(
-            "network1d_branch_long_name", "c", ("network1d_nEdges", "longstrlength")
+            "network_branch_long_name", "c", ("network_nEdges", "longstrlength")
         )
         ntw_branch_id_longname.long_name = "Long name of branch geometries"
         ntw_branch_id_longname[:] = self.to_char_list(
@@ -183,23 +183,23 @@ class UgridWriter:
         )
 
         ntw_edge_length = ncfile.createVariable(
-            "network1d_edge_length", np.float64, "network1d_nEdges"
+            "network_edge_length", np.float64, "network_nEdges"
         )
         ntw_edge_length.long_name = "Real length of branch geometries"
         ntw_edge_length.units = "m"
         ntw_edge_length[:] = mesh1d.network1d_branch_length
 
         ntw_branch_order = ncfile.createVariable(
-            "network1d_branch_order", "i4", "network1d_nEdges"
+            "network_branch_order", "i4", "network_nEdges"
         )
         ntw_branch_order.long_name = "Order of branches for interpolation"
-        ntw_branch_order.mesh = "network1d"
+        ntw_branch_order.mesh = "network"
         ntw_branch_order.location = "edge"
         ntw_branch_order[:] = mesh1d.network1d_branch_order
 
         # network edges
         ntw_edge_node = ncfile.createVariable(
-            "network1d_edge_nodes", "i4", ("network1d_nEdges", "Two")
+            "network_edge_nodes", "i4", ("network_nEdges", "Two")
         )
         ntw_edge_node.cf_role = "edge_node_connectivity"
         ntw_edge_node.long_name = "start and end nodes of network edges"
@@ -207,20 +207,20 @@ class UgridWriter:
         ntw_edge_node[:] = mesh1d.network1d_edge_nodes + ntw_edge_node.start_index
 
         # network geometry
-        ntw_geom = ncfile.createVariable("network1d_geometry", "i4", ())
+        ntw_geom = ncfile.createVariable("network_geometry", "i4", ())
         ntw_geom.geometry_type = "line"
         ntw_geom.long_name = "1D Geometry"
-        ntw_geom.node_count = "network1d_geom_node_count"
-        ntw_geom.node_coordinates = "network1d_geom_x network1d_geom_y"
+        ntw_geom.node_count = "network_geom_node_count"
+        ntw_geom.node_coordinates = "network_geom_x network_geom_y"
 
         ntw_geom_node_count = ncfile.createVariable(
-            "network1d_geom_node_count", "i4", "network1d_nEdges"
+            "network_geom_node_count", "i4", "network_nEdges"
         )
         ntw_geom_node_count.long_name = "Number of geometry nodes per branch"
         ntw_geom_node_count[:] = mesh1d.network1d_part_node_count
 
         ntw_geom_x = ncfile.createVariable(
-            "network1d_geom_x", np.float64, ("network1d_nGeometryNodes")
+            "network_geom_x", np.float64, ("network_nGeometryNodes")
         )
         ntw_geom_x.standard_name = "projection_x_coordinate"
         ntw_geom_x.long_name = "x-coordinate of branch geometry nodes"
@@ -228,7 +228,7 @@ class UgridWriter:
         ntw_geom_x[:] = mesh1d.network1d_geom_x
 
         ntw_geom_y = ncfile.createVariable(
-            "network1d_geom_y", np.float64, ("network1d_nGeometryNodes")
+            "network_geom_y", np.float64, ("network_nGeometryNodes")
         )
         ntw_geom_y.standard_name = "projection_y_coordinate"
         ntw_geom_y.long_name = "y-coordinate of branch geometry nodes"
@@ -240,7 +240,7 @@ class UgridWriter:
         nc_mesh1d = ncfile.createVariable("mesh1d", "i4", ())
         nc_mesh1d.cf_role = "mesh_topology"
         nc_mesh1d.long_name = "Topology data of 1D Mesh"
-        nc_mesh1d.coordinate_space = "network1d"
+        nc_mesh1d.coordinate_space = "network"
         nc_mesh1d.edge_dimension = "mesh1d_nEdges"
         nc_mesh1d.edge_node_connectivity = "mesh1d_edge_nodes"
         nc_mesh1d.edge_coordinates = "mesh1d_edge_branch mesh1d_edge_offset"
@@ -306,29 +306,29 @@ class UgridWriter:
 
     def _set_2dmesh(self, ncfile: nc.Dataset, mesh2d: Mesh2d) -> None:  # type: ignore[import]
 
-        nc_mesh2d = ncfile.createVariable("mesh2d", "i4", ())
+        nc_mesh2d = ncfile.createVariable("Mesh2d", "i4", ())
         nc_mesh2d.long_name = "Topology data of 2D network"
         nc_mesh2d.topology_dimension = 2
         nc_mesh2d.cf_role = "mesh_topology"
-        nc_mesh2d.node_coordinates = "mesh2d_node_x mesh2d_node_y"
-        nc_mesh2d.node_dimension = "mesh2d_nNodes"
-        nc_mesh2d.edge_coordinates = "mesh2d_edge_x mesh2d_edge_y"
-        nc_mesh2d.edge_dimension = "mesh2d_nEdges"
-        nc_mesh2d.edge_node_connectivity = "mesh2d_edge_nodes"
-        nc_mesh2d.face_node_connectivity = "mesh2d_face_nodes"
-        nc_mesh2d.max_face_nodes_dimension = "max_nmesh2d_face_nodes"
-        nc_mesh2d.face_dimension = "mesh2d_nFaces"
-        nc_mesh2d.face_coordinates = "mesh2d_face_x mesh2d_face_y"
+        nc_mesh2d.node_coordinates = "Mesh2d_node_x Mesh2d_node_y"
+        nc_mesh2d.node_dimension = "Mesh2d_nNodes"
+        nc_mesh2d.edge_coordinates = "Mesh2d_edge_x Mesh2d_edge_y"
+        nc_mesh2d.edge_dimension = "Mesh2d_nEdges"
+        nc_mesh2d.edge_node_connectivity = "Mesh2d_edge_nodes"
+        nc_mesh2d.face_node_connectivity = "Mesh2d_face_nodes"
+        nc_mesh2d.max_face_nodes_dimension = "max_nMesh2d_face_nodes"
+        nc_mesh2d.face_dimension = "Mesh2d_nFaces"
+        nc_mesh2d.face_coordinates = "Mesh2d_face_x Mesh2d_face_y"
 
         # Nodes:
         mesh2d_node_x = ncfile.createVariable(
-            "mesh2d_node_x", np.float64, nc_mesh2d.node_dimension
+            "Mesh2d_node_x", np.float64, nc_mesh2d.node_dimension
         )
         mesh2d_node_y = ncfile.createVariable(
-            "mesh2d_node_y", np.float64, nc_mesh2d.node_dimension
+            "Mesh2d_node_y", np.float64, nc_mesh2d.node_dimension
         )
         mesh2d_node_z = ncfile.createVariable(
-            "mesh2d_node_z", np.float64, nc_mesh2d.node_dimension, fill_value=np.nan
+            "Mesh2d_node_z", np.float64, nc_mesh2d.node_dimension, fill_value=np.nan
         )
 
         mesh2d_node_x.standard_name = "projection_x_coordinate"
@@ -337,18 +337,18 @@ class UgridWriter:
 
         for var, dim in zip([mesh2d_node_x, mesh2d_node_y, mesh2d_node_z], list("xyz")):
             setattr(var, "units", "m")
-            setattr(var, "mesh", "mesh2d")
+            setattr(var, "mesh", "Mesh2d")
             setattr(var, "location", "node")
             setattr(var, "long_name", f"{dim}-coordinate of mesh nodes")
 
-        mesh2d_node_z.coordinates = "mesh2d_node_x mesh2d_node_y"
+        mesh2d_node_z.coordinates = "Mesh2d_node_x Mesh2d_node_y"
         mesh2d_node_z.grid_mapping = ""
 
         mesh2d_node_x[:] = mesh2d.mesh2d_node_x
         mesh2d_node_y[:] = mesh2d.mesh2d_node_y
 
         mesh2d_en = ncfile.createVariable(
-            "mesh2d_edge_nodes",
+            "Mesh2d_edge_nodes",
             "i4",
             (nc_mesh2d.edge_dimension, "Two"),
             fill_value=np.iinfo(np.int32).min,
@@ -357,35 +357,35 @@ class UgridWriter:
         mesh2d_en.long_name = "maps every edge to the two nodes that it connects"
         mesh2d_en.start_index = 1
         mesh2d_en.location = "edge"
-        mesh2d_en.mesh = "mesh2d"
+        mesh2d_en.mesh = "Mesh2d"
         mesh2d_en[:] = mesh2d.mesh2d_edge_nodes + mesh2d_en.start_index
 
         mesh2d_fn = ncfile.createVariable(
-            "mesh2d_face_nodes",
+            "Mesh2d_face_nodes",
             "i4",
             (nc_mesh2d.face_dimension, nc_mesh2d.max_face_nodes_dimension),
             fill_value=np.iinfo(np.int32).min,
         )
         mesh2d_fn.cf_role = "face_node_connectivity"
-        mesh2d_fn.mesh = "mesh2d"
+        mesh2d_fn.mesh = "Mesh2d"
         mesh2d_fn.location = "face"
         mesh2d_fn.long_name = "maps every face to the nodes that it defines"
         mesh2d_fn.start_index = 1
         mesh2d_fn[:] = mesh2d.mesh2d_face_nodes + mesh2d_fn.start_index
 
         mesh2d_face_x = ncfile.createVariable(
-            "mesh2d_face_x", np.float64, nc_mesh2d.face_dimension
+            "Mesh2d_face_x", np.float64, nc_mesh2d.face_dimension
         )
         mesh2d_face_y = ncfile.createVariable(
-            "mesh2d_face_y", np.float64, nc_mesh2d.face_dimension
+            "Mesh2d_face_y", np.float64, nc_mesh2d.face_dimension
         )
         mesh2d_face_z = ncfile.createVariable(
-            "mesh2d_face_z", np.float64, nc_mesh2d.face_dimension, fill_value=np.nan
+            "Mesh2d_face_z", np.float64, nc_mesh2d.face_dimension, fill_value=np.nan
         )
 
         for var, dim in zip([mesh2d_face_x, mesh2d_face_y, mesh2d_face_z], list("xyz")):
             setattr(var, "units", "m")
-            setattr(var, "mesh", "mesh2d")
+            setattr(var, "mesh", "Mesh2d")
             setattr(var, "location", "face")
             setattr(
                 var,
@@ -394,7 +394,7 @@ class UgridWriter:
             )
             setattr(var, "long_name", f"{dim}-coordinate of face nodes")
 
-        mesh2d_face_z.coordinates = "mesh2d_face_x mesh2d_face_y"
+        mesh2d_face_z.coordinates = "Mesh2d_face_x Mesh2d_face_y"
         mesh2d_face_z.grid_mapping = ""
 
         mesh2d_face_x[:] = mesh2d.mesh2d_face_x
@@ -410,26 +410,26 @@ class UgridWriter:
 
     def _set_1d2dlinks(self, ncfile: nc.Dataset, link1d2d: Link1d2d) -> None:  # type: ignore[import]
         nc_link1d2d = ncfile.createVariable(
-            "link1d2d",
+            "links",
             "i4",
-            ("nLink1D2D_edge", "Two"),
+            ("nLinks_edge", "Two"),
         )
         nc_link1d2d.cf_role = "mesh_topology_contact"
-        nc_link1d2d.contact = "mesh1d:node mesh2d:face"
-        nc_link1d2d.contact_type = "link1d2d_contact_type"
-        nc_link1d2d.contact_ids = "link1d2d_ids"
-        nc_link1d2d.contact_long_names = "link1d2d_long_names"
+        nc_link1d2d.contact = "mesh1d:node Mesh2d:face"
+        nc_link1d2d.contact_type = "links_contact_type"
+        nc_link1d2d.contact_ids = "links_ids"
+        nc_link1d2d.contact_long_names = "links_long_names"
         nc_link1d2d.start_index = 1
         nc_link1d2d[:, :] = link1d2d.link1d2d + nc_link1d2d.start_index
 
         link1d2d_ids = ncfile.createVariable(
-            "link1d2d_ids", "c", ("nLink1D2D_edge", "idstrlength")
+            "links_ids", "c", ("nLinks_edge", "idstrlength")
         )
         link1d2d_ids.long_name = "ids of the contact"
         link1d2d_ids[:] = self.to_char_list(link1d2d.link1d2d_id, self.idstrlength)
 
         link1d2d_long_names = ncfile.createVariable(
-            "link1d2d_long_names", "c", ("nLink1D2D_edge", "longstrlength")
+            "links_long_names", "c", ("nLinks_edge", "longstrlength")
         )
         link1d2d_long_names.long_name = "long names of the contact"
         link1d2d_long_names[:] = self.to_char_list(
@@ -437,9 +437,9 @@ class UgridWriter:
         )
 
         link1d2d_contact_type = ncfile.createVariable(
-            "link1d2d_contact_type",
+            "links_contact_type",
             "i4",
-            "nLink1D2D_edge",
+            "nLinks_edge",
             fill_value=np.iinfo(np.int32).min,
         )
         link1d2d_contact_type[:] = link1d2d.link1d2d_contact_type

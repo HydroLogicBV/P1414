@@ -10,7 +10,8 @@ from scipy.spatial import KDTree
 from shapely.geometry import LineString, MultiPoint, Point
 from tqdm import tqdm
 
-from networkx_tools import combine_straight_branches, gdf_to_nx
+from network_tools import combine_straight_branches
+from networkx_tools import gdf_to_nx
 
 
 def check_branch_overlap(
@@ -64,7 +65,7 @@ def check_branch_overlap(
     G = gdf_to_nx(_out_branches, decimals=geometry_accuracy)
     component_list = sorted(nx.connected_components(G), key=len, reverse=True)
     H = None
-    for n in range(max_graphs):
+    for n in range(min(max_graphs, len(component_list))):
         if n > len(component_list):
             break
 
@@ -80,7 +81,7 @@ def check_branch_overlap(
         else:
             overlap = 0
         print(overlap)
-        if overlap > min_overlap:
+        if overlap >= min_overlap:
             if H is None:
                 H = nx.Graph(S)
             else:
@@ -147,9 +148,8 @@ def clip_branches(
                 .to_crs(overlay_branches.crs)
                 .explode(index_parts=False)
             )
-
     in_branches["new_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
-    if width_column is not None:
+    if (width_column is not None) and (min_width is not None):
         in_branches = in_branches.loc[in_branches[width_column].astype(float) > min_width, :]
 
     # compute extend of input branches and clip overlay branches to it
@@ -326,37 +326,34 @@ def validate_network_topology(
 print("initialize")
 p_folder = r"D:\Work\Project\P1414\GIS"
 # p_folder = r"D:\work\P1414_ROI\GIS"
-version = "v2.2"
+version = "v3"
 # p_folder = r"D:\work\Project\P1414\GIS"
 old_rm_branches_path = p_folder + r"\Randstadmodel_oud\rm_Branches_28992_edited_v10.shp"
 
 # agv_branches_path = p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"
 agv_branches_path = p_folder + r"\WAGV\hydrovak\hydrovak.shp"
-clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_{}_test.shp".format(version)
+clipped_agv_branches_path = p_folder + r"\Uitgesneden watergangen\AGV_{}.shp".format(version)
 
 HDSR_branches_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
-clipped_HDSR_branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_{}_test.shp".format(
-    version
-)
+clipped_HDSR_branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_{}.shp".format(version)
 
 HHD_branches_path = (
-    p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water_ww.shp"
+    p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
 )
-clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_{}_test.shp".format(version)
+clipped_HHD_branches_path = p_folder + r"\Uitgesneden watergangen\HHD_{}.shp".format(version)
 
 HHR_branches_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as.shp"
-clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_{}_test.shp".format(version)
+clipped_HHR_branches_path = p_folder + r"\Uitgesneden watergangen\HHR_{}.shp".format(version)
 
-HHR_west_branches_path = p_folder + r"\HHRijnland\Niet legger\Westeinderplassen_cut_v5.shp"
-clipped_HHR_west_branches_path = (
-    p_folder + r"\Uitgesneden watergangen\HHR_west_{}_test.shp".format(version)
-)
+# HHR_west_branches_path = p_folder + r"\HHRijnland\Niet legger\Westeinderplassen_cut_v5.shp"
+# clipped_HHR_west_branches_path = (
+#     p_folder + r"\Uitgesneden watergangen\HHR_west_{}_test.shp".format(version)
+# )
 
 # HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
 HHSK_branches_path = p_folder + r"\HHSK\Legger\oppervlaktewater_lijnen.shp"
-clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_{}_test_v2.shp".format(
-    version
-)
+# HHSK_branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang_nieuw\Hoofdwater_primair.shp"
+clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_{}.shp".format(version)
 # clipped_HHSK_branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_{}_test.shp".format(
 #     version
 # )
@@ -365,14 +362,15 @@ fixed_RMM_branches_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Branche
 
 AGV = False
 HDSR = False
-HHD = False
-HHR = False
+HHD = True
+HHR = True
 HHSK = True
 RMM = False
 HHR_westeinder = False
 
-max_graphs = 25
-min_width = 3.33
+max_graphs = 100
+min_width = 0
+min_overlap = 0.25
 
 # %% AGV
 if AGV:
@@ -383,6 +381,7 @@ if AGV:
         overlay_branches_path=old_rm_branches_path,
         max_graphs=max_graphs,
         min_width=min_width,
+        min_overlap=min_overlap,
         width_column="IWS_W_WATB",
     )
     intersected_branches.to_file(clipped_agv_branches_path)
@@ -403,6 +402,7 @@ if HDSR:
         in_branches=branches,
         max_graphs=max_graphs,
         min_width=min_width,
+        min_overlap=min_overlap,
         width_column="IWS_W_WATB",
     )
     intersected_branches.to_file(clipped_HDSR_branches_path)
@@ -410,13 +410,20 @@ if HDSR:
 # %% HHD
 if HHD:
     print("HHD")
-
+    branches = (
+        gpd.read_file(HHD_branches_path, geometry="geometry")
+        .to_crs(28992)
+        .explode(index_parts=False)
+    )
+    branches = branches.loc[branches["FUNCTIE"] == "Primair boezemwater", :]
     intersected_branches = clip_branches(
         in_branches_path=HHD_branches_path,
         overlay_branches_path=old_rm_branches_path,
+        in_branches=branches,
         max_graphs=max_graphs,
-        min_width=min_width,
-        width_column="bodembreed",
+        min_width=None,
+        min_overlap=min_overlap,
+        width_column=None,
     )
     intersected_branches.to_file(clipped_HHD_branches_path)
 
@@ -435,6 +442,7 @@ if HHR:
         in_branches=branches,
         max_graphs=max_graphs,
         min_width=min_width,
+        min_overlap=min_overlap,
         width_column="BREEDTE",
     )
     intersected_branches.to_file(clipped_HHR_branches_path)
@@ -447,6 +455,7 @@ if HHSK:
         .to_crs(28992)
         .explode(index_parts=False)
     )
+    branches = branches.loc[branches["STATUSOBJE"] == 3, :]
     branches = branches.loc[branches["CATEGORIEO"] == 1, :]
     intersected_branches = clip_branches(
         in_branches_path=HHSK_branches_path,
@@ -454,6 +463,7 @@ if HHSK:
         in_branches=branches,
         max_graphs=max_graphs,
         min_width=min_width,
+        min_overlap=min_overlap,
         width_column="BREEDTE",
     )
     intersected_branches.to_file(clipped_HHSK_branches_path)

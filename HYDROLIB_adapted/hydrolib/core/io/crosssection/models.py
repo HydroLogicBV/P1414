@@ -94,10 +94,7 @@ class CrossSectionDefinition(INIBasedModel):
         # https://github.com/samuelcolvin/pydantic/pull/2336
         if isinstance(v, dict):
             for c in cls.__subclasses__():
-                if (
-                    c.__fields__.get("type").default.lower()
-                    == v.get("type", "").lower()
-                ):
+                if c.__fields__.get("type").default.lower() == v.get("type", "").lower():
                     v = c(**v)
                     break
             else:
@@ -241,7 +238,8 @@ class RectangleCrsDef(CrossSectionDefinition):
     type: Literal["rectangle"] = Field("rectangle")
     width: float
     height: float
-    closed: bool = Field(True)
+    # closed: bool = Field(True)
+    closed: str = Field("no")
     frictionid: Optional[str] = Field(alias="frictionId")
     frictiontype: Optional[FrictionType] = Field(alias="frictionType")
     frictionvalue: Optional[float] = Field(alias="frictionValue")
@@ -262,12 +260,8 @@ class ZWRiverCrsDef(CrossSectionDefinition):
     """
 
     class Comments(CrossSectionDefinition.Comments):
-        type: Optional[str] = Field(
-            "Cross section type; must read zwRiver", alias="type"
-        )
-        numlevels: Optional[str] = Field(
-            "Number of levels in the table.", alias="numLevels"
-        )
+        type: Optional[str] = Field("Cross section type; must read zwRiver", alias="type")
+        numlevels: Optional[str] = Field("Number of levels in the table.", alias="numLevels")
         levels: Optional[str] = Field(
             "Space separated list of monotonic increasing heights/levels [m AD].",
             alias="levels",
@@ -288,9 +282,7 @@ class ZWRiverCrsDef(CrossSectionDefinition):
         leveebaselevel: Optional[str] = Field(
             "Base level of levee [m AD].", alias="leveeBaseLevel"
         )
-        leveeflowarea: Optional[str] = Field(
-            "Flow area behind levee [m2].", alias="leveeFlowArea"
-        )
+        leveeflowarea: Optional[str] = Field("Flow area behind levee [m2].", alias="leveeFlowArea")
         leveetotalarea: Optional[str] = Field(
             "Total area behind levee [m2].", alias="leveeTotalArea"
         )
@@ -340,9 +332,7 @@ class ZWRiverCrsDef(CrossSectionDefinition):
     fp1width: Optional[float] = Field(alias="fp1Width")
     fp2width: Optional[float] = Field(alias="fp2Width")
     frictionids: Optional[List[str]] = Field(alias="frictionIds", delimiter=";")
-    frictiontypes: Optional[List[FrictionType]] = Field(
-        alias="frictionTypes", delimiter=";"
-    )
+    frictiontypes: Optional[List[FrictionType]] = Field(alias="frictionTypes", delimiter=";")
     frictionvalues: Optional[List[float]] = Field(alias="frictionValues")
 
     _split_to_list = get_split_string_on_delimiter_validator(
@@ -379,9 +369,7 @@ class ZWCrsDef(CrossSectionDefinition):
     class Comments(CrossSectionDefinition.Comments):
         type: Optional[str] = Field("Cross section type; must read zw", alias="type")
         # NOTE: Field "template" deliberately ignored for now.
-        numlevels: Optional[str] = Field(
-            "Number of levels in the table.", alias="numLevels"
-        )
+        numlevels: Optional[str] = Field("Number of levels in the table.", alias="numLevels")
         levels: Optional[str] = Field(
             "Space separated list of monotonic increasing heights/levels [m AD].",
             alias="levels",
@@ -506,9 +494,7 @@ class YZCrsDef(CrossSectionDefinition):
     sectioncount: Optional[int] = Field(1, alias="sectionCount")
     frictionpositions: Optional[List[float]] = Field(alias="frictionPositions")
     frictionids: Optional[List[str]] = Field(alias="frictionIds", delimiter=";")
-    frictiontypes: Optional[List[FrictionType]] = Field(
-        alias="frictionTypes", delimiter=";"
-    )
+    frictiontypes: Optional[List[FrictionType]] = Field(alias="frictionTypes", delimiter=";")
     frictionvalues: Optional[List[float]] = Field(alias="frictionValues")
 
     _split_to_list = get_split_string_on_delimiter_validator(

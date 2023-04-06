@@ -819,7 +819,8 @@ class CrossSections:
             "thalweg": 0.0,
             "height": height,
             "width": width,
-            "closed": int(closed),
+            # "closed": int(closed),
+            "closed": str(closed),
             "frictionid": roughnessname,
         }
 
@@ -1223,7 +1224,7 @@ class CrossSections:
                         values[values.soortparameter == "bodembreedte"].waarde.values[0],
                         3,
                     ),
-                    "closed": 1,  # Changed HL
+                    "closed": "no",  # Changed HL
                     "thalweg": 0.0,
                     "typeruwheid": values.typeruwheid.values[0],
                     "ruwheid": roughness,
@@ -1237,7 +1238,7 @@ class CrossSections:
                         values[values.soortparameter == "bodembreedte"].waarde.values[0],
                         3,
                     ),
-                    "closed": 0,
+                    "closed": "no",
                     "thalweg": 0.0,
                     "typeruwheid": values.typeruwheid.values[0],
                     "ruwheid": roughness,

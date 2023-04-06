@@ -95,91 +95,60 @@ if __name__ == "__main__":
     in_out_dict = dict(
         [
             (
-                "D:\Work\Project\P1414\GIS\HDSR\Legger\Waterkeringen_Lijn\Waterkeringen_Lijn_BR.shp",
-                "D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hdsr.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Zeewering landwaartse begrenzing.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_zeewering.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Regionale waterkering buitenkruinlijn.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_regionale_kering.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering polderkade middenkruinlijn.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_polderkade.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering landscheiding middenkruinlijn.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_landscheiding.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Delflandsedijk buitenkruinlijn.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_delflandsedijk.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHRijnland\Primaire_keringen\Primaire_kering.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_primaire_kering.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHRijnland\Regionale_keringen\Regionale_keringen.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_regional_kering.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Primaire_waterkering.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_primaire_kering.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Regionale_waterkering_1.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_regionale_kering.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Overige_waterkering_1.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_overige_kering.shp",
-            ),
-            (
-                r"D:\Work\Project\P1414\GIS\WAGV\Keringen\keringen.shp",
-                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\wagv.shp",
-            ),
+                r"D:\Work\Project\P1414\GIS\RWS\oeverconstructie_verticaal_clipped.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\ARK.shp",
+            )
+            # (
+            #     "D:\Work\Project\P1414\GIS\HDSR\Legger\Waterkeringen_Lijn\Waterkeringen_Lijn_BR.shp",
+            #     "D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hdsr.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Zeewering landwaartse begrenzing.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_zeewering.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Regionale waterkering buitenkruinlijn.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_regionale_kering.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering polderkade middenkruinlijn.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_polderkade.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering landscheiding middenkruinlijn.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_landscheiding.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Delflandsedijk buitenkruinlijn.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_delflandsedijk.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHRijnland\Primaire_keringen\Primaire_kering.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_primaire_kering.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHRijnland\Regionale_keringen\Regionale_keringen.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_regional_kering.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Primaire_waterkering.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_primaire_kering.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Regionale_waterkering_1.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_regionale_kering.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Overige_waterkering_1.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_overige_kering.shp",
+            # ),
+            # (
+            #     r"D:\Work\Project\P1414\GIS\WAGV\Keringen\keringen.shp",
+            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\wagv.shp",
+            # ),
         ]
     )
-    # input_paths = [
-    #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Zeewering landwaartse begrenzing.shp",
-    #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Regionale waterkering buitenkruinlijn.shp",
-    #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering polderkade middenkruinlijn.shp",
-    #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering landscheiding middenkruinlijn.shp",
-    #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Delflandsedijk buitenkruinlijn.shp",
-    # ]
-    # output_paths = [
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_zeewering.shp",
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_regionale_kering.shp",
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_polderkade.shp",
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_landscheiding.shp",
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_delflandsedijk.shp"
-    # ]
-    # input_paths = [
-    #     r"D:\Work\Project\P1414\GIS\HHRijnland\Primaire_keringen\Primaire_kering.shp",
-    #     r"D:\Work\Project\P1414\GIS\HHRijnland\Regionale_keringen\Regionale_keringen.shp",
-    # ]
-    # output_paths = [
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_primaire_kering.shp",
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_regional_kering.shp",
-    # ]
-    # input_paths = [
-    #     r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Primaire_waterkering.shp",
-    #     r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Regionale_waterkering_1.shp",
-    #     r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Overige_waterkering_1.shp",
-    # ]
-    # output_paths = [
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_primaire_kering.shp",
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_regionale_kering.shp",
-    #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_overige_kering.shp",
-    # ]
-    # input_paths = [r"D:\Work\Project\P1414\GIS\WAGV\Keringen\keringen.shp"]
-    # output_paths = [r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\wagv.shp"]
 
-    # for input_path, output_path in zip(input_paths, output_paths):
     for input_path, output_path in in_out_dict.items():
         gdf = gpd.read_file(input_path).to_crs(crs="EPSG:28992").explode(ignore_index=True)
         print(np.sum(gdf.geometry.type == "MultiLineString"))

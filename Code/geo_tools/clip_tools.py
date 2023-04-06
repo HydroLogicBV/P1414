@@ -10,7 +10,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
         raise AttributeError("Modeldatabase not loaded")
 
     buffered_branches = gpd.GeoDataFrame(
-        self.ddm.waterloop.dissolve(by=None).buffer(buffer),
+        self.ddm.waterloop.dissolve(by=None).buffer(buffer, cap_style=2),
         columns=["geometry"],
         crs=self.ddm.waterloop.crs,
         geometry="geometry",

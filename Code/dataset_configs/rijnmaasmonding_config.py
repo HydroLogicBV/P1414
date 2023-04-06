@@ -24,7 +24,7 @@ class RawData:
     branches_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Branches.shp"
     river_profile_path = p_folder + r"\Rijn Maasmonding\without_lek\ZW_cross.csv"
     river_roughness_path = p_folder + r"\Rijn Maasmonding\without_lek\roughness.csv"
-    weir_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Weirs.shp"
+    weir_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Weirs_edited.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
@@ -34,20 +34,10 @@ class RawData:
     ## Branches
     branch_index_mapping = dict(
         [
-            ("bodembreedte", None),
-            ("bodemhoogte benedenstrooms", None),
-            ("bodemhoogte bovenstrooms", None),
             ("code", "Name"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", None),
-            ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", None),
-            ("taludhelling rechterzijde", None),
             ("typeruwheid", None),
-            ("ruwheidhoog", None),
-            ("ruwheidlaag", None),
-            ("water_width_index", None),
         ]
     )
 

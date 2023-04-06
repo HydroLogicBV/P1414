@@ -7,7 +7,7 @@ class Models:
 
         class one_d:
             max_dist_to_struct = 3
-            max_snap_dist = 0.1
+            max_snap_dist = 1
             node_distance = 50
 
 
@@ -17,6 +17,7 @@ class RawData:
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
     branches_path = p_folder + r"\Noordzee\Noordzee.shp"
     norm_profile_path = p_folder + r"\Noordzee\Noordzee.shp"
+    weir_path = p_folder + r"\Noordzee\stuw.shp"
 
     class Peil:
         default_peil = 0
@@ -26,20 +27,10 @@ class RawData:
     ## Branches
     branch_index_mapping = dict(
         [
-            ("bodembreedte", None),
-            ("bodemhoogte benedenstrooms", None),
-            ("bodemhoogte bovenstrooms", None),
             ("code", "Name"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", None),
-            ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", None),
-            ("taludhelling rechterzijde", None),
             ("typeruwheid", None),
-            ("ruwheidhoog", None),
-            ("ruwheidlaag", None),
-            ("water_width_index", None),
         ]
     )
 
@@ -62,5 +53,24 @@ class RawData:
             ("ruwheidhoog", None),
             ("ruwheidlaag", None),
             ("water_width_index", None),
+        ]
+    )
+
+    ## Weirs
+    weir_index_mapping = dict(
+        [
+            ("afvoercoefficient_stuw", None),
+            ("afvoercoefficient_opening", None),
+            ("code", "id"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("hoogstedoorstroombreedte", "BREEDTE"),
+            ("hoogstedoorstroomhoogte", "HOOGTE"),
+            ("laagstedoorstroombreedte", "BREEDTE"),
+            ("laagstedoorstroomhoogte", "HOOGTE"),
+            ("overlaatonderlaat", None),
+            ("soortregelbaarheid", None),
+            ("soortstuw", None),
+            ("vormopening", None),
         ]
     )

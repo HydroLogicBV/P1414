@@ -12,7 +12,7 @@ config = r"rijnmaasmonding_config"
 defaults = r"defaults"
 
 build_database = True
-build_model = False
+build_model = True
 
 if build_database:
     # 1. initialize an instance of DHydamoData

@@ -1,24 +1,24 @@
 import sys
 
-from hydrolib.core.io.ext.models import ExtModel, Lateral
-
 sys.path.append("D:\Work\git\GIS_tools\Code")
 
 from data_structures.dhydro_data import DHydroData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\Combined_test_v7.6.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\Combined_test_v14_WBD.gpkg"
 gpkgs_list = [
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HHSK_clipped_wnp.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HDSR_clipped_test.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HHD_clipped_wnp.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HHR_clipped_wnp.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\WAGV_clipped.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\HHSK.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\HDSR.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\HHD.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\HHR.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\WAGV.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\ARKNZK.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\Rijntakken.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\RMM.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\RMM_delta_open.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\noordzee.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\markermeer.gpkg",
 ]
-output_folder = folder + r"\Models\Combined\V7.6"
+output_folder = folder + r"\Models\Combined\V14_WBD_v2"
 
 config_dhydro = r"combined_config"
 config_list = [
@@ -30,13 +30,15 @@ config_list = [
     r"ark_nzk_config",
     r"rijntakken_config",
     r"rijnmaasmonding_config",
+    r"noordzee_config",
+    r"markermeer_config",
 ]
-snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100]
+snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 100, 100]
 
 defaults = r"defaults"
 
 build_database = False
-load_gpkgs = False
+load_gpkgs = True
 build_model = True
 
 
@@ -54,8 +56,9 @@ if build_database:
             pass
 
     dhd.clip_structures_by_branches()
-    dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults, min_length=500)
-    dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults, min_length=500)
+    dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
+    dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)
+    # dhd.dambreaks_from_config(config="dambreak_v0_config", defaults=defaults)
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
 
 if load_gpkgs:
@@ -66,12 +69,12 @@ if load_gpkgs:
         # 2. load data
         dhd.hydamo_from_gpkg(gpkg, branch_snap_dist=snap_dist_list[ix])
 
-    dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults, min_length=500)
-    dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults, min_length=500)
+    dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
+    dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)
+    # dhd.dambreaks_from_config(config="dambreak_v0_config", defaults=defaults)
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
 
 if build_model:
-
     # 1. initialize an instance of DHydamoData
     dhd = DHydroData()
 
@@ -81,6 +84,7 @@ if build_model:
     # remove brug as it needs a cs
     del dhd.ddm.brug
     dhd.features.remove("brug")
+    dhd.ddm.pomp["maximalecapaciteit"] = 0
 
     # 3. save as dhydro model
     dhd.to_dhydro(config=config_dhydro, output_folder=output_folder)

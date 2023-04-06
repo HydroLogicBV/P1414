@@ -56,8 +56,8 @@ agv_peil_path = r"https://maps.waternet.nl/arcgis/rest/services/AGV_Legger/Vastg
 output_file = r"D:\Work\Project\P1414\GIS\WAGV\peilen.shp"
 json_download_rijnland(url=agv_peil_path, output_file_path=output_file)
 
-# %%
-from requests.utils import DEFAULT_CA_BUNDLE_PATH
 
-print(DEFAULT_CA_BUNDLE_PATH)
-# %%
+# %% HHSK hoofdwatergang
+watergang_path = r"https://services.arcgis.com/OnnVX2wGkBfflKqu/ArcGIS/rest/services/HHSK_Legger_Watersysteem/FeatureServer/11?f=pjson"
+output_file = r"D:\Work\Project\P1414\GIS\HHSK\hoofdwater.shp"
+json_download_rijnland(url=agv_peil_path, output_file_path=output_file)

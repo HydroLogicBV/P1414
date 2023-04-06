@@ -79,10 +79,16 @@ class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v2.2_test.shp"  # Corrected from V7
+    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v3.shp"  # Corrected from V7
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
-    norm_profile_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"
+    norm_profile_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject_primair.shp"
+    # norm_profile_path = dict(
+    #     [
+    #         ("base", p_folder + r"\Uitgesneden watergangen\HDSR_v3.shp"),
+    #         ("sjoin", p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject_primair.shp"),
+    #     ]
+    # )
     peil_gebieden_path = p_folder + r"\HDSR\Legger\Peilgebieden\BR_Peilgebieden.shp"
     pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"
     sluice_path = p_folder + r"\HDSR\Legger\Sluizen_Lijnen\Sluizen_Lijnen.shp"
@@ -91,7 +97,7 @@ class RawData:
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
-    branch_selection = dict([("column", "CATEGORIEO"), ("value", 1)])
+    # branch_selection = dict([("column", "CATEGORIEO"), ("value", 1)])
     branch_index_mapping = dict(
         [
             ("bodembreedte", "IWS_W_BODB"),
@@ -146,7 +152,6 @@ class RawData:
     )
 
     ## normprofiles
-    np_selection = branch_selection
     np_index_mapping = dict(
         [
             ("bodembreedte", "IWS_W_BODB"),
