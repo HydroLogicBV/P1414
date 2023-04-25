@@ -5,7 +5,7 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydro_data import DHydroData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\Combined_test_v14_KW.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\Combined_test_v16_KW.gpkg"
 gpkgs_list = [
     r"D:\Work\Project\P1414\GIS\HYDAMO\HHSK.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\HDSR.gpkg",
@@ -14,11 +14,13 @@ gpkgs_list = [
     r"D:\Work\Project\P1414\GIS\HYDAMO\WAGV.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\ARKNZK.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\Rijntakken.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\RMM_delta_dicht.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\RMM_closed.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\noordzee_hoog_KW_open.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\markermeer.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\tunnels.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
 ]
-output_folder = folder + r"\Models\Combined\V14_KW"
+output_folder = folder + r"\Models\Combined\V16_HHR"
 
 config_dhydro = r"combined_KW_config"
 config_list = [
@@ -33,7 +35,7 @@ config_list = [
     r"noordzee_config",
     r"markermeer_config",
 ]
-snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 100, 100]
+snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 100, 100, 0, 0]
 
 defaults = r"defaults"
 
@@ -58,6 +60,7 @@ if build_database:
     dhd.clip_structures_by_branches()
     dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
     dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)
+    dhd.fixed_weirs_from_raw_data(config="noordzeekeringen_config", defaults=defaults)
     # dhd.dambreaks_from_config(config="dambreak_v0_config", defaults=defaults)
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
 
@@ -71,6 +74,7 @@ if load_gpkgs:
 
     dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
     dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)
+    dhd.fixed_weirs_from_raw_data(config="noordzeekeringen_config", defaults=defaults)
     # dhd.dambreaks_from_config(config="dambreak_v0_config", defaults=defaults)
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
 

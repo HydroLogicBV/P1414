@@ -5,15 +5,13 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydro_data import DHydroData
 
 folder = r"D:\Work\Project\P1414"
-# folder = r"D:\work\P1414_ROI"
-gpkg_file = folder + r"\GIS\HYDAMO\noordzee.gpkg"
-output_folder = folder + r"\Models\noordzee\V0"
+gpkg_file = folder + r"\GIS\HYDAMO\Ontbrekende_stuwen.gpkg"
 
-config = r"noordzee_config"
+
+config = r"ontbrekende_stuwen_config"
 defaults = r"defaults"
 
 build_database = True
-build_model = False
 
 
 if build_database:
@@ -23,10 +21,5 @@ if build_database:
     # 2. convert raw data to hydamo data
     dhd.hydamo_from_raw_data(defaults=defaults, config=config)
 
-    dhd.clip_structures_by_branches()
+    # 3. save data to gpkg
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
-
-if build_model:
-    dhd = DHydroData()
-    dhd.hydamo_from_gpkg(gpkg_file)
-    dhd.to_dhydro(config=config, output_folder=output_folder)

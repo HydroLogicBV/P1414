@@ -139,6 +139,7 @@ class RawData:
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
+            ("tunnel", False),
             ("typeruwheid", None),
         ]
     )

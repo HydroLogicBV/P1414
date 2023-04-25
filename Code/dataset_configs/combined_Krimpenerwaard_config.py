@@ -122,7 +122,7 @@ class Models:
                         name="LateralSource_1D_1",
                         branchId="rijn_wl_DuitseRijn",
                         chainage=30,
-                        discharge=3000,
+                        discharge=16000,
                     )
                 ]
                 extforcefilenew = ExtModel(boundary=__boundaries, lateral=__laterals)
@@ -154,7 +154,7 @@ class Models:
 
 class Dambreak:
     ## PATHS
-    dambreak_path = r"D:\Work\Project\P1414\GIS\Dijkdoorbraken\Dijkdoorbraak_Delfland.shp"
+    dambreak_path = r"D:\Work\Project\P1414\GIS\Dijkdoorbraken\Dijkdoorbraak_Krimpenerwaard.shp"
     dambreak_index_mapping = dict(
         [
             ("algorithm", None),

@@ -9,7 +9,7 @@ from shapely.geometry import LineString, Point
 
 
 def add_height_to_linestrings(
-    gdf: gpd.GeoDataFrame, ahn_path: str, buffer: float = None
+    gdf: gpd.GeoDataFrame, ahn_path: str, buffer: float = None, n_std: float = 2
 ) -> gpd.GeoDataFrame:
     ahn = rasterio.open(ahn_path)
     affine = ahn.transform
@@ -37,7 +37,7 @@ def add_height_to_linestrings(
 
             # h_mean = np.nanmean(np_line[:, 2])
             # np_line[np.isnan(np_line[:, 2]), 2] = h_mean
-
+            out_gdf.loc[name, "z_min"] = np.nanmin(z)
             out_gdf.loc[name, "geometry"] = LineString(np_line)
 
     else:
@@ -68,11 +68,13 @@ def add_height_to_linestrings(
             z = np.array([z for z in heights]).flatten()
             z_mean = np.nanmean(z)
             z_std = np.nanstd(z)
-            bool_arry = (z < (z_mean - 2 * z_std)) | (z > (z_mean + 2 * z_std))
-            z[bool_arry] = np.nan
-
-            # Fill all nan-values with the new median
-            z[np.isnan(z)] = np.nanmedian(z)
+            bool_arry = (z < (z_mean - n_std * z_std)) | (z > (z_mean + n_std * z_std))
+            if np.sum(bool_arry) == z.shape[0]:
+                z[:] = z_mean
+            else:
+                z[bool_arry] = np.nan
+                # Fill all nan-values with the new median
+                z[np.isnan(z)] = np.nanmedian(z)
 
             if np.isnan(z_mean):
                 out_gdf.drop(name, inplace=True)
@@ -91,61 +93,65 @@ def add_height_to_linestrings(
 
 
 if __name__ == "__main__":
-    ahn_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_merged.tif"
+    ahn_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.tif"
     in_out_dict = dict(
         [
             (
+                r"D:\Work\Project\P1414\GIS\Keringen\Noordzeekeringen.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\Noordzeekeringen.shp",
+            ),
+            (
                 r"D:\Work\Project\P1414\GIS\RWS\oeverconstructie_verticaal_clipped.shp",
                 r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\ARK.shp",
-            )
-            # (
-            #     "D:\Work\Project\P1414\GIS\HDSR\Legger\Waterkeringen_Lijn\Waterkeringen_Lijn_BR.shp",
-            #     "D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hdsr.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Zeewering landwaartse begrenzing.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_zeewering.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Regionale waterkering buitenkruinlijn.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_regionale_kering.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering polderkade middenkruinlijn.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_polderkade.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering landscheiding middenkruinlijn.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_landscheiding.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Delflandsedijk buitenkruinlijn.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_delflandsedijk.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHRijnland\Primaire_keringen\Primaire_kering.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_primaire_kering.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHRijnland\Regionale_keringen\Regionale_keringen.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_regional_kering.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Primaire_waterkering.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_primaire_kering.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Regionale_waterkering_1.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_regionale_kering.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Overige_waterkering_1.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_overige_kering.shp",
-            # ),
-            # (
-            #     r"D:\Work\Project\P1414\GIS\WAGV\Keringen\keringen.shp",
-            #     r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\wagv.shp",
-            # ),
+            ),
+            (
+                "D:\Work\Project\P1414\GIS\HDSR\Legger\Waterkeringen_Lijn\Waterkeringen_Lijn_BR.shp",
+                "D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hdsr.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Zeewering landwaartse begrenzing.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_zeewering.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Regionale waterkering buitenkruinlijn.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_regionale_kering.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering polderkade middenkruinlijn.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_polderkade.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Overige waterkering landscheiding middenkruinlijn.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_landscheiding.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHDelfland\Legger_Delfland_shp\Waterkeringen\Delflandsedijk buitenkruinlijn.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhd_delflandsedijk.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHRijnland\Primaire_keringen\Primaire_kering.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_primaire_kering.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHRijnland\Regionale_keringen\Regionale_keringen.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhr_regionale_kering.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Primaire_waterkering.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_primaire_kering.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Regionale_waterkering_1.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_regionale_kering.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\HHSK\Keringen\Overige_waterkering_1.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\hhsk_overige_kering.shp",
+            ),
+            (
+                r"D:\Work\Project\P1414\GIS\WAGV\Keringen\keringen.shp",
+                r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\wagv.shp",
+            ),
         ]
     )
 
@@ -153,5 +159,5 @@ if __name__ == "__main__":
         gdf = gpd.read_file(input_path).to_crs(crs="EPSG:28992").explode(ignore_index=True)
         print(np.sum(gdf.geometry.type == "MultiLineString"))
 
-        out_gdf = add_height_to_linestrings(gdf=gdf, ahn_path=ahn_path, buffer=11)
+        out_gdf = add_height_to_linestrings(gdf=gdf, ahn_path=ahn_path, buffer=11, n_std=1)
         out_gdf.to_file(output_path)

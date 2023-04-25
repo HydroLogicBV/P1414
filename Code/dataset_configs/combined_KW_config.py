@@ -1,5 +1,4 @@
-from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel, QHTable,
-                                        QuantityUnitPair)
+from hydrolib.core.io.bc.models import ForcingBase, ForcingModel, QHTable, QuantityUnitPair
 from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 
 
@@ -8,20 +7,22 @@ class Models:
         one_d_bool = True
         two_d_bool = True
         start_time = 20000101
-        stop_time = 86400
+        stop_time = 86400 * 7
 
         class one_d:
             max_dist_to_struct = 10
             max_snap_dist = 5
-            node_distance = 500
+            node_distance = 200
 
         class two_d:
             coupling_type = "1Dto2D"
-            dx = 500
-            dy = 500
-            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN4_WSS.TIF"
-            extent_path = "D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
-            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\peilen_jp_25m_full.tif"
+            dx = 200
+            dy = 200
+            elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.TIF"
+            extent_path = (
+                r"D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
+            )
+            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\wd_0_v4.tif"
             roughness_2d_raster_path = (
                 r"D:\Work\Project\P1414\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )
@@ -133,7 +134,7 @@ class Models:
                 cflmax = 0.7
 
             class output:
-                hisinterval = [0]
+                hisinterval = [300]
                 wrimap_waterlevel_s0 = False
                 wrimap_evaporation = False
                 wrimap_velocity_component_u0 = False

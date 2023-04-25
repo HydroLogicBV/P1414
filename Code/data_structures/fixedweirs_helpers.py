@@ -30,7 +30,10 @@ def create_dambreak_data(config: str, defaults: str, dm: DataModel):
 
 
 def create_fixed_weir_data(
-    config: str, defaults: str, dm: DataModel, min_length: float = None
+    config: str,
+    defaults: str,
+    dm: DataModel,
+    min_length: float = None,
 ) -> DataModel:
 
     defaults = importlib.import_module("dataset_configs." + defaults)
@@ -51,7 +54,12 @@ def create_fixed_weir_data(
             # fd_gdf = fd_gdf.loc[fd_gdf.geometry.length > min_length, :]
             fd_gdf = fd_gdf.drop(fd_gdf[fd_gdf.geometry.length < min_length].index)
 
-        dm.keringen = fd_gdf
+        if hasattr(fw_data_config, "dm_attribute"):
+            dm_attribute = getattr(fw_data_config, "dm_attribute")
+        else:
+            dm_attribute = "keringen"
+
+        setattr(dm, dm_attribute, fd_gdf)
 
     return dm
 

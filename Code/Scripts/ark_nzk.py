@@ -13,7 +13,7 @@ config = r"ark_nzk_config"
 defaults = r"defaults"
 
 build_database = True
-build_model = True
+build_model = False
 
 
 if build_database:

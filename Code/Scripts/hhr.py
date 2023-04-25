@@ -12,7 +12,7 @@ config = r"hhr_config"
 defaults = r"defaults"
 
 build_database = True
-build_model = True
+build_model = False
 
 
 if build_database:
@@ -21,7 +21,7 @@ if build_database:
 
     # 2. convert raw data to hydamo data
     dhd.hydamo_from_raw_data(defaults=defaults, config=config)
-    dhd.clip_structures_by_branches()
+    dhd.clip_structures_by_branches(buffer=5)
     dhd.fixed_weirs_from_raw_data(config=config, defaults=defaults)
 
     # 3. save data to gpkg

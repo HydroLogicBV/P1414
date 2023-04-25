@@ -13,7 +13,7 @@ from plotting import raster_plot_with_context
 
 # set paths
 # output_folder = r"D:\Work\Project\P1414\Models\HHR\HM\run_fw_model\dflowfm\output"
-output_folder = r"D:\Work\Project\P1414\Models\Combined\V14_HHD_v2\run_model\dflowfm\output"
+output_folder = r"D:\Work\Project\P1414\Models\Combined\V18_WBD_v3\run_model\dflowfm\output"
 input_file_path = output_folder + r"\DFM_map.nc"
 
 
@@ -54,6 +54,7 @@ for n in range(2):
     frames = []
     for ix in tqdm(range(5, 505, 25)):
         # for ix in tqdm(range(0, 72, 3)):
+        # for ix in tqdm(range(1, 13, 1)):
         output_png_file_path = output_fig_path + r"\{}.png".format(ix)
         output_tiff_file_path = output_fig_path + r"\{}.tiff".format(ix)
 

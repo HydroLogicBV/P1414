@@ -7,8 +7,7 @@ from pydantic import BaseModel, root_validator
 
 from data_structures import hydamo_data_model as hdm
 from data_structures.dhydamo_data_model_checks import validate_codes
-from data_structures.hydamo_globals import (HYDAMO_WEIR_TYPES,
-                                            ROUGHNESS_MAPPING_LIST)
+from data_structures.hydamo_globals import HYDAMO_WEIR_TYPES, ROUGHNESS_MAPPING_LIST
 
 
 class BrugSchema(hdm.BrugSchema):
@@ -73,6 +72,9 @@ class WaterloopSchema(hdm.WaterloopSchema):
     tunnel: Optional[Series[bool]] = pa.Field(nullable=True)
     typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)  # addition to confluence
 
+    class Config:
+        strict = "filter"
+
 
 class ROIDataModel(BaseModel):
     """
@@ -106,6 +108,8 @@ class ROIDataModel(BaseModel):
     keringen: Optional[Any]
     kunstwerkopening: Optional[DataFrame[KunstwerkopeningSchema]]
     normgeparamprofielwaarde: Optional[DataFrame[NormgeparamprofielwaardeSchema]]
+    overiglijnelement: Optional[Any]
+    peilgebieden: Optional[Any]
     pomp: Optional[DataFrame[PompSchema]]
     profielgroep: Optional[DataFrame[ProfielgroepSchema]]
     profiellijn: Optional[DataFrame[ProfiellijnSchema]]

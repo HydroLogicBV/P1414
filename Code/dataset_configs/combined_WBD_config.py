@@ -10,7 +10,7 @@ class Models:
         stop_time = 86400 * 7
 
         class one_d:
-            max_dist_to_struct = 10
+            max_dist_to_struct = 5
             max_snap_dist = 5
             node_distance = 500
 
@@ -18,13 +18,15 @@ class Models:
             coupling_type = "1Dto2D"
             dx = 500
             dy = 500
-            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN4_WSS.TIF"
-            extent_path = "D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
-            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\peilen_jp_25m_full.tif"
+            elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.TIF"
+            extent_path = (
+                r"D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
+            )
+            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\wd_0_v4.tif"
             roughness_2d_raster_path = (
                 r"D:\Work\Project\P1414\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )
-            two_d_buffer = 1000
+            two_d_buffer = 0
 
         class hydrolib_core_options:
             class external_forcing:
@@ -120,7 +122,7 @@ class Models:
                         name="LateralSource_1D_1",
                         branchId="rijn_wl_DuitseRijn",
                         chainage=30,
-                        discharge=18000,
+                        discharge=16000,
                     )
                 ]
                 extforcefilenew = ExtModel(boundary=__boundaries, lateral=__laterals)

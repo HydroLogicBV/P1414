@@ -1,4 +1,5 @@
-from hydrolib.core.io.bc.models import ForcingBase, ForcingModel, QHTable, QuantityUnitPair
+from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel, QHTable,
+                                        QuantityUnitPair)
 from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 
 
@@ -10,14 +11,14 @@ class Models:
         stop_time = 86400 * 7
 
         class one_d:
-            max_dist_to_struct = 10
+            max_dist_to_struct = 5
             max_snap_dist = 5
-            node_distance = 200
+            node_distance = 100
 
         class two_d:
             coupling_type = "1Dto2D"
-            dx = 200
-            dy = 200
+            dx = 100
+            dy = 100
             elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.TIF"
             extent_path = (
                 r"D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
@@ -122,7 +123,7 @@ class Models:
                         name="LateralSource_1D_1",
                         branchId="rijn_wl_DuitseRijn",
                         chainage=30,
-                        discharge=3000,
+                        discharge=16000,
                     )
                 ]
                 extforcefilenew = ExtModel(boundary=__boundaries, lateral=__laterals)
@@ -154,7 +155,7 @@ class Models:
 
 class Dambreak:
     ## PATHS
-    dambreak_path = r"D:\Work\Project\P1414\GIS\Dijkdoorbraken\Dijkdoorbraak_Delfland.shp"
+    dambreak_path = r"D:\Work\Project\P1414\GIS\Dijkdoorbraken\Dijkdoorbraken_v0_lijn.shp"
     dambreak_index_mapping = dict(
         [
             ("algorithm", None),

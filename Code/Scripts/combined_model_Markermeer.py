@@ -5,7 +5,7 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydro_data import DHydroData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\Combined_test_v16_HHD.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\Combined_test_v16_Markermeer.gpkg"
 gpkgs_list = [
     r"D:\Work\Project\P1414\GIS\HYDAMO\HHSK.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\HDSR.gpkg",
@@ -14,15 +14,15 @@ gpkgs_list = [
     r"D:\Work\Project\P1414\GIS\HYDAMO\WAGV.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\ARKNZK.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\Rijntakken.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\RMM_closed.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\noordzee_hoog.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\markermeer.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\RMM_open.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\noordzee.gpkg",
+    r"D:\Work\Project\P1414\GIS\HYDAMO\markermeer_hoog.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\tunnels.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
 ]
-output_folder = folder + r"\Models\Combined\V16_HHD"
+output_folder = folder + r"\Models\Combined\V16_Markermeer"
 
-config_dhydro = r"combined_HHD_config"
+config_dhydro = r"combined_Markermeer_config"
 config_list = [
     r"hhsk_config",
     r"hdsr_config",

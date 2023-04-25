@@ -61,7 +61,7 @@ class RawData:
     norm_profile_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as_primair.shp"
     peil_gebieden_path = p_folder + r"\HHRijnland\Legger\Peilvakken\gerealiseerde_peilvakken.shp"
     pump_path = p_folder + r"\HHRijnland\Niet legger\gemaal_peil.shp"
-    sluice_path = _path = dict(
+    sluice_path = dict(
         [
             ("base", p_folder + r"\HHRijnland\Legger\Sluis\sluis.shp"),
             ("concat", p_folder + r"\HHRijnland\Legger\Noodwaterkering\noodwaterkering.shp"),
@@ -78,6 +78,7 @@ class RawData:
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
+            ("tunnel", False),
             ("typeruwheid", "TYPERUWHEI"),
         ]
     )
@@ -141,9 +142,9 @@ class RawData:
     ## Peil gebied
     peil_index_mapping = dict(
         [
-            ("boven peil", "ZOMERPEIL"),
+            ("boven peil", ["ZOMERPEIL", "FLEXZOMERP", "FLEXZOME_1"]),
             ("geometry", "geometry"),
-            ("onder peil", "WINTERPEIL"),
+            ("onder peil", ["WINTERPEIL", "FLEXWINTER", "FLEXWINT_1"]),
             ("vast peil", "VASTPEIL"),
         ]
     )

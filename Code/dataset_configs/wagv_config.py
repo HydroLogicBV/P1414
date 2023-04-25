@@ -83,12 +83,16 @@ class RawData:
     sluice_path = p_folder + r"\WAGV\sluis\sluis.shp"
     weir_path = p_folder + r"\WAGV\Niet legger\stuw_v13_clipped_with_do.shp"
 
+    class Peil:
+        default_peil = -0.4
+
     ## Branches
     branch_index_mapping = dict(
         [
             ("code", "code"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
+            ("tunnel", False),
             ("typeruwheid", "ruwheidsty"),  # changed in hydrovak_combined
         ]
     )
@@ -213,7 +217,7 @@ class RawData:
             ("hoogstedoorstroombreedte", None),
             ("hoogstedoorstroomhoogte", "hoogstedo0"),
             ("laagstedoorstroombreedte", "laagstedoo"),
-            ("laagstedoorstroomhoogte", "laagstedo0"),
+            ("laagstedoorstroomhoogte", "hoogstedo0"),
             ("overlaatonderlaat", None),
             ("soortregelbaarheid", "soortregel"),
             ("soortstuw", "soortstuwi"),
