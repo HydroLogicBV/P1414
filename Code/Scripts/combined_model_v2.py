@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append("C:\Werk\Projecten\P1414_ROI\Github_P1414\P1414\Code")
 
 from data_structures.dhydro_data import DHydroData
 
@@ -38,7 +38,7 @@ snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 100, 100]
 defaults = r"defaults"
 
 build_database = False
-load_gpkgs = True
+load_gpkgs = False
 build_model = True
 
 

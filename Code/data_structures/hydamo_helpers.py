@@ -103,6 +103,7 @@ def load_geo_file(
         raise ValueError("filetype not implemented")
 
     gdf.set_geometry(col="geometry", inplace=True)
+    gdf = gdf.loc[~gdf["geometry"].isna(), :]
 
     # check for multi-element geometries
     if np.sum(gdf.geometry.type.isin(["MultiPoint", "MultiLine", "MultiLineString"])) > 0:
