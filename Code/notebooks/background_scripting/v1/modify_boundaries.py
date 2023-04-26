@@ -172,15 +172,15 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
         self.model_duration = self.tStop - self.tStart
 
         self.settings = {}
-        self.settings['Rhine basic discharge'] = 18000
-        self.settings['Rhine variable discharge'] = 0
+        self.settings['Rhine basic discharge'] = 5000
+        self.settings['Rhine peak discharge'] = 15000
         self.settings['Rhine event start'] = 0
         self.settings['Rhine event duration'] = 86400
 
         if os.path.exists(self.rhine_bc_loc):
             pass
         else:
-            self.settings['Rhine basic discharge'] = self.modify_rhine_discharge_to_timeseries()
+            self.modify_rhine_discharge_to_timeseries()
         
         self.update()
 
@@ -233,7 +233,6 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
         lines[index_discharge + start_search_index] = f"{key}{value}\n"
         self.write_lines_to_file(self.bnd_folder, lines)
 
-        return float(discharge_default)
 
     def write_discharge_rhine(self):
         header = [
@@ -269,7 +268,7 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
         for t in range(self.tStart, self.tStop + 300, 300):
             self.T.append(t)
             if t < self.settings['Rhine event start'] + self.settings['Rhine event duration'] and t > self.settings['Rhine event start']:
-                Q_calc =  self.settings['Rhine basic discharge'] + self.settings['Rhine variable discharge'] * (1 + np.cos(np.pi + 2*np.pi*((t-self.settings['Rhine event start'])/self.settings['Rhine event duration']))) * 1/2
+                Q_calc =  self.settings['Rhine basic discharge'] + (self.settings['Rhine peak discharge']-self.settings['Rhine basic discharge']) * (1 + np.cos(np.pi + 2*np.pi*((t-self.settings['Rhine event start'])/self.settings['Rhine event duration']))) * 1/2
             else:
                 Q_calc = self.settings['Rhine basic discharge']
             self.Q.append(Q_calc)

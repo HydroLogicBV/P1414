@@ -192,7 +192,7 @@ class DambreakWidget(WidgetStyling):
         self.map_to_rd = pyproj.Transformer.from_crs(crs_map, crs_rd)
         self.rd_to_map = pyproj.Transformer.from_crs(crs_rd, crs_map)
         
-        self.path_keringen = r"C:\Werk\Projecten\P1414_ROI\Github_P1414\P1414\Code\notebooks\data\Combined_test_v14_WBD.gpkg"
+        self.path_keringen = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\Combined_test_v14_WBD.gpkg')
         self.get_keringen()
         self.dambreak_layer = None
 
@@ -316,3 +316,19 @@ class DambreakWidget(WidgetStyling):
         y_end = y_point + dy/2* len_perpendicular
         return [[x_start, y_start], [x_end, y_end]]
     
+
+
+# 1.3
+# from notebooks.background_scripting.v1.modify_dambreak import DambreakWidget
+
+# dambreak_input = DambreakWidget()   
+# dambreak_input.draw_map()
+
+# 1.4
+# from notebooks.background_scripting.v1.modify_dambreak import ModifyDambreakSettingsDHYDRO
+
+# dambreak_settings_dhydro = ModifyDambreakSettingsDHYDRO(model_path)
+# if 'dambreak_input' in globals():
+#     if hasattr(dambreak_input, 'dambreak'):
+#         dambreak_settings_dhydro.modify_dikebreak_location(dambreak_input.dambreak, dambreak_input.keringen)
+# dambreak_settings_dhydro.display_widgets()

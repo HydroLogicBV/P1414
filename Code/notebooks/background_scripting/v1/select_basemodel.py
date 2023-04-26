@@ -15,8 +15,9 @@ class ModelSettings(WidgetStyling):
         self.settings['folder'] = r"D:\work\Project\P1414\Models_SAS\Model_database"
         self.settings['model_options'] = os.listdir(self.settings['folder'])
         self.settings['model'] = self.settings['model_options'][0]
+        self.settings['scenario_name'] = 'run'
     
-        self.settings_to_print = ['folder', 'model']
+        self.settings_to_print = ['folder', 'model', 'scenario_name']
       
         self.folder_widget = ipy.Text(
             value= self.settings['folder'],
@@ -32,10 +33,17 @@ class ModelSettings(WidgetStyling):
             disabled=False
         )
 
+        self.scenario_name_widget = ipy.Text(
+            value=self.settings['scenario_name'],
+            placeholder=self.settings['scenario_name'],
+            description='Scenario name:',
+            disabled=False   
+        )
+
         self.set_default_layout_and_styling()
         
 
-        self.widgets_to_display = [self.folder_widget, self.select_model_widget]
+        self.widgets_to_display = [self.folder_widget, self.select_model_widget, self.scenario_name_widget]
         for widget in self.widgets_to_display:
             widget.layout = self.item_layout
             widget.style = self.item_style
@@ -44,6 +52,7 @@ class ModelSettings(WidgetStyling):
     def update_settings_dict(self, b):
         self.settings['folder'] = self.folder_widget.value
         self.settings['model'] = self.select_model_widget.value
+        self.settings['scenario_name'] = self.scenario_name_widget.value
 
         clear_output(wait=True)
         self.display_widgets()

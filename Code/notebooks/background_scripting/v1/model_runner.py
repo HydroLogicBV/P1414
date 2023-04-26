@@ -74,6 +74,9 @@ class ModelRunner(WidgetStyling):
                 self.full_logs.append(b)
                 new_logging = ""
                 for line in self.full_logs[-nr_log_lines:]:
+                    if "0 nr of dambreak links" in line:
+                        p.kill()
+                        raise Exception("Dambreak is invalid, retry setting a dambreak")
                     new_logging += f"<p>{line}</p>"
                     self.read_model_progress()
                 logging.value = new_logging

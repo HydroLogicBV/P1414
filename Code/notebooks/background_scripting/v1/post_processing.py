@@ -252,11 +252,16 @@ class BreachPlotter():
     def plot_output(self):
         nc_file = nc.Dataset(self.settings['his_path'])
         t = nc_file.variables['time'][:]
-
+        
         fig, axes = plt.subplots(
             figsize = (12, 5 + 4 * len(self.settings['plot_variables'])),
             nrows = len(self.settings['plot_variables']),
             sharex = True)
+
+        if len(self.settings['plot_variables']) == 1:
+            axes = [axes]
+        elif len(self.settings['plot_variables']) == 0:
+            return 0
 
         for i, var in enumerate(self.settings['plot_variables']):
             data = nc_file.variables[var][:]

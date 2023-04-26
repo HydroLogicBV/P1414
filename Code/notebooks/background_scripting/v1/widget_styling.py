@@ -16,7 +16,7 @@ class WidgetStyling():
             )
 
         self.item_style = {
-            'description_width': '30%',
+            'description_width': '40%',
             }
 
         self.button_style = {

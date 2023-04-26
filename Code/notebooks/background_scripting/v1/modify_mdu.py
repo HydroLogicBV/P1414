@@ -4,6 +4,19 @@ import ipywidgets as ipy
 from IPython.display import display, clear_output
 import json
 from datetime import datetime
+import shutil
+
+def copy_model(path_model, scenario_name):
+    now = datetime.now()
+    formatted_datetime = now.strftime("%Y-%m-%dT%H-%M-%S")
+      
+    new_name = os.path.basename(path_model) + f"_{formatted_datetime}_{scenario_name}"
+    model_run_path =  os.path.join(os.path.dirname(os.path.dirname(path_model)), 'Model_runs')
+    if os.path.exists(model_run_path) == False:
+        os.mkdir(model_run_path)
+    new_path =os.path.join(model_run_path, new_name)
+    destination = shutil.copytree(path_model, new_path, copy_function = shutil.copy) 
+    return new_path
 
 class ModifyMDU(WidgetStyling):
     def __init__(self, model_folder):
@@ -16,18 +29,25 @@ class ModifyMDU(WidgetStyling):
         self.modify_parameter_mdu(parameter = "statsInterval", new_value = 1) # always do this
 
         self.settings_to_modify = ['tStart', 'tStop', 'mapInterval']
+        self.settings_names = {
+            'tStart': 'Model start time (tStart in hours)',
+            'tStop': "Model end time (tStop in hours)", 
+            'mapInterval': "Interval to write map file (mapInterval in minutes)"
+            }
+        self.settings_in_hours = ['tStart', 'tStop']
+        self.settings_in_minutes = ['mapInterval']
         self.settings = {}
         self.settings['refDate'] = datetime.strptime(self.read_parameter_mdu('refDate'), '%Y%m%d')
         
         self.set_default_layout_and_styling()
 
-
         self.widgets = {}
         for setting in self.settings_to_modify:
             self.settings[setting] =  float(self.read_parameter_mdu(setting))
-            self.widgets[setting] = ipy.FloatText(
-                value = self.settings[setting],
-                description=f'{setting}:',
+            val = self.convert_to_sas(setting, self.settings[setting])
+            self.widgets[setting] = ipy.IntText(
+                value = val,
+                description=f'{self.settings_names[setting]}:',
                 disabled=False
                 )
             
@@ -44,7 +64,21 @@ class ModifyMDU(WidgetStyling):
             )
 
         self.widgets_to_display = [self.widgets[setting] for setting in self.widgets.keys()]
-        
+    
+    def convert_to_sas(self, key, value):
+        if key in self.settings_in_hours:
+            return value / 60 / 60
+        if key in self.settings_in_minutes:
+            return value / 60
+        return value
+    
+    def convert_to_mdu(self, key, value):
+        if key in self.settings_in_hours:
+            return value * 60 * 60
+        if key in self.settings_in_minutes:
+            return value * 60
+        return value
+
     def read_run_bat(self):
         with open(self.run_bat_file, 'r') as f:
             lines = f.readlines()
@@ -62,7 +96,6 @@ class ModifyMDU(WidgetStyling):
         with open(self.run_bat_file, 'w') as f:
             for line in lines:
                 f.write(line)
-
 
     def search_string_in_file(self, string, lines):
         line_numbers, strings = [], []
@@ -111,9 +144,9 @@ class ModifyMDU(WidgetStyling):
     
     def update_settings_widget(self, b):
         for setting in self.settings_to_modify:
-            widget_value = self.widgets[setting].value
-            self.settings[setting] = widget_value
-            self.modify_parameter_mdu(parameter = setting, new_value = widget_value)
+            widget_value = self.widgets[setting].value 
+            self.settings[setting] = self.convert_to_mdu(setting, widget_value)
+            self.modify_parameter_mdu(parameter = setting, new_value = self.settings[setting])
 
         self.settings['DHYDRO location'] = self.widgets['DHYDRO location'].value
         self.modify_run_bat()    
@@ -123,4 +156,7 @@ class ModifyMDU(WidgetStyling):
         self.display_widgets()
         display("MDU settings are:")
         print_settings_dict = {k: self.settings[k] for k in self.widgets.keys()}
+        for key in print_settings_dict.keys():
+            if key in self.settings_to_modify:
+                print_settings_dict[key] = self.convert_to_sas(key, self.settings[key])
         print(json.dumps(print_settings_dict, indent=4))
