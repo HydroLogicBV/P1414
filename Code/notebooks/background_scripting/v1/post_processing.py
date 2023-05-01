@@ -294,14 +294,19 @@ class MapPlotter():
         """
         # load mesh coordinates and data from netCDF 
         map_data = load_map_data(self.settings['map_path'], self.settings['plot_variable'])
+        map_data[map_data < 0.01] = np.nan
         out = ipy.HTML("<p>Generating plot... (first plot can take a while)</p>")
         display(out)
 
         if self.settings['aggregation_type'] == 'minimum':
-            data = np.min(map_data, axis = 0)
+            data = np.nanmin(map_data, axis = 0)
+            start_depth = map_data[1,:]
+            data[np.where(start_depth > 0.01)] = np.nan
             title = f"{self.settings['aggregation_type']} {self.settings['plot_variable']}"
         elif self.settings['aggregation_type'] == 'maximum':
-            data = np.max(map_data, axis = 0)
+            data = np.nanmax(map_data, axis = 0)
+            start_depth = map_data[1,:]
+            data[np.where(start_depth > 0.01)] = np.nan
             title = f"{self.settings['aggregation_type']} {self.settings['plot_variable']}"
         elif self.settings['aggregation_type'] == 'timestep':
             t_index = (np.abs(self.settings['timesteps_in_hours'] - self.settings['timestep'])).argmin()
@@ -333,5 +338,3 @@ class MapPlotter():
             )
         plt.savefig(os.path.join(self.settings['output_file_path'], f"{self.settings['plot_variable']}.png"))
         out.value = ""
-
-  

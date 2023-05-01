@@ -13,10 +13,14 @@ class ModelSettings(WidgetStyling):
         # initiate default values for settings
         self.settings = {}
         self.settings['folder'] = r"D:\work\Project\P1414\Models_SAS\Model_database"
-        self.settings['model_options'] = os.listdir(self.settings['folder'])
-        self.settings['model'] = self.settings['model_options'][0]
+        try: 
+            self.settings['model_options'] = os.listdir(self.settings['folder'])
+            self.settings['model'] = self.settings['model_options'][0]
+        except:
+            self.settings['model_options'] = ['The folder you selected is not valid!']
+            self.settings['model'] = self.settings['model_options'][0]
+
         self.settings['scenario_name'] = 'run'
-    
         self.settings_to_print = ['folder', 'model', 'scenario_name']
       
         self.folder_widget = ipy.Text(
@@ -50,9 +54,22 @@ class ModelSettings(WidgetStyling):
 
             
     def update_settings_dict(self, b):
-        self.settings['folder'] = self.folder_widget.value
-        self.settings['model'] = self.select_model_widget.value
-        self.settings['scenario_name'] = self.scenario_name_widget.value
+        if self.settings['folder'] != self.folder_widget.value.strip(' '):
+            self.settings['folder'] = self.folder_widget.value
+
+            try:
+                self.settings['model_options'] = os.listdir(self.settings['folder'])
+                self.select_model_widget.options = self.settings['model_options']
+                self.settings['model'] = self.settings['model_options'][0]
+                self.select_model_widget.value = self.settings['model']
+            except:
+                self.settings['model_options'] =  ['The folder you selected is not valid!']
+                self.select_model_widget.options = self.settings['model_options']
+                self.settings['model'] = self.settings['model_options'][0]
+                self.select_model_widget.value = self.settings['model']
+        else:
+            self.settings['model'] = self.select_model_widget.value
+            self.settings['scenario_name'] = self.scenario_name_widget.value
 
         clear_output(wait=True)
         self.display_widgets()
