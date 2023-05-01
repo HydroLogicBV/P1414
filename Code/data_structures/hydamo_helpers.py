@@ -11,10 +11,12 @@ from shapely import affinity
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 
-from data_structures.hydamo_globals import (BRANCH_FRICTION_FUNCTION,
-                                            MANAGEMENT_DEVICE_TYPES,
-                                            ROUGHNESS_MAPPING_LIST,
-                                            WEIR_MAPPING)
+from data_structures.hydamo_globals import (
+    BRANCH_FRICTION_FUNCTION,
+    MANAGEMENT_DEVICE_TYPES,
+    ROUGHNESS_MAPPING_LIST,
+    WEIR_MAPPING,
+)
 from data_structures.roi_data_model import ROIDataModel as Datamodel
 
 warnings.filterwarnings(action="ignore", message="Mean of empty slice")
@@ -162,14 +164,14 @@ def map_columns(
                     try:
                         _gdf[key] = (
                             gdf[value]
-                            .replace(to_replace=[None, "n.v.t."], value=np.nan)
+                            .replace(to_replace=[None, "n.v.t.", -999, 0], value=np.nan)
                             .astype(float)
                             .apply(np.nanmean, axis=1)
                         )
                     except:
                         _gdf[key] = (
                             gdf[value]
-                            .replace(to_replace=[None, "n.v.t."], value=np.nan)
+                            .replace(to_replace=[None, "n.v.t.", -999, 0], value=np.nan)
                             .astype(str)
                             .bfill(axis=1)
                             .iloc[:, 0]  # Select the non-nan values
@@ -339,12 +341,17 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             gdf=culvert_gdf["breedteopening"]
         )
         culvert_gdf["hoogteopening"] = check_column_is_numerical(gdf=culvert_gdf["hoogteopening"])
+        culvert_gdf["lengte"] = check_column_is_numerical(gdf=culvert_gdf["lengte"])
         culvert_gdf["breedteopening"] = culvert_gdf["breedteopening"].replace(0, np.nan)
         culvert_gdf["hoogteopening"] = culvert_gdf["hoogteopening"].replace(0, np.nan)
 
         _culvert_gdf = copy(culvert_gdf)
 
         for ix, culvert in culvert_gdf.iterrows():
+            if (not check_is_not_na_number(culvert["lengte"])) or (culvert["lengte"] == 1):
+                if isinstance(culvert["geometry"], LineString):
+                    _culvert_gdf.loc[ix, "lengte"] = culvert["geometry"].length
+
             if np.isnan(culvert["breedteopening"]) and np.isnan(culvert["hoogteopening"]):
                 _culvert_gdf.drop(index=ix, inplace=True)
                 continue
@@ -1246,9 +1253,10 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             normgeparamprofielwaarde = None
 
         return (
-            branches_out_gdf[["code", "globalid", "geometry", "typeruwheid"]].reset_index(
-                drop=True
-            ),
+            # branches_out_gdf[["code", "globalid", "geometry", "typeruwheid"]].reset_index(
+            #     drop=True
+            # ),
+            branches_out_gdf.reset_index(drop=True),
             hydroobject_normgp,
             normgeparamprofielwaarde,
         )
@@ -1466,7 +1474,14 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
 
         return geom_gdf, meta_gdf, rough_gdf
 
-    def create_weir_data(weir_gdf: gpd.GeoDataFrame) -> List[gpd.GeoDataFrame]:
+    def create_weir_data(
+        branches_gdf: gpd.GeoDataFrame, weir_gdf: gpd.GeoDataFrame
+    ) -> List[gpd.GeoDataFrame]:
+        if branches_gdf is None:
+            branch_geom = None
+        else:
+            branch_geom = branches_gdf["geometry"]
+
         weir_list = []
         opening_list = []
         management_device_list = []
@@ -1520,8 +1535,16 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                 h_hoog = weir["hoogstedoorstroomhoogte"]
 
             geom = weir["geometry"]
-            if not isinstance(geom, Point):
-                geom = geom.centroid
+            if (not isinstance(geom, Point)) and (branch_geom is not None):
+                centroid = geom.centroid
+                bool_intersect = branch_geom.intersects(geom)
+                if np.sum(bool_intersect.values[:]) > 0:
+                    branch = branches_gdf.loc[bool_intersect, "geometry"].iloc[0]
+                    branch_loc = branch.project(centroid, normalized=True)
+                    branch_loc = np.amax([0.01, np.amin([0.99, branch_loc])])
+                    geom = branch.interpolate(branch_loc, normalized=True)
+                else:
+                    geom = centroid
 
             if isinstance(weir["soortstuw"], str):
                 try:
@@ -1533,6 +1556,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
 
             else:
                 soort_stuw = weir["soortstuw"]
+
             _weir = dict(
                 [
                     ("afvoercoefficient", weir["afvoercoefficient_stuw"]),
@@ -1596,7 +1620,6 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
                 ]
             )
             management_device_list.append(management_device)
-
         _weir_gdf = gpd.GeoDataFrame(weir_list, geometry="geometry", crs=28992)
         opening_gdf = gpd.GeoDataFrame(opening_list, geometry="geometry", crs=28992)
         management_device_gdf = gpd.GeoDataFrame(
@@ -1827,7 +1850,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             )
             np_gdf = fill_branch_norm_parm_profiles_data(
                 defaults=defaults.Peil, in_branches_gdf=np_gdf, data_config=data_config
-            )            
+            )
 
             (
                 profielgroep,
@@ -1909,6 +1932,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             index_mapping=data_config.peil_index_mapping,
         )
         # replace waterlopen with extra info
+        ddm.peilgebieden = peil_gdf
         ddm.waterloop = add_peil_to_branch(branches_gdf=ddm.waterloop, peil_gdf=peil_gdf)
 
     if (
@@ -1960,7 +1984,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             index_mapping=data_config.sluice_index_mapping,
         )
 
-        stuw, kunstwerkopening, regelmiddel = create_weir_data(weir_gdf=sluice_gdf)
+        stuw, kunstwerkopening, regelmiddel = create_weir_data(
+            branches_gdf=ddm.waterloop, weir_gdf=sluice_gdf
+        )
         ddm = merge_to_ddm(ddm=ddm, feature="stuw", feature_gdf=stuw)
         ddm = merge_to_ddm(ddm=ddm, feature="kunstwerkopening", feature_gdf=kunstwerkopening)
         ddm = merge_to_ddm(ddm=ddm, feature="regelmiddel", feature_gdf=regelmiddel)
@@ -1974,8 +2000,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             gdf=weir_gdf,
             index_mapping=data_config.weir_index_mapping,
         )
-
-        stuw, kunstwerkopening, regelmiddel = create_weir_data(weir_gdf=weir_gdf)
+        stuw, kunstwerkopening, regelmiddel = create_weir_data(
+            branches_gdf=ddm.waterloop, weir_gdf=weir_gdf
+        )
         ddm = merge_to_ddm(ddm=ddm, feature="stuw", feature_gdf=stuw)
         ddm = merge_to_ddm(ddm=ddm, feature="kunstwerkopening", feature_gdf=kunstwerkopening)
         ddm = merge_to_ddm(ddm=ddm, feature="regelmiddel", feature_gdf=regelmiddel)

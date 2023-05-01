@@ -5,14 +5,14 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydro_data import DHydroData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\RMM.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\RMM_open.gpkg"
 output_folder = folder + r"\Models\RMM\V0"
 
-config = r"rijnmaasmonding_config"
+config = r"rijnmaasmonding_open_config"
 defaults = r"defaults"
 
 build_database = True
-build_model = True
+build_model = False
 
 if build_database:
     # 1. initialize an instance of DHydamoData

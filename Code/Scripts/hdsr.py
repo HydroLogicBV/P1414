@@ -10,8 +10,8 @@ output_folder = folder + r"\Models\HDSR\V00"
 config = r"hdsr_config"
 defaults = r"defaults"
 
-build_database = False
-build_model = True
+build_database = True
+build_model = False
 
 
 if build_database:

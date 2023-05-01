@@ -24,7 +24,7 @@ class RawData:
     branches_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Branches.shp"
     river_profile_path = p_folder + r"\Rijn Maasmonding\without_lek\ZW_cross.csv"
     river_roughness_path = p_folder + r"\Rijn Maasmonding\without_lek\roughness.csv"
-    weir_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Weirs_edited.shp"
+    weir_path = p_folder + r"\Rijn Maasmonding\without_lek\RMM_Weirs_closed_HIJ.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
@@ -37,6 +37,7 @@ class RawData:
             ("code", "Name"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
+            ("tunnel", False),
             ("typeruwheid", None),
         ]
     )

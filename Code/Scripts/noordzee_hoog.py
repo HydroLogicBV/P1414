@@ -7,6 +7,7 @@ from data_structures.dhydro_data import DHydroData
 folder = r"D:\Work\Project\P1414"
 # folder = r"D:\work\P1414_ROI"
 gpkg_file = folder + r"\GIS\HYDAMO\noordzee_hoog.gpkg"
+gpkg_file_2 = folder + r"\GIS\HYDAMO\noordzee_hoog_KW_open.gpkg"
 output_folder = folder + r"\Models\noordzee\V0"
 
 config = r"noordzee_hoog_config"
@@ -25,6 +26,12 @@ if build_database:
 
     dhd.clip_structures_by_branches()
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
+
+    del dhd.ddm.stuw, dhd.ddm.kunstwerkopening, dhd.ddm.regelmiddel
+    dhd.features.remove("stuw")
+    dhd.features.remove("kunstwerkopening")
+    dhd.features.remove("regelmiddel")
+    dhd.hydamo_to_gpkg(output_gpkg=gpkg_file_2)
 
 if build_model:
     dhd = DHydroData()

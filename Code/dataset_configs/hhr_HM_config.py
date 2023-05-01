@@ -15,7 +15,7 @@ class Models:
             dx = 50
             dy = 50
             # elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN4_WSS.TIF"
+            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.TIF"
             initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\peilen_jp_25m_full.tif"
             roughness_2d_raster_path = (
                 r"D:\Work\Project\P1414\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
@@ -93,6 +93,7 @@ class RawData:
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
+            ("tunnel", False),
             ("typeruwheid", "TYPERUWHEI"),
         ]
     )

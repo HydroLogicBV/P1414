@@ -5,8 +5,10 @@ import pandas as pd
 from geo_tools.clip_tools import _clip_structures_by_branches
 from geo_tools.merge_networks import merge_networks
 
-from data_structures.fixedweirs_helpers import create_dambreak_data, create_fixed_weir_data
-from data_structures.hydamo_helpers import check_and_fix_duplicate_code, convert_to_dhydamo_data
+from data_structures.fixedweirs_helpers import (create_dambreak_data,
+                                                create_fixed_weir_data)
+from data_structures.hydamo_helpers import (check_and_fix_duplicate_code,
+                                            convert_to_dhydamo_data)
 from data_structures.roi_data_model import ROIDataModel as DataModel
 from data_structures.to_dhydro_helpers import to_dhydro, write_dimr
 
@@ -29,7 +31,7 @@ class DHydroData:
     def __init__(self):
         pass
 
-    def clip_structures_by_branches(self, buffer: float = 2, min_overlap: float = 0.5) -> None:
+    def clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0.5) -> None:
         """
         Class method to drop structures from the data that are farther from a branch than "buffer"
         Structures that are linestring are required to overlap with a branch for at least "min_overlap"

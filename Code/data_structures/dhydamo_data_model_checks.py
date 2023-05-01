@@ -3,7 +3,7 @@ import uuid
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, MultiPoint, Point
+from shapely.geometry import LineString, Point
 
 
 def geometry_check(geometry: gpd.GeoSeries) -> bool:
@@ -63,13 +63,13 @@ def none_geometry_check(geometry: gpd.GeoSeries) -> bool:
         return False
 
 
-def validate_codes(values: dict) -> dict:
-    struct_list = ["brug", "duiker", "gemaal", "stuw"]
+def validate_codes(values: dict, struct_list: list = ["brug", "duiker", "gemaal", "stuw"]) -> dict:
+
     codes = None
     # check if field is assigned and if so add code column to list of codes
     for ix, struct in enumerate(struct_list):
         if values.get(struct) is not None:
-            if ix == 0:
+            if codes is None:
                 codes = values.get(struct)["code"]
             else:
                 codes = pd.concat([codes, values.get(struct)["code"]], ignore_index=True)

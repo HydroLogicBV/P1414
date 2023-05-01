@@ -11,7 +11,7 @@ class Models:
             node_distance = 50
 
         class two_d:
-            coupling_type = "1Dto2D"
+            coupling_type = None
             dx = 500
             dy = 500
             elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
@@ -23,9 +23,8 @@ class RawData:
     ## PATHS
     p_folder = r"D:\Work\Project\P1414\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
-    branches_path = p_folder + r"\Wegen\tunnel.shp"
-    culvert_path = p_folder + r"\Wegen\tunnel.shp"
-    norm_profile_path = p_folder + r"\Wegen\tunnel.shp"
+    branches_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
+    norm_profile_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
 
     class Peil:
         default_peil = -9.75
@@ -40,25 +39,6 @@ class RawData:
             ("globalid", "globalid"),
             ("tunnel", True),
             ("typeruwheid", None),
-        ]
-    )
-
-    culvert_index_mapping = dict(
-        [
-            ("breedteopening", "width"),
-            ("code", "lokaalid"),
-            ("geometry", "geometry"),
-            ("gesloten", None),
-            ("globalid", "globalid"),
-            ("hoogtebinnenonderkantbene", "z_min"),
-            ("hoogtebinnenonderkantbov", "z_min"),
-            ("hoogteopening", "height"),
-            ("intreeverlies", None),
-            ("lengte", None),
-            ("typeruwheid", None),
-            ("ruwheid", None),
-            ("uittreeverlies", None),
-            ("vormkoker", None),
         ]
     )
 

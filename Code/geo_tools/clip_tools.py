@@ -21,6 +21,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             (feature == "waterloop")
             or (feature == "profielpunt")
             or (feature == "keringen")
+            or (feature == "peilgebieden")
             # or (feature == "rivier_profielen_data")
             # or (feature == "rivier_profielen_ruwheid")
         ):

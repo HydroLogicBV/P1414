@@ -49,7 +49,7 @@ def add_tunnel_dims(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 if __name__ == "__main__":
-    ahn_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_merged.tif"
+    ahn_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.tif"
     brug_output_path = r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\brug.shp"
     input_path = r"D:\Work\Project\P1414\GIS\Wegen\Top10NLwegen_en_spoorwegen_clipped.shp"
     output_path = (
@@ -62,7 +62,9 @@ if __name__ == "__main__":
     wl_gdf = gpd.read_file(
         "D:\Work\Project\P1414\GIS\HYDAMO\Combined_test_v14_WBD.gpkg", layer="waterloop"
     ).to_crs(crs="EPSG:28992")
-    kering_gdf = gpd.read_file("D:\Work\Project\P1414\GIS\HYDAMO\Combined_keringen.gpkg")
+    wl_gdf = wl_gdf.loc[~wl_gdf["tunnel"], :]
+    kering_gdf = gpd.read_file(r"D:\Work\Project\P1414\GIS\HYDAMO\Combined_keringen.gpkg")
+    tunnel_gdf = gpd.read_file(r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\tunnel.shp")
 
     rd_gdf["fysiekvoor"] = rd_gdf["fysiekvoor"].fillna("")
     brug_bool = rd_gdf["fysiekvoor"].str.contains("brug")
@@ -107,7 +109,7 @@ if __name__ == "__main__":
 
     rd_out_gdf.to_file(r"D:\Work\Project\P1414\GIS\Wegen\underpass_buffers.shp")
 
-    blen = np.sqrt(2 * 100**2) + 1
+    blen = np.sqrt(2 * 500**2) + 1
     interp_range = 0.1
     in_gdf = copy(brug_gdf)
     u_list = []
@@ -165,6 +167,10 @@ if __name__ == "__main__":
 
     kering_gdf["geometry"] = kering_gdf["geometry"].buffer(2.5)
     u_gdf = u_gdf.overlay(kering_gdf, how="difference").explode()
+
+    tunnel_gdf["geometry"] = tunnel_gdf["geometry"].buffer(5)
+    u_gdf = u_gdf.overlay(tunnel_gdf, how="difference").explode()
+
     u_gdf.to_file(r"D:\Work\Project\P1414\GIS\Wegen\Underpasses_overlayed.shp")
     out_u_gdf = copy(u_gdf)
     for name, upass in u_gdf.iterrows():
@@ -175,4 +181,5 @@ if __name__ == "__main__":
 
     out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=11)
     out_u_gdf = add_tunnel_dims(gdf=out_u_gdf)
-    out_u_gdf.to_file(r"D:\Work\Project\P1414\GIS\Wegen\Underpasses_filtered.shp")
+    out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=10)
+    out_u_gdf.to_file(r"D:\Work\Project\P1414\GIS\Wegen\Underpasses_filtered_500m.shp")

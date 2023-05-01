@@ -1,4 +1,5 @@
-from hydrolib.core.io.bc.models import ForcingBase, ForcingModel, QuantityUnitPair
+from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel,
+                                        QuantityUnitPair)
 from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 
 
@@ -92,7 +93,12 @@ class RawData:
     peil_gebieden_path = p_folder + r"\HDSR\Legger\Peilgebieden\BR_Peilgebieden.shp"
     pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"
     sluice_path = p_folder + r"\HDSR\Legger\Sluizen_Lijnen\Sluizen_Lijnen.shp"
-    weir_path = p_folder + r"\HDSR\Legger\Stuwen\BR_Stuwen.shp"
+    weir_path = dict(
+        [
+            ("base", p_folder + r"\HDSR\Legger\Stuwen\BR_Stuwen.shp"),
+            ("concat", p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_Kerend.shp"),
+        ]
+    )
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
@@ -110,6 +116,7 @@ class RawData:
             ("hoogte insteek rechterzijde", "IWS_W_IN_1"),
             ("taludhelling linkerzijde", "IWS_W_TALU"),
             ("taludhelling rechterzijde", "IWS_W_TA_1"),
+            ("tunnel", False),
             ("typeruwheid", None),
             ("ruwheidhoog", None),
             ("ruwheidlaag", None),
@@ -173,9 +180,9 @@ class RawData:
     ## Peil gebied
     peil_index_mapping = dict(
         [
-            ("boven peil", "ZOMERPEIL"),
+            ("boven peil", ["ZOMERPEIL", "BOVENPEIL"]),
             ("geometry", "geometry"),
-            ("onder peil", "WINTERPEIL"),
+            ("onder peil", ["WINTERPEIL", "ONDERPEIL"]),
             ("vast peil", "VASTPEIL"),
         ]
     )

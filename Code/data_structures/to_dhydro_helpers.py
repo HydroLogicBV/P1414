@@ -28,7 +28,7 @@ from rasterstats import zonal_stats
 from scipy.spatial import KDTree
 from shapely.geometry import LineString
 from shapely.geometry import Point as sPoint
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, box
 
 from data_structures.roi_data_model import ROIDataModel as DataModel
 
@@ -229,6 +229,13 @@ def to_dhydro(
 
     def add_culverts(ddm: DataModel, hydamo: HyDAMO, max_snap_dist: float = 5) -> HyDAMO:
         hydamo.culverts.set_data(ddm.duiker)
+
+        for name, culvert in ddm.duiker.iterrows():
+            if isinstance(culvert["geometry"], LineString):
+                hydamo.culverts.loc[name, "geometry"] = hydamo.culverts.loc[
+                    name, "geometry"
+                ].interpolate(0.5, normalized=True)
+
         hydamo.culverts.snap_to_branch(
             hydamo.branches, snap_method="overal", maxdist=max_snap_dist
         )
@@ -315,22 +322,27 @@ def to_dhydro(
         return fm
 
     def add_fixed_weirs(ddm: DataModel, fm=FMModel, data: List = [0, 0, 5, 4, 4, 0]) -> FMModel:
-        fw_gdf = ddm.keringen
+        fw_list = []
+        if hasattr(ddm, "keringen"):
+            fw_list.append(ddm.keringen)
+        if hasattr(ddm, "overiglijnelement"):
+            fw_list.append(ddm.overiglijnelement)
 
         line_list = []
-        for name, row in fw_gdf.iterrows():
-            coord_list = row.geometry.coords[:]
-            point_list = []
-            for (x, y, z) in coord_list:
-                point_list.append(hPoint(x=x, y=y, z=z, data=data))
+        for fw_gdf in fw_list:
+            for name, row in fw_gdf.iterrows():
+                coord_list = row.geometry.coords[:]
+                point_list = []
+                for (x, y, z) in coord_list:
+                    point_list.append(hPoint(x=x, y=y, z=z, data=data))
 
-            metadata = Metadata(name=str(row["code"]), n_rows=len(coord_list), n_columns=9)
-            polyline = PolyObject(
-                description=Description(content=str(row["code"])),
-                metadata=metadata,
-                points=point_list,
-            )
-            line_list.append(polyline)
+                metadata = Metadata(name=str(row["code"]), n_rows=len(coord_list), n_columns=9)
+                polyline = PolyObject(
+                    description=Description(content=str(row["code"])),
+                    metadata=metadata,
+                    points=point_list,
+                )
+                line_list.append(polyline)
 
         fm.geometry.fixedweirfile = [PolyFile(has_z_values=True, objects=line_list)]
         return fm
@@ -523,14 +535,16 @@ def to_dhydro(
     def add_tunnels(
         hydamo: HyDAMO,
         fm: FMModel,
-        node_distance=20,
         max_dist_to_struct=3,
-        two_d: bool = False,
+        extent=None,
     ) -> FMModel:
         if "tunnel" in hydamo.branches.columns:
             branches = hydamo.branches.loc[hydamo.branches.tunnel, :]
         else:
             return fm
+
+        if extent is not None:
+            branches = branches.overlay(gpd.GeoDataFrame(extent["geometry"]), how="intersection")
 
         network = fm.geometry.netfile.network
 
@@ -655,6 +669,7 @@ def to_dhydro(
 
         if "tunnel" in hydamo.branches.columns:
             branches = hydamo.branches.loc[~hydamo.branches.tunnel, :]
+            # structures = structures.loc[structures["branchid"].isin(branches["code"]), :]
         else:
             branches = hydamo.branches
 
@@ -745,6 +760,35 @@ def to_dhydro(
             ynodes = network._mesh2d.mesh2d_node_y
 
             with rasterio.open(elevation_raster_path) as src:
+                #     bounds = src.bounds
+                #     _box = box(*bounds)
+                #     points = []
+                #     ixs = []
+                #     for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
+                #         p = sPoint(x, y)
+                #         if p.within(_box):
+                #             bp = p.buffer((dx + dy) // 2, cap_style=3)
+                #             points.append(bp)
+                #             ixs.append(ix)
+
+                #     stats = zonal_stats(
+                #         bp,
+                #         src.read(1),
+                #         affine=src.transform,
+                #         stats="",
+                #         add_stats={"nanmean": np.nanmean},
+                #         nodata=np.nan,
+                #     )
+                #     heights = []
+                #     for result in stats:
+                #         heights.append(result["nanmean"])
+
+                #     # convert to numpy array and remove values more than two standard devations from the nanmean
+                #     z = np.array([z for z in heights]).flatten()
+                #     z_new = np.full((network._mesh2d.mesh2d_node_y.shape[0]), -10)
+                #     for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
+                #         if ix in ixs:
+                #             z_new[ix] = z
                 ahn = src.read(1)
                 z = []
                 for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
@@ -770,15 +814,42 @@ def to_dhydro(
 
                 network._mesh2d.mesh2d_node_z = np.array(z).flatten()
 
+            # with rasterio.open(elevation_raster_path) as src:
+            #     ahn = src.read(1)
+            #     z = []
+            #     for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
+            #         p = sPoint(x, y)
+            #         bp = p.buffer((dx + dy) // 2, cap_style=3)
+
+            #         try:
+            #             stats = zonal_stats(
+            #                 bp,
+            #                 ahn,
+            #                 affine=src.transform,
+            #                 stats="",
+            #                 add_stats={"nanmean": np.nanmean},
+            #                 nodata=np.nan,
+            #             )
+            #             heights = []
+            #             for result in stats:
+            #                 heights.append(result["nanmean"])
+
+            #             z.append(*[z for z in heights])
+            #         except:
+            #             z.append(-10)
+
+            #     network._mesh2d.mesh2d_node_z = np.array(z).flatten()
+
             print("added elevation to 2D mesh")
 
         if initial_peil_raster_path is not None:
             initial_wl = InitialField(
-                quantity="waterlevel",
+                averagingtype="nearestNb",
                 datafile=DiskOnlyFileModel(filepath=Path(initial_peil_raster_path)),
                 datafiletype="GeoTIFF",
                 interpolationmethod="averaging",
                 locationtype="2d",
+                quantity="waterlevel",
             )
             if hasattr(fm.geometry, "inifieldfile") and isinstance(
                 fm.geometry.inifieldfile, IniFieldModel
@@ -787,20 +858,37 @@ def to_dhydro(
             else:
                 fm.geometry.inifieldfile = IniFieldModel(initial=[initial_wl])
             print("added initial peilen to 2D mesh")
+        # else:
+        # initial_wd = InitialField(
+        #     quantity="waterdepth",
+        #     datafile=DiskOnlyFileModel(filepath=Path(initial_peil_raster_path)),
+        #     datafiletype="polygon",
+        #     interpolationmethod="constant",
+        #     locationtype="2d",
+        #     value=0,
+        # )
+        # if hasattr(fm.geometry, "inifieldfile") and isinstance(
+        #     fm.geometry.inifieldfile, IniFieldModel
+        # ):
+        #     fm.geometry.inifieldfile.initial.append(initial_wd)
+        # else:
+        #     fm.geometry.inifieldfile = IniFieldModel(initial=[initial_wd])
+        # print("added initial peilen to 2D mesh")
+        # fm.geometry.waterlevini = -10
 
         if roughness_2d_raster_path is not None:
             path_f = os.path.split(roughness_2d_raster_path)[0]
             xyz_path = path_f + "\\roughness_sample.xyz"
-            create_roughness_xyz(
-                xnodes=network._mesh2d.mesh2d_face_x,
-                ynodes=network._mesh2d.mesh2d_face_y,
-                dx=dx,
-                dy=dy,
-                roughness_tif_path=roughness_2d_raster_path,
-                roughness_mesh_name=path_f + "\\roughness_mesh_v2.tif",
-                roughness_xyz_name=xyz_path,
-                convert_to_manning=True,
-            )
+            # create_roughness_xyz(
+            #     xnodes=network._mesh2d.mesh2d_face_x,
+            #     ynodes=network._mesh2d.mesh2d_face_y,
+            #     dx=dx,
+            #     dy=dy,
+            #     roughness_tif_path=roughness_2d_raster_path,
+            #     roughness_mesh_name=path_f + "\\roughness_mesh_v2.tif",
+            #     roughness_xyz_name=xyz_path,
+            #     convert_to_manning=True,
+            # )
 
             initial_rn = ParameterField(
                 quantity="frictioncoefficient",
@@ -823,6 +911,7 @@ def to_dhydro(
         # branchids = network._mesh1d.network1d_branch_id
         # branchids = [x for x in branchids if not x.startswith(r"rijn_")]
         branchids = None
+        polygon = None
         if one_d:
             if coupling_type == "1Dto2D":
                 mesh.links1d2d_add_links_1d_to_2d(
@@ -866,12 +955,16 @@ def to_dhydro(
         return set_options(obj_loc=fmmodel, options=options)
 
     def simple_fm_model(
-        dtmax: int = 60, start_time: int = 20160601, stop_time: int = 2 * 86400
+        dtmax: int = 60,
+        start_time: int = 20160601,
+        stop_time: int = 2 * 86400,
+        statsinterval: int = 3600,
     ) -> FMModel:
         fm = FMModel()
         fm.time.refdate = start_time
         fm.time.tstop = stop_time
         fm.time.dtmax = dtmax
+        fm.output.statsinterval = [statsinterval]
         return fm
 
     # load configuration file
@@ -884,6 +977,24 @@ def to_dhydro(
             start_time=model_config.FM.start_time, stop_time=model_config.FM.stop_time
         )
         self.hydamo = HyDAMO()
+
+        if model_config.FM.two_d_bool:  # compute extent of 1D network
+            # Add to gpgk?
+
+            if hasattr(model_config.FM.two_d, "extent_path") and (
+                model_config.FM.two_d.extent_path is not None
+            ):
+                extent = gpd.read_file(model_config.FM.two_d.extent_path).dissolve(by=None)
+            else:
+                extent = self.ddm.waterloop.dissolve(by=None).convex_hull.buffer(
+                    model_config.FM.two_d.two_d_buffer
+                )
+            if "doorbraak" in self.features:
+                buf_doorbraak = copy(self.ddm.doorbraak)
+                buf_doorbraak["geometry"] = buf_doorbraak["geometry"].buffer(
+                    (model_config.FM.two_d.dx + model_config.FM.two_d.dy) / 2
+                )
+                extent = gpd.overlay(extent, buf_doorbraak, how="union").dissolve(by=None)
 
         # build 1D model
         if model_config.FM.one_d_bool:
@@ -918,6 +1029,14 @@ def to_dhydro(
                         max_snap_dist=model_config.FM.one_d.max_snap_dist,
                     )
 
+            if ("tunnel" in self.ddm.waterloop.columns) and (model_config.FM.two_d_bool):
+                self.fm = add_tunnels(
+                    hydamo=self.hydamo,
+                    fm=self.fm,
+                    max_dist_to_struct=model_config.FM.one_d.max_dist_to_struct,
+                    extent=extent,
+                )
+
             # add 1D model
             print("\nCompletig 1D model\n")
             self.fm, self.hydamo = build_1D_model(
@@ -949,15 +1068,6 @@ def to_dhydro(
                     initial_1D_waterdepth=initial_1D_waterdepth,
                 )
 
-            if "tunnel" in self.ddm.waterloop.columns:
-                self.fm = add_tunnels(
-                    hydamo=self.hydamo,
-                    fm=self.fm,
-                    node_distance=model_config.FM.one_d.node_distance,
-                    max_dist_to_struct=model_config.FM.one_d.max_dist_to_struct,
-                    two_d=model_config.FM.two_d_bool,
-                )
-
         # build 2D model
         if model_config.FM.two_d_bool:  # compute extent of 1D network
             # Add to gpgk?
@@ -965,11 +1075,17 @@ def to_dhydro(
             if hasattr(model_config.FM.two_d, "extent_path") and (
                 model_config.FM.two_d.extent_path is not None
             ):
-                extent = gpd.read_file(model_config.FM.two_d.extent_path)
+                extent = gpd.read_file(model_config.FM.two_d.extent_path).dissolve(by=None)
             else:
                 extent = self.ddm.waterloop.dissolve(by=None).convex_hull.buffer(
                     model_config.FM.two_d.two_d_buffer
                 )
+            if "doorbraak" in self.features:
+                buf_doorbraak = copy(self.ddm.doorbraak)
+                buf_doorbraak["geometry"] = buf_doorbraak["geometry"].buffer(
+                    (model_config.FM.two_d.dx + model_config.FM.two_d.dy) / 2
+                )
+                extent = gpd.overlay(extent, buf_doorbraak, how="union").dissolve(by=None)
 
             option_list = [
                 "coupling_type",
@@ -998,7 +1114,7 @@ def to_dhydro(
                 **kwargs,
             )
 
-            if "keringen" in self.features:
+            if ("keringen" in self.features) or ("overiglijnelement" in self.features):
                 self.fm = add_fixed_weirs(ddm=self.ddm, fm=self.fm)
 
             if "doorbraak" in self.features:
