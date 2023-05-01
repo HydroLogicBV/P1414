@@ -12,8 +12,14 @@ class ModifyBoundaries(WidgetStyling):
         self.modify_rhine_discharge = ModifyRhineDischarge(input_path, mdu_settings, dambreak_settings)
 
         self.model_folder = input_path
-        self.ic_folder = os.path.join(self.model_folder, r'dflowfm\Initialwaterlevels.ini')
-        self.bnd_folder = os.path.join(self.model_folder, r'dflowfm\bnd.ext')
+        files = os.listdir(os.path.join(self.model_folder, 'dflowfm'))
+        for file in files:
+            if file.lower().endswith('.ini') and 'initial' in file.lower() and 'water' in file.lower() and 'level' in file.lower():
+                ic_file = file
+            if 'bnd.ext' in file.lower():
+                bnd_file = file
+        self.ic_folder = os.path.join(self.model_folder, 'dflowfm', ic_file)
+        self.bnd_folder = os.path.join(self.model_folder, 'dflowfm', bnd_file)
 
         self.line_indices = {}
 
@@ -103,7 +109,9 @@ class ModifyBoundaries(WidgetStyling):
         wls = []
         for index in line_indices:
             wl_line = lines[index]
-            values = wl_line.split('#')[0].split('=')[-1].strip(' ').split(' ')
+            if '#' in wl_line:
+                wl_line = wl_line.split('#')[0]
+            values = wl_line.split('=')[-1].strip().split(' ')
             for value in values:
                 wls.append(float(value))
 

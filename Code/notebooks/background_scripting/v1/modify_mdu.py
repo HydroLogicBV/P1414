@@ -26,7 +26,7 @@ class ModifyMDU(WidgetStyling):
         self.run_bat_file = os.path.join(model_folder, 'run.bat')
         self.mdu_lines = self.read_mdu()
         
-        self.modify_parameter_mdu(parameter = "statsInterval", new_value = 1) # always do this
+        self.modify_parameter_mdu(parameter = "statsinterval", new_value = 1) # always do this
 
         self.settings_to_modify = ['tStart', 'tStop', 'mapInterval']
         self.settings_names = {
@@ -100,7 +100,7 @@ class ModifyMDU(WidgetStyling):
     def search_string_in_file(self, string, lines):
         line_numbers, strings = [], []
         for i, line in enumerate(lines):
-            if string in line:
+            if line.strip(' ').lower().startswith(string.lower()):
                 line_numbers.append(i)
                 strings.append(line)
         if len(strings) == 1:
@@ -119,14 +119,14 @@ class ModifyMDU(WidgetStyling):
                 f.write(line)
     
     def modify_parameter_mdu(self, parameter, new_value):
-        search_string = f" {parameter} " # add spaces to prevent accidentaly having wrong value
+        search_string = f"{parameter} " # add spaces to prevent accidentaly having wrong value
         index, line = self.search_string_in_file(search_string, self.mdu_lines)
         key = line.split("=")[0]
         value = f"= {new_value}"
         self.mdu_lines[index] = f"{key}{value}\n"
     
     def read_parameter_mdu(self, parameter):
-        search_string = f" {parameter} " # add spaces to prevent accidentaly having wrong value
+        search_string = f"{parameter} " # add spaces to prevent accidentaly having wrong value
         index, line = self.search_string_in_file(search_string, self.mdu_lines)
         value = line.split("=")[-1].strip(' ')
         if '\n' in value:
