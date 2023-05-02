@@ -85,8 +85,9 @@ class ModelRunner(WidgetStyling):
                     initializing_out.value = "<p>Initializing model...</p>"
                 else:
                     initializing_out.value = ""
-        self.done = True
-        logging_title.value = "<p>Model finished!</p>"
+        if self.percentage > 99:
+            self.done = True
+            logging_title.value = "<p>Model finished!</p>"
         logging.value = ""
         
         if p.returncode != 0:

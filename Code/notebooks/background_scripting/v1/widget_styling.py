@@ -18,6 +18,10 @@ class WidgetStyling():
         self.item_style = {
             'description_width': '40%',
             }
+    
+        self.item_style_wide_description = {
+            'description_width': '65%',
+            }
 
         self.button_style = {
             'button_color' :'#3587A4',

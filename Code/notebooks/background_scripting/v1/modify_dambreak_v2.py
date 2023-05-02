@@ -52,7 +52,7 @@ class NetcdfNetwork():
         self.mesh_rd = gpd.GeoDataFrame(df['geometry'], crs = self.crs_rd) 
         self.mesh_map = self.mesh_rd.to_crs(self.crs_map)
 
-class DambreachWidget(WidgetStyling):
+class DambreakWidget(WidgetStyling):
     def __init__(self, model_folder):
         self.network_loc = os.path.join(model_folder, r'dflowfm\network.nc')
         self.model_path = model_folder
@@ -122,6 +122,7 @@ class DambreachWidget(WidgetStyling):
             self.add_mesh()
             self.m.add_layer(self.marker)
             self.m.add_layer(self.upstream)
+            self.m.add_layer(self.breach)
         
         elif self.current_step == 4:
             instruction = "Done! Inspect your results (4/4) "
@@ -278,14 +279,16 @@ class DambreachWidget(WidgetStyling):
         self.m.add_layer(keringen_map)
         
     def add_network(self):
-        network = self.filter_gdf_based_on_location(self.marker.location, self.netcdf.network_map)
+        lat, lon= self.breach_point.to_crs(self.crs_map).iloc[0].geometry.x, self.breach_point.to_crs(self.crs_map).iloc[0].geometry.y
+        network = self.filter_gdf_based_on_location([lon, lat], self.netcdf.network_map)
         network_1d_points = GeoData(geo_dataframe = network,
             point_style={'radius': 5, 'color': 'blue', 'fillOpacity': 1, 'fillColor': 'black', 'weight': 3},
             name = 'NETWORK')
         self.m.add_layer(network_1d_points)
     
     def add_mesh(self):
-        mesh = self.filter_gdf_based_on_location(self.m.center, self.netcdf.mesh_map)
+        lat, lon= self.breach_point.to_crs(self.crs_map).iloc[0].geometry.x, self.breach_point.to_crs(self.crs_map).iloc[0].geometry.y
+        mesh = self.filter_gdf_based_on_location([lon, lat], self.netcdf.mesh_map)
         mesh2d = GeoData(geo_dataframe = mesh,
             point_style={'radius': 5, 'color': 'green', 'fillOpacity': 1, 'fillColor': 'black', 'weight': 3},
             name = 'MESH')
@@ -338,7 +341,7 @@ class ModifyDambreak(WidgetStyling):
                 disabled=False
                 )
             self.widgets[setting].layout = self.item_layout
-            self.widgets[setting].style = self.item_style
+            self.widgets[setting].style = self.item_style_wide_description
         
         self.widgets_to_display = [widget for widget in self.widgets.values()]
     

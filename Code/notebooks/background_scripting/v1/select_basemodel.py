@@ -14,10 +14,10 @@ class ModelSettings(WidgetStyling):
         self.settings = {}
         self.settings['folder'] = r"D:\work\Project\P1414\Models_SAS\Model_database"
         try: 
-            self.settings['model_options'] = os.listdir(self.settings['folder'])
+            self.settings['model_options'] = self.select_models(self.settings['folder'])
             self.settings['model'] = self.settings['model_options'][0]
         except:
-            self.settings['model_options'] = ['The folder you selected is not valid!']
+            self.settings['model_options'] = ['The folder you selected is not valid!', 'Please update the folder above and hit "Update settings".']
             self.settings['model'] = self.settings['model_options'][0]
 
         self.settings['scenario_name'] = 'run'
@@ -52,18 +52,28 @@ class ModelSettings(WidgetStyling):
             widget.layout = self.item_layout
             widget.style = self.item_style
 
-            
+    def select_models(self, folder):
+        valid_folders = []
+        for potential_folder in os.listdir(folder):
+            for f in os.listdir(os.path.join(folder, potential_folder)):
+                if f.endswith('.xml'):
+                    valid_folders.append(potential_folder)
+                    break
+        return valid_folders
+
+
+
     def update_settings_dict(self, b):
         if self.settings['folder'] != self.folder_widget.value.strip(' '):
             self.settings['folder'] = self.folder_widget.value
 
             try:
-                self.settings['model_options'] = os.listdir(self.settings['folder'])
+                self.settings['model_options'] = self.select_models(self.settings['folder'])
                 self.select_model_widget.options = self.settings['model_options']
                 self.settings['model'] = self.settings['model_options'][0]
                 self.select_model_widget.value = self.settings['model']
             except:
-                self.settings['model_options'] =  ['The folder you selected is not valid!']
+                self.settings['model_options'] =  ['The folder you selected is not valid!', 'Please update the folder above and hit "Update settings".']
                 self.select_model_widget.options = self.settings['model_options']
                 self.settings['model'] = self.settings['model_options'][0]
                 self.select_model_widget.value = self.settings['model']

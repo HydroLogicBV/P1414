@@ -121,7 +121,7 @@ class PlotSettingsMap(WidgetStyling):
 
         self.settings['min_value_legend'] = 0
         self.settings['max_value_legend'] = 1
-        self.settings['color_map_options'] = ['rainbow', 'hsv', 'viridis', 'plasma', 'inferno', 'magma', 'Blues', 'Reds']
+        self.settings['color_map_options'] = ['viridis', 'hsv', 'rainbow', 'plasma', 'inferno', 'magma', 'Blues', 'Reds']
         self.settings['color_map'] = self.settings['color_map_options'][0]
 
         self.settings_to_print = ['output_file_path', 'mesh_resolution', 'timestep', 'plot_variable', 'aggregation_type', 'min_value_legend', 'max_value_legend', 'color_map']
