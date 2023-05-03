@@ -36,7 +36,12 @@ class ModifyMDU(WidgetStyling):
         files = os.listdir(os.path.join(model_folder, 'dflowfm'))
         mdu_file = [file for file in files if file.endswith('.mdu')][0]
         self.mdu_path = os.path.join(model_folder, 'dflowfm', mdu_file)
+
         self.run_bat_file = os.path.join(model_folder, 'run.bat')
+        backup_run_bat = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), r'data\\run.bat')
+        if os.path.isfile(self.run_bat_file) == False:
+            shutil.copy(backup_run_bat, self.run_bat_file)
+
         self.mdu_lines = self.read_mdu()
         
         self.modify_parameter_mdu(parameter = "statsinterval", new_value = 1) # always do this
