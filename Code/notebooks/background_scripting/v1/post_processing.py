@@ -77,7 +77,7 @@ class PlotSettingsBreach(WidgetStyling):
         items_map = ipy.VBox(children=self.widgets_to_display, layout=self.box_layout, style = self.box_style)
         display(items_map)
 
-        button = ipy.Button(description="Plot breach information")
+        button = ipy.Button(description="Plot breach information", style = self.button_style, layout = self.button_layout)
         output = ipy.Output()
         display(button, output)
         button.on_click(self.plot_map)
@@ -217,12 +217,18 @@ class PlotSettingsMap(WidgetStyling):
         return np.min(distances)
 
     def get_timesteps(self):
+        """
+        Get the timesteps that are present in the netcdf file
+        """
         nc_file = nc.Dataset(self.settings['map_path'])
         timesteps_in_seconds = nc_file.variables['time']
         timesteps_in_hours = np.divide(timesteps_in_seconds, 3600)
         return timesteps_in_hours
 
     def update_settings_dict(self):
+        """
+        Update the settings dictionary based on the values of the widget
+        """
         self.settings['output_file_path'] = self.output_folder_images.value
         self.settings['mesh_resolution'] = self.output_resolution.value
         self.settings['timestep'] = round(self.timestep_selector.value,2)
@@ -233,6 +239,9 @@ class PlotSettingsMap(WidgetStyling):
         self.settings['color_map'] = self.colormap_picker.value
     
     def plot_map(self, b):
+        """
+        Funciton activated on button press. Calls the map plotter. 
+        """
         self.update_settings_dict()
         clear_output(wait=True)
         self.display_widgets()
@@ -245,11 +254,17 @@ class PlotSettingsMap(WidgetStyling):
       
 
 class BreachPlotter():
+    """
+    Class that is responsible for generating the plot of the dikebreach
+    """
     def __init__(self, plot_settings):
         self.settings = plot_settings
         self.plot_output()   
 
     def plot_output(self):
+        """
+        Plot the dikebreach characteristics that the user selected
+        """
         nc_file = nc.Dataset(self.settings['his_path'])
         t = nc_file.variables['time'][:]
         

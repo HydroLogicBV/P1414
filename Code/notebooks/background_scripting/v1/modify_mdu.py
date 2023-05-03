@@ -6,7 +6,17 @@ import json
 from datetime import datetime
 import shutil
 
-def copy_model(path_model, scenario_name):
+def copy_model(path_model:str, scenario_name:str):
+    """
+    Copy a model from the database to the model_run folder, such that it can be used and modified
+
+    Args:
+        path_model (str): path to the model
+        scenario_name (str): name of the scenario
+
+    Returns:
+        str: path to the new folder of the model
+    """
     now = datetime.now()
     formatted_datetime = now.strftime("%Y-%m-%dT%H-%M-%S")
       
@@ -19,6 +29,9 @@ def copy_model(path_model, scenario_name):
     return new_path
 
 class ModifyMDU(WidgetStyling):
+    """
+    Class for modifying the MDU settings of the model
+    """
     def __init__(self, model_folder):
         files = os.listdir(os.path.join(model_folder, 'dflowfm'))
         mdu_file = [file for file in files if file.endswith('.mdu')][0]
@@ -66,6 +79,9 @@ class ModifyMDU(WidgetStyling):
         self.widgets_to_display = [self.widgets[setting] for setting in self.widgets.keys()]
     
     def convert_to_sas(self, key, value):
+        """
+        Convert unit from seconds to hours or minutes
+        """
         if key in self.settings_in_hours:
             return value / 60 / 60
         if key in self.settings_in_minutes:
@@ -73,6 +89,9 @@ class ModifyMDU(WidgetStyling):
         return value
     
     def convert_to_mdu(self, key, value):
+        """
+        Convert unit from hours or minutes to seconds
+        """
         if key in self.settings_in_hours:
             return value * 60 * 60
         if key in self.settings_in_minutes:
@@ -80,6 +99,9 @@ class ModifyMDU(WidgetStyling):
         return value
 
     def read_run_bat(self):
+        """
+        read run.bat line that calls dhydro
+        """
         with open(self.run_bat_file, 'r') as f:
             lines = f.readlines()
         for line in lines:
@@ -88,6 +110,9 @@ class ModifyMDU(WidgetStyling):
         return path
 
     def modify_run_bat(self):
+        """
+        modify run.bat line that calls dhydro
+        """
         with open(self.run_bat_file, 'r') as f:
             lines = f.readlines()
         for i, line in enumerate(lines):
@@ -97,7 +122,17 @@ class ModifyMDU(WidgetStyling):
             for line in lines:
                 f.write(line)
 
-    def search_string_in_file(self, string, lines):
+    def search_string_in_file(self, string:str, lines:list):
+        """
+        Function to find the lines that start with a certain string
+
+        Args:
+            string (str): string to find
+            lines (list): lines to find string in 
+
+        Returns:
+            indices and string that is found
+        """
         line_numbers, strings = [], []
         for i, line in enumerate(lines):
             if line.strip(' ').lower().startswith(string.lower()):
@@ -109,16 +144,29 @@ class ModifyMDU(WidgetStyling):
             return None
         
     def read_mdu(self):
+        """
+        read all lines of the mdu file
+        """
         with open(os.path.join(self.mdu_path), 'r') as f:
             lines = f.readlines()
         return lines
     
     def save_mdu(self):
+        """
+        save all lines of the mdu file
+        """
         with open(os.path.join(self.mdu_path), 'w') as f:
             for line in self.mdu_lines:
                 f.write(line)
     
-    def modify_parameter_mdu(self, parameter, new_value):
+    def modify_parameter_mdu(self, parameter:str, new_value:str):
+        """
+        Modify a parameter in the mdu dictionary
+
+        Args:
+            parameter (str): parameter name
+            new_value (str): new value
+        """
         search_string = f"{parameter} " # add spaces to prevent accidentaly having wrong value
         index, line = self.search_string_in_file(search_string, self.mdu_lines)
         key = line.split("=")[0]

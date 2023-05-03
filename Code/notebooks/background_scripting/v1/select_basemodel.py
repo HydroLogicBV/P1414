@@ -53,6 +53,9 @@ class ModelSettings(WidgetStyling):
             widget.style = self.item_style
 
     def select_models(self, folder):
+        """
+        Function that checks for each folder if the folder contains a model (contains a .xml file) or not
+        """
         valid_folders = []
         for potential_folder in os.listdir(folder):
             for f in os.listdir(os.path.join(folder, potential_folder)):
@@ -64,6 +67,9 @@ class ModelSettings(WidgetStyling):
 
 
     def update_settings_dict(self, b):
+        """
+        Function to update settings based on the widget values after the update button is pressed.
+        """
         if self.settings['folder'] != self.folder_widget.value.strip(' '):
             self.settings['folder'] = self.folder_widget.value
 
@@ -88,6 +94,9 @@ class ModelSettings(WidgetStyling):
         print(json.dumps(print_settings_dict, indent=4))
         
     def display_widgets(self):
+        """
+        Function to display all widgets, and the update button.
+        """
         items = ipy.VBox(children=self.widgets_to_display, layout=self.box_layout, style = self.box_style)
         display(items)
         button = ipy.Button(

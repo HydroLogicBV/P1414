@@ -8,6 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class ModifyBoundaries(WidgetStyling):
+    """
+    Class for modifying the boundary conditions of the model
+    """
     def __init__(self, input_path, mdu_settings, dambreak_settings):
         self.modify_rhine_discharge = ModifyRhineDischarge(input_path, mdu_settings, dambreak_settings)
 
@@ -59,7 +62,18 @@ class ModifyBoundaries(WidgetStyling):
 
         self.widgets_to_display = [widget for widget in self.widgets.values()]
 
-    def find_start_string_in_lines(self, lines, start_string, stop_on_first_match = False):
+    def find_start_string_in_lines(self, lines: list, start_string: str, stop_on_first_match:bool = False):
+        """
+        Find the occurence of a certain string in a list of strings
+
+        Args:
+            lines (list): lines to check
+            start_string (str): wich line should the string start with
+            stop_on_first_match (bool, optional): Wether to stop search when there is one match Defaults to False.
+
+        Returns:
+            indices of the lines in which the string is found
+        """
         lines_found = []
         for i, line in enumerate(lines):
             if line.replace(' ', '').startswith(start_string):
@@ -68,7 +82,16 @@ class ModifyBoundaries(WidgetStyling):
                     return i
         return lines_found
 
-    def write_lines_to_file(self, file_path, lines):
+    def write_lines_to_file(self, file_path:str, lines:list):
+        """Write lines to a text file
+
+        Args:
+            file_path (str): Path of the file to write
+            lines (list): lines to write to the file
+
+        Raises:
+            Exception: in case the lines you provide are not the same length as the existin lines in the file
+        """
         with open(file_path, 'r') as f:
             old_lines = f.readlines()
 
@@ -79,7 +102,18 @@ class ModifyBoundaries(WidgetStyling):
         else:
             raise Exception("error")
 
-    def get_inital_conditions_lines(self, start_string):
+    def get_inital_conditions_lines(self, start_string:str):
+        """Find the line indices of the initial conditions that you want
+
+        Args:
+            start_string (str): which string the inital conditon should start with
+
+        Raises:
+            Exception: if the string was not found
+
+        Returns:
+            _type_: indices at which the inital condition is located
+        """
         with open(self.ic_folder) as f:
             lines = f.readlines()
 
@@ -103,7 +137,18 @@ class ModifyBoundaries(WidgetStyling):
 
         return indices_noordzee
 
-    def read_wl_initial(self, line_indices):
+    def read_wl_initial(self, line_indices:list):
+        """
+
+        Args:
+            line_indices (list): indices to read
+
+        Raises:
+            Exception: small error check to see if all initial water levels are the same
+
+        Returns:
+            waterlevel
+        """
         with open(self.ic_folder, 'r') as f:
             lines = f.readlines()
         wls = []
@@ -136,6 +181,9 @@ class ModifyBoundaries(WidgetStyling):
         self.write_lines_to_file(self.ic_folder, lines)
 
     def display_widgets(self):
+        """
+        Display widgets and the update button
+        """
         all_widgets = self.widgets_to_display + self.modify_rhine_discharge.widgets_to_display
         items = ipy.VBox(children=all_widgets, layout=self.box_layout, style = self.box_style)
         display(items)
@@ -146,6 +194,12 @@ class ModifyBoundaries(WidgetStyling):
         button.on_click(self.update_settings_widget)
     
     def update_settings_widget(self, b):
+        """
+        update the settings based on the widget values, and modify the d-hydro values accordingly
+
+        Args:
+            b (_type_): only required to maket his funciton callable by button widget
+        """
         print_settings = {}
         for setting in self.read_functions.keys():
             self.settings[setting] = self.widgets[setting].value
@@ -167,6 +221,9 @@ class ModifyBoundaries(WidgetStyling):
 
 
 class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
+    """
+    Class for modifying the discharge of the Rhine
+    """
     def __init__(self, model_path, mdu_settings, dambreak_settings):
         self.bnd_folder = os.path.join(model_path, r'dflowfm\bnd.ext')
         self.rhine_bc_loc = os.path.join(model_path, r'dflowfm\rhine.bc')
@@ -206,6 +263,9 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
     
     
     def modify_rhine_discharge_to_timeseries(self):
+        """
+        if currently the dischrage is fixed, replace it by a file reference.
+        """
         with open(self.bnd_folder) as f:
             lines = f.readlines()
         start_string = f'branchId={self.branch_name}'
@@ -243,6 +303,9 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
 
 
     def write_discharge_rhine(self):
+        """
+        write the rhine discharge to a file
+        """
         header = [
             "[General]",
             "    fileVersion           = 1.01"      ,          
@@ -269,6 +332,9 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
                 f.write('\n')
 
     def generate_discharge_timeseries(self):
+        """
+        Generate discharge timeseries based on the user input paramters
+        """
         if self.tStop % 300 != 0 or self.tStart % 300 != 0:
             raise Exception("tstart or tstop is not valid")
         self.T = []
@@ -286,6 +352,9 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
             self.timeseries_lines.append(f"    {self.T[i]} {self.Q[i]}")
         
     def plot_timeseries(self):
+        """
+        Generate a plot of the discharge timeseries, together with tstart, tstop and tbreach.
+        """
         fig, ax = plt.subplots(figsize = (13, 5))
         T_plot = [x/3600 for x in self.T]
         ax.plot(T_plot, self.Q, color = '#3587A4', lw = 3, label = 'Discharge Rhine')
@@ -304,6 +373,9 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
 
 
     def update(self):
+        """
+        function to update the timeseries, write it to file, and plot it
+        """
         self.generate_discharge_timeseries()
         self.write_discharge_rhine()
         self.plot_timeseries()

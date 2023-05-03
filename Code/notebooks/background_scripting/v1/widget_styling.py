@@ -1,6 +1,9 @@
 import ipywidgets as ipy
 
 class WidgetStyling():
+    """
+    Class that contains the default widget styling. This class is inherited such that the default layout and styling can be applied. 
+    """
     def set_default_layout_and_styling(self):
         self.box_layout = ipy.Layout(
             border='2px solid #3587A4',

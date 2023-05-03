@@ -5,6 +5,9 @@ import ipywidgets as ipy
 from IPython.display import display, clear_output
 
 class ModelRunner(WidgetStyling):
+    """
+    Class that contains the widgets and functions for running a model
+    """
     def __init__(self, path):
         self.model_folder = path
         self.run_dimr_path = os.path.join(self.model_folder, 'run.bat')
@@ -20,12 +23,18 @@ class ModelRunner(WidgetStyling):
         )
         
     def display_widgets(self):
+        """
+        Display the run model button
+        """
         button = ipy.Button(description="Run model!", style = self.button_style, layout = self.button_layout)
         output = ipy.Output()
         display(button, output)
         button.on_click(self.run_model)
 
     def read_model_progress(self):
+        """
+        Read model progress from logging to the .dia file
+        """
         for index_line in reversed(range(len(self.full_logs))):
             if '%' in self.full_logs[index_line]:
                 valid_percentage = self.update_model_percentage(self.full_logs[index_line])
@@ -36,6 +45,9 @@ class ModelRunner(WidgetStyling):
             self.running = True
 
     def update_model_percentage(self, line):
+        """
+        Get current completion percentage of model
+        """
         line_before_percentage = line.split('%')[0]
         percentage = line_before_percentage.split(' ')[-1]
         try:
@@ -50,6 +62,10 @@ class ModelRunner(WidgetStyling):
             return False
             
     def run_model(self, b):
+        """
+        Run the model, and keep track of the logs
+        b is not used, it is just required to make this function start from a button click
+        """
         nr_log_lines = 4
         self.full_logs = []
         
@@ -82,12 +98,11 @@ class ModelRunner(WidgetStyling):
                 logging.value = new_logging
                 self.progess_bar.value = self.percentage
                 if self.initializing:
-                    initializing_out.value = "<p>Initializing model...</p>"
+                    initializing_out.value = "<p><b>Initializing model...</b></p>"
                 else:
                     initializing_out.value = ""
-        if self.percentage > 99:
-            self.done = True
-            logging_title.value = "<p>Model finished!</p>"
+        self.done = True
+        logging_title.value = "<p>Model finished!</p>"
         logging.value = ""
         
         if p.returncode != 0:
