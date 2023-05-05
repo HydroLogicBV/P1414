@@ -108,7 +108,7 @@ def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAP
 
 def load_geo_file(
     file_path: Any, geom_type: str = None, has_z_coord: bool = None, layer: str = None
-):
+) -> gpd.GeoDataFrame:
     """
     This function reads in a geospatial file and returns a geodataframe.
 

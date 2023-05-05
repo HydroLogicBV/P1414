@@ -217,7 +217,7 @@ class DambreakWidget(WidgetStyling):
 
         point_on_line = [snap_point.x, snap_point.y]
 
-        perp_line = self.calc_perpendicular_line(points_of_interest, point_on_line, 250)
+        perp_line = self.calc_perpendicular_line(points_of_interest, point_on_line, 500)
         
         line_geom = LineString(perp_line)
         gdf = gpd.GeoDataFrame(geometry=[line_geom], crs = self.crs_rd)
