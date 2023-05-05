@@ -11,11 +11,14 @@ from geo_tools.roughness_to_mesh import create_roughness_xyz
 from hydrolib.core.basemodel import DiskOnlyFileModel
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
-from hydrolib.core.io.friction.models import FrictBranch, FrictGlobal, FrictionModel
+from hydrolib.core.io.friction.models import (FrictBranch, FrictGlobal,
+                                              FrictionModel)
 from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
-from hydrolib.core.io.inifield.models import IniFieldModel, InitialField, ParameterField
+from hydrolib.core.io.inifield.models import (IniFieldModel, InitialField,
+                                              ParameterField)
 from hydrolib.core.io.mdu.models import FMModel
-from hydrolib.core.io.onedfield.models import OneDFieldBranch, OneDFieldGlobal, OneDFieldModel
+from hydrolib.core.io.onedfield.models import (OneDFieldBranch,
+                                               OneDFieldGlobal, OneDFieldModel)
 from hydrolib.core.io.polyfile.models import Description, Metadata
 from hydrolib.core.io.polyfile.models import Point as hPoint
 from hydrolib.core.io.polyfile.models import PolyFile, PolyObject
@@ -42,9 +45,21 @@ def to_dhydro(
     initial_1D_waterdepth: float = 1,
     output_folder=None,
 ):
-    """ """
+    """
+    Function to convert datamodel to D-HYDRO model
+
+    Args:
+        config (str): configuration file
+        extent (Union[gpd.GeodataFrame, Polygon]): extent of 2D grid
+        initial_1D_waterdepth (float): initial 1D waterdepth (defaults to 1)
+        ouput_folder (str): output folder path
+
+    Returns:
+        None
+    """
 
     def add_1D_initial_waterdepth(fm: FMModel, fm_path: Path, initial_1D_waterdepth: float):
+
         globalwd = OneDFieldGlobal(quantity="waterdepth", unit="m", value=initial_1D_waterdepth)
         onedfile_wd = OneDFieldModel(global_=globalwd)
         onedfile_wd.filepath = fm_path / "Initialwaterdepth.ini"
@@ -265,13 +280,26 @@ def to_dhydro(
         fw_gdf = ddm.keringen
 
         fw_point_list = []
-        for ix, branch in fw_gdf.iterrows():
-            coords = branch.geometry.coords[:]
+        for ix, fw in fw_gdf.iterrows():
+            coords = fw.geometry.coords[:]
 
             for x, y, z in coords:
                 fw_point_list.append([x, y, z])
 
         fw_kdtree = KDTree(data=fw_point_list)
+
+        # mesh1d = fm.geometry.netfile.network._mesh1d
+        # ids = mesh1d.network1d_node_id
+        # xs = mesh1d.network1d_node_x
+        # ys = mesh1d.network1d_node_y
+
+        # id_list = []
+        # wl_node_list = []
+        # for x, y, id in zip(xs, ys, ids):
+        #     wl_node_list.append([x, y])
+        #     id_list.append(id)
+
+        # wl_kdtree = KDTree(data=wl_node_list)
 
         for name, db in db_gdf.iterrows():
             geom = db.geometry
@@ -289,6 +317,9 @@ def to_dhydro(
 
             _, ix_point_in_kering = fw_kdtree.query(mid_point, distance_upper_bound=max_dist)
             point_in_kering = fw_point_list[ix_point_in_kering]
+
+            # _, ix_point_in_wl = wl_kdtree.query(coords[0, :], distance_upper_bound=max_dist)
+            # wl_node_id = id_list[ix_point_in_wl]
 
             dambreak = Dambreak(
                 algorithm=db.algorithm,
@@ -309,6 +340,9 @@ def to_dhydro(
                 waterleveldownstreamlocationy=coords[-1, 1],
                 waterlevelupstreamlocationx=coords[0, 0],
                 waterlevelupstreamlocationy=coords[0, 1],
+                # waterlevelupstreamlocationx=xs[ix_point_in_wl],
+                # waterlevelupstreamlocationy=ys[ix_point_in_wl],
+                # waterlevelupstreamnodeid=wl_node_id,
                 xcoordinates=coords[:, 0].tolist(),
                 ycoordinates=coords[:, 1].tolist(),
             )
@@ -323,9 +357,9 @@ def to_dhydro(
 
     def add_fixed_weirs(ddm: DataModel, fm=FMModel, data: List = [0, 0, 5, 4, 4, 0]) -> FMModel:
         fw_list = []
-        if hasattr(ddm, "keringen"):
+        if hasattr(ddm, "keringen") and ddm.keringen is not None:
             fw_list.append(ddm.keringen)
-        if hasattr(ddm, "overiglijnelement"):
+        if hasattr(ddm, "overiglijnelement") and ddm.overiglijnelement is not None:
             fw_list.append(ddm.overiglijnelement)
 
         line_list = []
@@ -542,10 +576,12 @@ def to_dhydro(
             branches = hydamo.branches.loc[hydamo.branches.tunnel, :]
         else:
             return fm
-
-        if extent is not None:
+        if extent is None:
+            pass
+        elif isinstance(extent, gpd.GeoDataFrame):
             branches = branches.overlay(gpd.GeoDataFrame(extent["geometry"]), how="intersection")
-
+        elif isinstance(extent, Polygon) or isinstance(extent, gpd.GeoSeries):
+            branches = branches.overlay(gpd.GeoDataFrame(geometry=extent), how="intersection")
         network = fm.geometry.netfile.network
 
         mesh.mesh1d_add_branches_from_gdf(
@@ -730,7 +766,9 @@ def to_dhydro(
         initial_peil_raster_path: str,
         roughness_2d_raster_path: str,
         two_d_buffer: float,
-        one_d=False,
+        one_d: bool = False,
+        bound_ids: list = ["mark", "noor", "rijn"],
+        max_lat_dist: float = 2e3,
     ) -> FMModel:
 
         network = fm.geometry.netfile.network
@@ -923,6 +961,21 @@ def to_dhydro(
                 )
             else:
                 print("No 1D to 2D links have been set")
+
+            branchids = network._mesh1d.network1d_branch_id
+            branch_list = []
+            for id in branchids:
+                for prefix in bound_ids:
+                    if prefix in id:
+                        branch_list.append(id)
+            if len(branch_list) > 0:
+                mesh.links1d2d_add_links_2d_to_1d_lateral(
+                    network=network,
+                    branchids=branch_list,
+                    dist_factor=None,  # within=extent.buffer(1e3)
+                    max_length = max_lat_dist
+                )
+
         return fm
 
     def set_hydrolib_core_options(fmmodel: FMModel, options):
@@ -989,12 +1042,12 @@ def to_dhydro(
                 extent = self.ddm.waterloop.dissolve(by=None).convex_hull.buffer(
                     model_config.FM.two_d.two_d_buffer
                 )
-            if "doorbraak" in self.features:
-                buf_doorbraak = copy(self.ddm.doorbraak)
-                buf_doorbraak["geometry"] = buf_doorbraak["geometry"].buffer(
-                    (model_config.FM.two_d.dx + model_config.FM.two_d.dy) / 2
-                )
-                extent = gpd.overlay(extent, buf_doorbraak, how="union").dissolve(by=None)
+            # if "doorbraak" in self.features:
+            #     buf_doorbraak = copy(self.ddm.doorbraak)
+            #     buf_doorbraak["geometry"] = buf_doorbraak["geometry"].buffer(
+            #         (model_config.FM.two_d.dx + model_config.FM.two_d.dy) / 2
+            #     )
+            #     extent = gpd.overlay(extent, buf_doorbraak, how="union").dissolve(by=None)
 
         # build 1D model
         if model_config.FM.one_d_bool:
@@ -1080,12 +1133,12 @@ def to_dhydro(
                 extent = self.ddm.waterloop.dissolve(by=None).convex_hull.buffer(
                     model_config.FM.two_d.two_d_buffer
                 )
-            if "doorbraak" in self.features:
-                buf_doorbraak = copy(self.ddm.doorbraak)
-                buf_doorbraak["geometry"] = buf_doorbraak["geometry"].buffer(
-                    (model_config.FM.two_d.dx + model_config.FM.two_d.dy) / 2
-                )
-                extent = gpd.overlay(extent, buf_doorbraak, how="union").dissolve(by=None)
+            # if "doorbraak" in self.features:
+            #     buf_doorbraak = copy(self.ddm.doorbraak)
+            #     buf_doorbraak["geometry"] = buf_doorbraak["geometry"].buffer(
+            #         (model_config.FM.two_d.dx + model_config.FM.two_d.dy) / 2
+            #     )
+            #     extent = gpd.overlay(extent, buf_doorbraak, how="union").dissolve(by=None)
 
             option_list = [
                 "coupling_type",
@@ -1127,6 +1180,7 @@ def to_dhydro(
 
 
 def write_dimr(fm: FMModel, output_folder: str):
+    """ """
 
     output_path = Path(output_folder)
     output_path.mkdir(exist_ok=True, parents=True)

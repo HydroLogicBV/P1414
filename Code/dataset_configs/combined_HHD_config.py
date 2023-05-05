@@ -26,7 +26,7 @@ class Models:
             roughness_2d_raster_path = (
                 r"D:\Work\Project\P1414\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )
-            two_d_buffer = 1000
+            two_d_buffer = 0
 
         class hydrolib_core_options:
             class external_forcing:

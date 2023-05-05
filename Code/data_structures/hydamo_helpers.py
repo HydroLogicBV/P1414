@@ -23,6 +23,19 @@ warnings.filterwarnings(action="ignore", message="Mean of empty slice")
 
 
 def check_and_fix_duplicate_code(gdf: gpd.GeoDataFrame, column="code") -> gpd.GeoDataFrame:
+    """
+    Function that takes a GeoDataFrame and a column name (default: column="code"),
+    checks if the column exists, and if it does, it checks if there are any duplicate values.
+    If there are, it pads the duplicate values with a number
+
+    Args:
+      gdf (gpd.GeoDataFrame): gpd.GeoDataFrame
+      column (str): the name of the column to check for duplicates. Defaults to code
+
+    Returns:
+      gdf(gpd.GeoDataFrame): A GeoDataFrame with the duplicated codes fixed.
+    """
+
     if column in gdf.columns:
         gdf[column] = gdf[column].astype("str").str.strip()
         # _gdf = copy(gdf)
@@ -39,12 +52,33 @@ def check_and_fix_duplicate_code(gdf: gpd.GeoDataFrame, column="code") -> gpd.Ge
 
 
 def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Helper function that tries to convert the column in the geodataframe to int or float
+
+    Args:
+      gdf (gpd.GeoDataFrame): the GeoDataFrame that you want to check
+
+    Returns:
+      gdf (gpd.GeoDataFrame): the checked GeoDataFrame
+    """
+
     if (not isinstance(gdf, int)) | (not isinstance(gdf, float)):
         gdf = gdf.astype(float)
     return gdf
 
 
-def check_is_not_na_number(input, zero_allowed=False) -> bool:
+def check_is_not_na_number(input: Any, zero_allowed=False) -> bool:
+    """
+    Helper funciton that checks if the input is not None and not NaN and (if zero_allowed is False) not zero.
+    Returns True if this is the case, and false if any of these values are found.
+
+    Args:
+      input (Any): The input value to check.
+      zero_allowed (bool): If the input is zero, should it be considered a valid number?. Defaults to False
+
+    Returns:
+      result (bool): whether the number is na, or valid
+    """
     if (input is None) or (np.isnan(input)):
         return False
 
@@ -55,7 +89,17 @@ def check_is_not_na_number(input, zero_allowed=False) -> bool:
 
 
 def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAPPING_LIST) -> str:
-    """ """
+    """
+    Function that takes a GeoSeries of structures and a list of roughness types,
+    and returns the roughness type  of the structure as a str
+
+    Args:
+      structure (gpd.GeoSeries): gpd.GeoSeries
+      rougness_map (List): Roughness types with indices
+
+    Returns:
+      type_ruwheid (str): the roughenss type as a strinng
+    """
     type_ruwheid = structure["typeruwheid"]
     if isinstance(type_ruwheid, int) or isinstance(type_ruwheid, float):
         type_ruwheid = rougness_map[int(type_ruwheid) - 1]
@@ -65,7 +109,23 @@ def check_roughness(structure: gpd.GeoSeries, rougness_map: List = ROUGHNESS_MAP
 def load_geo_file(
     file_path: Any, geom_type: str = None, has_z_coord: bool = None, layer: str = None
 ):
-    """ """
+    """
+    This function reads in a geospatial file and returns a geodataframe.
+
+    When multiple paths are given, the files are combined.
+    When given a list, a maximum of two files can be sjoined.
+    When given a dict, multiple files can be sjoined or concatted, depending on the argument supplied in the dict.
+
+    Args:
+      file_path (Any): The path to the file you want to load. Can be multiple files (list or dict)
+      layer (str): the name of the layer in the geopackage (if file_path ends in .gpkg). Defaults to None
+
+    Errors:
+      ValueError: when specific path does not end in either .shp or .gpkg, a ValueError is raised.
+    Returns:
+      gdf (gpd.GeoDataFrame): loaded ans possibly combined geodataframe
+    """
+
     if isinstance(file_path, dict):
         for key, value in file_path.items():
             if "base" in key:
@@ -141,12 +201,41 @@ def load_geo_file(
 def map_columns(
     defaults, gdf: gpd.GeoDataFrame, index_mapping: dict, code_pad: str = None
 ) -> gpd.GeoDataFrame:
-    """ """
+    """
+    Function that:
+        1. fixes possibly incorrect geometries in fix_geometry
+        2. adds globalid columns. Overwrites possibly existing values to
+        3. fills empty columns with values in fill_empty_columns
+        4. checks for duplicate codes
+
+    Args:
+      defaults: a module of classes with default values for the columns in the GeoDataFrame
+      gdf (gpd.GeoDataFrame): gpd.GeoDataFrame
+      index_mapping (dict): dict
+      code_pad (str): Padding used before a code. Defaults to None
+
+    Returns:
+      A GeoDataFrame with filled values and fixed geometries
+    """
 
     def fill_empty_columns(
         defaults, gdf: gpd.GeoDataFrame, index_mapping: dict
     ) -> Tuple[gpd.GeoDataFrame, dict]:
-        """ """
+        """
+        Function that takes a GeoDataFrame, a dictionary with column names and a module of classes with default values. It then
+        checks if the column names in the dictionary are present in the GeoDataFrame. If not, it adds
+        the column with the default values. If the column is present, but contains missing values, it
+        fills the missing values with the default values
+
+        Args:
+          defaults: a module with classes with default values for the columns that are not in the shapefile
+          gdf (gpd.GeoDataFrame): gpd.GeoDataFrame
+          index_mapping (dict): a dictionary with the DHYMAMO parameter name as key and the column name
+        in the shapefile as value.
+
+        Returns:
+          A tuple of two objects: the tidy GeoDataFrame and a dictionary.
+        """
 
         _index_mapping = copy(index_mapping)
         _gdf = copy(gdf)
@@ -229,13 +318,21 @@ def map_columns(
 
         return _gdf, _index_mapping
 
-    def fix_geometry(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """drops values without geometry and sets corrects crs"""
+    def fix_geometry(gdf: gpd.GeoDataFrame, csr="epsg:28992") -> gpd.GeoDataFrame:
+        """
+        It drops rows without geometry and sets the correct crs
+
+        Args:
+          gdf (gpd.GeoDataFrame): GeoDataFrame to be fixed
+
+        Returns:
+          gdf (gpd.GeoDataFrame): GeoDataFrame with the geometry column dropped and the crs set to epsg:28992.
+        """
         gdf.dropna(axis=0, inplace=True, subset=["geometry"])
         try:
-            gdf = gdf.to_crs("epsg:28992")
+            gdf = gdf.to_crs(csr)
         except ValueError:
-            gdf = gdf.set_crs("epsg:28992").to_crs("epsg:28992")
+            gdf = gdf.set_crs(csr).to_crs(csr)
         return gdf
 
     # ensure no incorrect geometries exist and set a globalid
@@ -262,10 +359,23 @@ def map_columns(
 
 
 def merge_to_ddm(ddm: Datamodel, feature: str, feature_gdf: gpd.GeoDataFrame) -> Datamodel:
+    """Legacy function, see merge_to_dm"""
     return merge_to_dm(dm=ddm, feature=feature, feature_gdf=feature_gdf)
 
 
 def merge_to_dm(dm, feature: str, feature_gdf: gpd.GeoDataFrame):
+    """
+    Function that merges a feature into the supplied DataModel. If the feature already exists in the data model,
+    then concatenate the new feature with the existing feature. Otherwise, add the new feature to the data model
+
+    Args:
+      dm (DataModel): the DataModel object object
+      feature (str): name of the feature to be added to the DataModel
+      feature_gdf (gpd.GeoDataFrame): the GeoDataFrame you want to merge into the DataModel
+
+    Returns:
+      dm (DataModel): A DataModel object with the new feature added.
+    """
     if hasattr(dm, feature):
         new_gdf = gpd.GeoDataFrame(
             data=pd.concat([getattr(dm, feature), feature_gdf]),
@@ -280,9 +390,39 @@ def merge_to_dm(dm, feature: str, feature_gdf: gpd.GeoDataFrame):
 
 
 def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datamodel:
-    """ """
+    """
+    This function creates a full DHYDAMO DataModel, based on an empty DataModel and a defaults and config file. It creates the
+    DataModel by adding elements in the following order.
+    - branches
+    - culverts and bridges
+    - measured profiles
+    - peilgebieden or default peilen
+    - pumps
+    - river profiles
+    - sluices and weirs
 
-    def add_default_peil_to_branch(branches_gdf: gpd.GeoDataFrame, default_peil: float = None):
+    Args:
+      ddm (Datamodel): empty DataModel, to be filled
+      defaults (str): The path to the default file (should be in ./dataset_configs/)
+      config (str): The path to the config file (should be in ./dataset_configs/).
+    Returns:
+      ddm (Datamodel): a fully HYDAMO compliant DataModel
+    """
+
+    def add_default_peil_to_branch(
+        branches_gdf: gpd.GeoDataFrame, default_peil: float = None
+    ) -> gpd.GeoDataFrame:
+        """
+        Add default peil values to branches.
+
+        Args:
+          branches_gdf (gpd.GeoDataFrame): a GeoDataFrame with a column called "peil"
+          default_peil (float): value of default peil. Defaults to None
+
+        Returns:
+          A GeoDataFrame with a column "peil"
+        """
+
         if default_peil is None:
             return branches_gdf
 

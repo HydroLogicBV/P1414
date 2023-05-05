@@ -63,14 +63,18 @@ def merge_networks(data_base_input, data_match_input, max_dist=1, outputfile_pat
     point_list_base = []
     for ix, branch in data_base.iterrows():
         coords = branch.geometry.coords
-        point_list_base.append(coords[0])
-        point_list_base.append(coords[-1])
+        x1, y1, *_ = coords[0]
+        x2, y2, *_ = coords[-1]
+        point_list_base.append((x1, y1))
+        point_list_base.append((x2, y2))
 
     point_list_match = []
     for ix, branch in data_match.iterrows():
         coords = branch.geometry.coords
-        point_list_match.append(coords[0])
-        point_list_match.append(coords[-1])
+        x1, y1, *_ = coords[0]
+        x2, y2, *_ = coords[-1]
+        point_list_match.append((x1, y1))
+        point_list_match.append((x2, y2))
 
     # build spatial KDTree from start and end points
     kdtree_base = KDTree(point_list_base)
@@ -88,7 +92,7 @@ def merge_networks(data_base_input, data_match_input, max_dist=1, outputfile_pat
     # Get the geometries of the branches
     geometry_branches = data_base.geometry
 
-    for ix, branch in data_base.iterrows():
+    for ix, (name, branch) in enumerate(data_base.iterrows()):
         if bool_array[ix * 2] and bool_array[ix * 2 + 1]:
 
             min_idx_start, min_dist_start = non_zero_min_idx(sdm.toarray()[ix * 2])

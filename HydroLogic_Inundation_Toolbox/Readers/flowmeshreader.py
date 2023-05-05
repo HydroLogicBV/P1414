@@ -30,12 +30,11 @@ def load_mesh(input_file_path: str) -> Tuple[np.ndarray, np.ndarray]:
 
             node_x = ug.variable_get_data_double(r"Mesh2d_face_x")
             node_y = ug.variable_get_data_double(r"Mesh2d_face_y")
-    except OSError:
+    except:
         # Linux support not yet implemented in UGridpy
         with Dataset(input_file_path) as nc:
             node_x = np.asarray(nc.variables[r"Mesh2d_face_x"][:]).flatten()
             node_y = np.asarray(nc.variables[r"Mesh2d_face_y"][:]).flatten()
-
     return node_x, node_y
 
 
@@ -81,7 +80,7 @@ def load_data(input_file_path: str, variable: str) -> np.ndarray:
         ) as ug:
 
             data = ug.variable_get_data_double(variable)
-    except OSError:
+    except:
         # Linux support not yet implemented in UGridpy
         with Dataset(input_file_path) as nc:
             data = np.asarray(nc.variables[variable][:]).flatten()
@@ -125,7 +124,7 @@ def load_map_data(input_file_path: str, variable: str) -> np.ndarray:
         ) as ug:
 
             map_data = ug.variable_get_data_double(variable)
-    except OSError:
+    except:
         # Linux support not yet implemented in UGridpy
         with Dataset(input_file_path) as nc:
             map_data = np.asarray(nc.variables[variable][:]).flatten()

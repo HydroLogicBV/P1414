@@ -1,4 +1,5 @@
-from hydrolib.core.io.bc.models import ForcingBase, ForcingModel, QHTable, QuantityUnitPair
+from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel, QHTable,
+                                        QuantityUnitPair)
 from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 
 
@@ -18,10 +19,8 @@ class Models:
             coupling_type = "1Dto2D"
             dx = 500
             dy = 500
-            elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.TIF"
-            extent_path = (
-                r"D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
-            )
+            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.TIF"
+            extent_path = "D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
             initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\wd_0_v4.tif"
             roughness_2d_raster_path = (
                 r"D:\Work\Project\P1414\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
