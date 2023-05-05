@@ -465,6 +465,8 @@ def links1d2d_add_links_2d_to_1d_lateral(
 
     geometrylist = network.meshkernel.mesh2d_get_mesh_boundaries_as_polygons()
     mpboundaries = GeometryList(**geometrylist.__dict__).to_geometry()
+    if isinstance(mpboundaries, Polygon):
+        mpboundaries = MultiPolygon([mpboundaries])
     if within is not None:
         # If a 'within' polygon was provided, get the intersection with the meshboundaries
         # and convert it to a geometrylist
@@ -507,14 +509,16 @@ def links1d2d_add_links_2d_to_1d_lateral(
         axis=1,
     )
     nodes2d = np.stack([network._mesh2d.mesh2d_node_x, network._mesh2d.mesh2d_node_y], axis=1)
-    face_node_crds = nodes2d[network._mesh2d.mesh2d_face_nodes[id2d]]
+    # neglect -2147483648 indices
+    idxs = network._mesh2d.mesh2d_face_nodes[id2d]
+    face_node_crds = nodes2d[idxs[idxs >= 0]]
 
     # Calculate distance between face edge and face center
-    x1 = np.take(face_node_crds, 0, axis=2)
-    y1 = np.take(face_node_crds, 1, axis=2)
+    x1 = np.take(face_node_crds, 0, axis=1)
+    y1 = np.take(face_node_crds, 1, axis=1)
     face_node_crds[:] = np.roll(face_node_crds, 1, axis=1)
-    x2 = np.take(face_node_crds, 0, axis=2)
-    y2 = np.take(face_node_crds, 1, axis=2)
+    x2 = np.take(face_node_crds, 0, axis=1)
+    y2 = np.take(face_node_crds, 1, axis=1)
     x0, y0 = faces2d[:, 0], faces2d[:, 1]
     distance = (
         np.absolute((x2 - x1) * (y1 - y0[:, None]) - (x1 - x0[:, None]) * (y2 - y1))
