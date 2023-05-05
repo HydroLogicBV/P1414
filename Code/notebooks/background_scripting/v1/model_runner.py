@@ -102,8 +102,9 @@ class ModelRunner(WidgetStyling):
                 else:
                     initializing_out.value = ""
         self.done = True
-        logging_title.value = "<p>Model finished!</p>"
-        logging.value = ""
+        if self.percentage > 90:
+            logging_title.value = "<p>Model finished!</p>"
+            logging.value = ""
         
         if p.returncode != 0:
             raise subprocess.CalledProcessError(p.returncode, p.args)
