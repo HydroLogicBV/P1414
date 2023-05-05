@@ -6,20 +6,24 @@ from pandera.typing import DataFrame, Series
 from pandera.typing.geopandas import GeoSeries
 from pydantic import BaseModel, root_validator
 
-from data_structures.dhydamo_data_model_checks import (geometry_check,
-                                                       globalid_check,
-                                                       none_geometry_check,
-                                                       validate_codes)
-from data_structures.hydamo_globals import (HYDAMO_SHAPE_NUMS,
-                                            MANAGEMENT_DEVICE_TYPES,
-                                            ROUGHNESS_MAPPING_LIST)
+from data_structures.dhydamo_data_model_checks import (
+    geometry_check,
+    globalid_check,
+    none_geometry_check,
+    validate_codes,
+)
+from data_structures.hydamo_globals import (
+    HYDAMO_SHAPE_NUMS,
+    MANAGEMENT_DEVICE_TYPES,
+    ROUGHNESS_MAPPING_LIST,
+)
 
 
 class BasicSchema(pa.SchemaModel):
     class Config:
         coerce = True  # allow datatype conversion
         name = "BasicSchema"
-        strict = True  # no additional columns allowed
+        strict = "filter"  # no additional columns allowed
 
 
 class PDBasicShema(BasicSchema):

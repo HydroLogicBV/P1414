@@ -11,8 +11,8 @@ output_folder = folder + r"\Models\HHSK\V0"
 config = r"hhsk_config"
 defaults = r"defaults"
 
-build_database = True
-build_model = False
+build_database = False
+build_model = True
 
 
 if build_database:

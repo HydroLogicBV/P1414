@@ -25,7 +25,6 @@ class DHydroData:
     Attributes:
         ddm (DHydamoDataModel): instance of DHydamoDataModel that is used by this clas
         features (list): list of features that are present in self.ddm and do not have None values
-        gpkg_path (str): file location of geopackage (depreciated)
     """
 
     def __init__(self):
