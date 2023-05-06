@@ -239,8 +239,8 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
         self.settings = {}
         self.settings['Rhine basic discharge'] = 5000
         self.settings['Rhine peak discharge'] = 15000
-        self.settings['Rhine event start'] = 0
-        self.settings['Rhine event duration'] = 86400
+        self.settings['Rhine event start (hour)'] = 0
+        self.settings['Rhine event duration (hours)'] = 24
 
         if os.path.exists(self.rhine_bc_loc):
             pass
@@ -339,10 +339,12 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
             raise Exception("tstart or tstop is not valid")
         self.T = []
         self.Q = []
+        duration = self.settings['Rhine event duration'] * 60 * 60
+        offset = self.settings['Rhine event start'] * 60 * 60
         for t in range(self.tStart, self.tStop + 300, 300):
             self.T.append(t)
-            if t < self.settings['Rhine event start'] + self.settings['Rhine event duration'] and t > self.settings['Rhine event start']:
-                Q_calc =  self.settings['Rhine basic discharge'] + (self.settings['Rhine peak discharge']-self.settings['Rhine basic discharge']) * (1 + np.cos(np.pi + 2*np.pi*((t-self.settings['Rhine event start'])/self.settings['Rhine event duration']))) * 1/2
+            if t < offset + duration and t > offset:
+                Q_calc =  self.settings['Rhine basic discharge'] + (self.settings['Rhine peak discharge']-self.settings['Rhine basic discharge']) * (1 + np.cos(np.pi + 2*np.pi*((t-offset)/duration))) * 1/2
             else:
                 Q_calc = self.settings['Rhine basic discharge']
             self.Q.append(Q_calc)
@@ -370,6 +372,7 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
         ax.plot([self.tStop/3600, self.tStop/3600], [-10000, 100000], color = 'orange', label = "End of simulation")
         ax.plot([self.tBreach/3600, self.tBreach/3600], [-10000, 100000], color = 'red', label = "Timestep dikebreach")
         ax.legend()
+        ax.set_ylim(bottom = 0)
 
 
     def update(self):

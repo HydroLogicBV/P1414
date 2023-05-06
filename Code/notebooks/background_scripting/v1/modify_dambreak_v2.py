@@ -348,16 +348,6 @@ class UseTemplateDambreak(WidgetStyling):
                 'waterLevelDownstreamLocationX': "105164.77299999818",
                 'waterLevelDownstreamLocationY': "441639.9690000005",
                 'waterLevelUpstreamNodeId': "97739.000000_435536.000000"
-                },
-            'origineel_wijk_bij_duurstede':{
-                'xCoordinates': "156824.3099 156683.9894", 
-                'yCoordinates': "443271.8724 443672.4882", 
-                'startLocationX': "156822.791",
-                'startLocationY': "443463.731",
-                'waterLevelDownstreamLocationX': "156683.989",
-                'waterLevelDownstreamLocationY': "443672.488",
-                'waterLevelUpstreamLocationX': "156821.639",
-                'waterLevelUpstreamLocationY': "443274.543"
                 }
             }
         self.model_path = model_folder
@@ -376,10 +366,10 @@ class UseTemplateDambreak(WidgetStyling):
         
         self.keringen = gpd.read_file(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data\keringen.shp'), crs = self.crs_rd)
 
-        self.center = [51.970682, 4.64013599]
+        self.center = [51.90698, 4.74042]
         self.zoom = 12
         self.marker = Marker(location=self.center, draggable=True)
-       
+        self.display_text = ''
         self.draw_map()
         
     def draw_map(self):
@@ -394,10 +384,15 @@ class UseTemplateDambreak(WidgetStyling):
         output = ipy.Output()
         display(button_next_step, output)
         button_next_step.on_click(self.confirm)
+
+        self.html = ipy.HTML(value=f'<b style="color:black;font-size:18px;">{self.display_text}</b>')
+        display(self.html)
     
     def confirm(self, b):
         self.closest = self.snap_to_closest_point()
         self.kering_choice = self.dambreak_database[self.closest]
+        self.display_text = 'Succesfully selected a dambreak location!'
+        self.html.value = self.display_text
 
     def add_keringen(self):
         keringen_map = GeoData(geo_dataframe = self.keringen.to_crs(self.crs_map),
