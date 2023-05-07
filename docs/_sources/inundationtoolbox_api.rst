@@ -1,5 +1,5 @@
-Inundation toolbox api-doc
---------------------------
+Inundation toolbox
+------------------
 
 Arrival_times
 ^^^^^^^^^^^^^

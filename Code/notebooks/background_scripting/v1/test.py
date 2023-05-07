@@ -1,51 +1,49 @@
-import re
-from scipy.spatial import KDTree
-import numpy as np
-import os
-import shutil
-# from notebooks.background_scripting.v1.widget_styling import WidgetStyling
-import ipywidgets as ipy
-from IPython.display import display, clear_output
-import json 
-from shapely.geometry import Point, LineString
-import geopandas as gpd
-from ipyleaflet import Map, Marker, projections, basemaps
-import ipyleaflet as ipl
-import pyproj
-from shapely.geometry import Point, LineString
-from shapely.ops import nearest_points
-import xarray as xr
-import matplotlib.pyplot as plt
+# import xarray as xr
+# import geopandas as gpd
+# import pandas as pd
+
+
+# ds = xr.open_dataset(r"C:\Werk\Projecten\P1414_ROI\Cursus\StandAloneServiceZipfile\Model_database\V20_WBD_v1\dflowfm\network.nc")
+# network_x = [ds.network_node_x.values[i] for i in range(len(ds.network_node_x.values))]
+# network_y = [ds.network_node_y.values[i] for i in range(len(ds.network_node_y.values))]
+
+
+# df = pd.DataFrame({'x': network_x , 'y': network_y})
+# geometry = gpd.points_from_xy(df.x, df.y, crs="EPSG:28992")
+
+# gdf = gpd.GeoDataFrame(data = {'index': range(len(network_x))}, geometry = geometry)
+# print(gdf)
+
+# gdf.to_file(r"C:\Temp\network_x_y_ROI.shp")
+
 import netCDF4 as nc
-# keringen = gpd.read_file(r"C:\Werk\Projecten\P1414_ROI\Github_P1414\P1414\Code\notebooks\data\Combined_test_v14_WBD.gpkg",
-#                     layer = 'keringen',
-#                     crs=28992)
+import numpy as np
+import matplotlib.pyplot as plt
+import os
 
-# strings_to_match = ['hhsk', 'hhd', 'hdsr', 'hhr', 'wagv', 'ark']
-# keringen = keringen[keringen['code'].str.startswith(tuple(strings_to_match))]
+def plot_inundation_volume(nc_path):
+    ncfile = nc.Dataset(nc_path)
 
-# keringen.to_file(r'C:\Werk\Projecten\P1414_ROI\Github_P1414\P1414\Code\notebooks\data\keringen.shp')
+    wd = ncfile.variables['Mesh2d_waterdepth'][:]
 
-# node = "121494.000000_443715.000000"
+    wd_over_time = np.sum(wd, axis = 1)[:36]
 
-# waterLevelDownstreamLocationX      = 109664.77608820342
-# waterLevelDownstreamLocationY      = 437140.22771585674
+    # fig, ax = plt.subplots(figsize = (12,12))
+    # ax.plot(
+    #     [x/3 for x in range(len(wd_over_time))],
+    #     wd_over_time
+    #     )
+    # savefigpath = os.path.dirname(os.path.dirname(os.path.dirname(nc_path)))
+    # plt.savefig(os.path.join(savefigpath, 'inundation_total.png'))
+    return np.sum(wd_over_time)
 
-# ds = nc.Dataset(r"D:\work\Project\P1414\Models_SAS\Model_runs\V14_krimpenerwaard_v7_run_2023-04-26T12-03-01\dflowfm\DFM_OUTPUT_test\test_map.nc")
-
-# # ids = ds['network_node_id'][:]
-
-# # for i, id in enumerate(ids):
-# #     id = ''.join([x.decode('UTF-8') for x in id])
-# #     if id.strip(' ') == node:
-# #         index = i
-
-# # # fig, ax = plt.subplots(figsize = (10,10))
-
-# print(list(ds.variables.keys()))
-location = r"D:\work\Project\P1414\Models_SAS\Model_runs\demo\dflowfm\network.nc"
-ds = xr.open_dataset(location)
-ds = nc.Dataset(location)
-
-print(list(ds.variables.keys()))
-print(ds['mesh1d'])
+runs = r"C:\Werk\Projecten\P1414_ROI\Cursus\StandAloneServiceZipfile\Model_runs"
+for folder in os.listdir(runs):
+    map_file = f"{folder}/dflowfm/output/DFM_map.nc"
+    path = os.path.join(runs, map_file)
+    if os.path.exists(path):
+        vol = plot_inundation_volume(path)
+        # print(vol)
+        if vol > 24900:
+            print(path)
+            print(vol)

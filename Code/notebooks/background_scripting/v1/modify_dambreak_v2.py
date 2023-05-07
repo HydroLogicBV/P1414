@@ -85,15 +85,12 @@ class DambreakWidget(WidgetStyling):
             width=300,
             )
 
-
     def gdf_to_geojson(self, input_gdf, layer_name):
         json_data = json.loads(input_gdf.to_json())
         geojson = ipl.GeoJSON(data=json_data, name = layer_name)
         return geojson
     
-    def filter_gdf_based_on_location(self, location, dataframe):
-        dist_max_x = 0.2
-        dist_max_y = 0.16
+    def filter_gdf_based_on_location(self, location, dataframe, dist_max_x = 0.2, dist_max_y = 0.16):
         dataframe = dataframe[(location[1] - dist_max_x < dataframe.geometry.x) & (dataframe.geometry.x < location[1] + dist_max_x)]
         dataframe = dataframe.loc[(location[0] - dist_max_y < dataframe.geometry.y) & (dataframe.geometry.y < location[0] + dist_max_y)]
         return dataframe
@@ -211,13 +208,16 @@ class DambreakWidget(WidgetStyling):
             if dist < best_dist:
                 best_dist = dist
                 best_index = i
-        points_of_interest = closest_line.geometry.coords[max(best_index - 1, 0): min(len(closest_line.geometry.coords), best_index+1)]
-        
+        if best_index != 0:
+            points_of_interest = closest_line.geometry.coords[max(best_index - 1, 0): min(len(closest_line.geometry.coords), best_index+1)]
+        else:
+            points_of_interest = closest_line.geometry.coords[best_index:best_index+1]
+
         points_of_interest = [[p[0], p[1]] for p in points_of_interest]
 
         point_on_line = [snap_point.x, snap_point.y]
 
-        perp_line = self.calc_perpendicular_line(points_of_interest, point_on_line, 250)
+        perp_line = self.calc_perpendicular_line(points_of_interest, point_on_line, 750)
         
         line_geom = LineString(perp_line)
         gdf = gpd.GeoDataFrame(geometry=[line_geom], crs = self.crs_rd)
@@ -280,7 +280,7 @@ class DambreakWidget(WidgetStyling):
         
     def add_network(self):
         lat, lon= self.breach_point.to_crs(self.crs_map).iloc[0].geometry.x, self.breach_point.to_crs(self.crs_map).iloc[0].geometry.y
-        network = self.filter_gdf_based_on_location([lon, lat], self.netcdf.network_map)
+        network = self.filter_gdf_based_on_location([lon, lat], self.netcdf.network_map, dist_max_x = 0.5, dist_max_y = 0.5)
         network_1d_points = GeoData(geo_dataframe = network,
             point_style={'radius': 5, 'color': 'blue', 'fillOpacity': 1, 'fillColor': 'black', 'weight': 3},
             name = 'NETWORK')
@@ -301,26 +301,159 @@ class DambreakWidget(WidgetStyling):
         self.marker.location = (closest_point.geometry.y, closest_point.geometry.x)
         return index_closest
 
+class UseTemplateDambreak(WidgetStyling):
+    def __init__(self, model_folder):
+        self.dambreak_database = {
+            "test1": {
+                'xCoordinates': "108979.1337823624 109416.15887880792", 
+                'yCoordinates': "435419.48272509914 433984.5579657208", 
+                'startLocationX': "109197.9809",
+                'startLocationY': "434702.1157",
+                'waterLevelDownstreamLocationX': "109164.77299999818",
+                'waterLevelDownstreamLocationY': "435639.9690000005",
+                'waterLevelUpstreamNodeId': "102828.214338_433732.462321"
+                },
+            "test4": {
+                'xCoordinates': "105180.70213595919 105438.70492741487", 
+                'yCoordinates': "433197.1908588133 434674.8357957318", 
+                'startLocationX': "105294.6061",
+                'startLocationY': "433938.6494",
+                'waterLevelDownstreamLocationX': "105164.77299999818",
+                'waterLevelDownstreamLocationY': "434639.9690000005",
+                'waterLevelUpstreamNodeId': "102828.214338_433732.462321"
+                },
+            "test4": {
+                'xCoordinates': "105180.70213595919 105438.70492741487", 
+                'yCoordinates': "433197.1908588133 434674.8357957318", 
+                'startLocationX': "105294.6061",
+                'startLocationY': "433938.6494",
+                'waterLevelDownstreamLocationX': "105164.77299999818",
+                'waterLevelDownstreamLocationY': "434639.9690000005",
+                'waterLevelUpstreamNodeId': "102828.214338_433732.462321"
+                },
+            "test9": {
+                'xCoordinates': "110285.11228979738 110593.13499187054", 
+                'yCoordinates': "436198.89107870497 434730.85769522644", 
+                'startLocationX': "110432.6329",
+                'startLocationY': "435463.5125",
+                'waterLevelDownstreamLocationX': "110164.77299999818",
+                'waterLevelDownstreamLocationY': "436139.9690000005",
+                'waterLevelUpstreamNodeId': "102828.214338_433732.462321"
+                },
+            "test10": {
+                'xCoordinates': "103278.34685413516 104344.65983664396", 
+                'yCoordinates': "441073.2397343932 442128.21680681384", 
+                'startLocationX': "103815.7146",
+                'startLocationY': "441596.6324",
+                'waterLevelDownstreamLocationX': "105164.77299999818",
+                'waterLevelDownstreamLocationY': "441639.9690000005",
+                'waterLevelUpstreamNodeId': "97739.000000_435536.000000"
+                }
+            }
+        self.model_path = model_folder
+        
+        self.set_default_layout_and_styling()
+        
+        self.crs_rd = 28992
+        self.crs_map = 4326
+        crs_rd = pyproj.CRS.from_epsg(self.crs_rd)
+        crs_map = pyproj.CRS.from_epsg(self.crs_map)
+
+        # Create a transformer object to convert between the two coordinate systems
+        self.map_to_rd = pyproj.Transformer.from_crs(crs_map, crs_rd)
+        self.rd_to_map = pyproj.Transformer.from_crs(crs_rd, crs_map)
+
+        
+        self.keringen = gpd.read_file(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data\keringen.shp'), crs = self.crs_rd)
+
+        self.center = [51.90698, 4.74042]
+        self.zoom = 12
+        self.marker = Marker(location=self.center, draggable=True)
+        self.display_text = ''
+        self.draw_map()
+        
+    def draw_map(self):
+        clear_output()
+        self.m = Map(center=self.center, zoom=self.zoom)   
+        display(self.m)
+        self.m.add_layer(self.marker)  
+        self.add_dambreak_template()
+        # self.add_keringen() 
+
+        button_next_step = ipy.Button(description="Confirm location", style = self.button_style, layout = self.button_layout)
+        output = ipy.Output()
+        display(button_next_step, output)
+        button_next_step.on_click(self.confirm)
+
+        self.html = ipy.HTML(value=f'<b style="color:black;font-size:18px;">{self.display_text}</b>')
+        display(self.html)
+    
+    def confirm(self, b):
+        self.closest = self.snap_to_closest_point()
+        self.kering_choice = self.dambreak_database[self.closest]
+        self.display_text = 'Succesfully selected a dambreak location!'
+        self.html.value = self.display_text
+
+    def add_keringen(self):
+        keringen_map = GeoData(geo_dataframe = self.keringen.to_crs(self.crs_map),
+                style={'color': 'red', 'radius':10, 'fillColor': 'green', 'opacity':1, 'weight':3, 'dashArray':'2', 'fillOpacity':0.6},
+                name = 'KERINGEN')
+        self.m.add_layer(keringen_map)
+    
+    def add_dambreak_template(self):
+        self.points = {}
+        xs = []
+        ys = []
+        names = []
+        for code in self.dambreak_database.keys():
+            x_coor = self.dambreak_database[code]['startLocationX']
+            y_coor = self.dambreak_database[code]['startLocationY']
+            self.points[code] = [x_coor, y_coor]
+            xs.append(x_coor)
+            ys.append(y_coor)
+            names.append(code)
+        
+        geometry = gpd.points_from_xy(xs, ys , crs="EPSG:28992")
+        self.dambreak_locs_rd = gpd.GeoDataFrame(data = {'name': names}, geometry = geometry)
+        self.dambreak_locs_map = self.dambreak_locs_rd.to_crs(self.crs_map)
+        dambreaks_map = GeoData(geo_dataframe = self.dambreak_locs_map,
+                point_style={'radius': 5, 'color': 'red', 'fillOpacity': 1, 'fillColor': 'white', 'weight': 3},
+                name = 'BREACH')
+        self.m.add_layer(dambreaks_map)
+        
+    
+    def snap_to_closest_point(self):
+        point = self.marker.location
+        point = self.map_to_rd.transform(point[0], point[1])
+        index_closest = self.dambreak_locs_rd.distance(Point(point[0], point[1])).argmin()
+        name_closest = self.dambreak_locs_rd.iloc[index_closest]['name']
+        closest_point = self.dambreak_locs_map.iloc[index_closest]
+        self.marker.location = (closest_point.geometry.y, closest_point.geometry.x)
+        return name_closest
 
 class ModifyDambreak(WidgetStyling):
-    def __init__(self, model_path, dambreak_settings, keringen):
-        self.dambreak_settings_widget = dambreak_settings
+    def __init__(self, model_path, dambreak_settings, keringen, use_widget_dambreak, dambreak_template):
         self.model_path = model_path
         self.structures_path = os.path.join(model_path, 'dflowfm\structures.ini')
-        self.keringen = keringen
-
+    
         self.structure_textfile = self.remove_dambreaks_from_structures()
 
         self.dambreak_settings = {}
         self.wrote_backup = False
         
-        self.add_dambreaks_from_widget(
-            self.dambreak_settings_widget['breach_perpendicular'],
-            self.keringen)
+        if use_widget_dambreak == False:
+            self.dambreak_settings_widget = dambreak_settings
+            self.keringen = keringen
+            self.add_dambreaks_from_widget(
+                self.dambreak_settings_widget['breach_perpendicular'],
+                self.keringen)
+        else:
+            print(use_widget_dambreak)
+            self.use_template_dambreak(dambreak_template)
         
         self.set_default_layout_and_styling()
 
-        self.settings_to_modify = ['crestLevelIni', 't0', 'timeToBreachToMaximumDepth',
+        self.settings_to_modify = ['crestLevelIni', 't0',
                                   'crestLevelMin', 'breachWidthIni', 'f1', 'f2', 'uCrit']
         self.settings_to_modify_names = {
             'crestLevelIni': "Initial crest level of dambreach (crestLevelIni)",
@@ -454,6 +587,25 @@ class ModifyDambreak(WidgetStyling):
         self.dambreak_settings['waterLevelDownstreamLocationY'] = self.dambreak_settings_widget['downstream'].iloc[0].geometry.y
         self.dambreak_settings['waterLevelUpstreamNodeId'] =  self.dambreak_settings_widget['upstream_node']
     
+    def use_template_dambreak(self, dambreak_template):
+        self.dambreak_settings['id'] = 'comb_0.0'
+        self.dambreak_settings['name'] = 'd3d9f584-086e-4d19-ae01-e75bdca23d21'
+        self.dambreak_settings['type'] = 'dambreak'
+        self.dambreak_settings['algorithm'] = 2
+        self.dambreak_settings['numCoordinates'] = 2
+        self.dambreak_settings['crestLevelIni'] = 0 
+        self.dambreak_settings['crestLevelMin'] = -2
+        self.dambreak_settings['breachWidthIni'] = 5
+        self.dambreak_settings['t0'] = 0
+        self.dambreak_settings['timeToBreachToMaximumDepth'] = 360.0
+        self.dambreak_settings['f1'] = 1.3
+        self.dambreak_settings['f2'] = 0.04
+        self.dambreak_settings['uCrit'] = 0.2
+        self.dambreak_settings['breachWidthIni'] = 5
+
+        for setting in dambreak_template:
+            self.dambreak_settings[setting] = dambreak_template[setting]
+
     def write_to_structures(self, write_output = True, backup_original = True):       
         if write_output:
             if backup_original and self.wrote_backup == False:

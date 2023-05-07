@@ -1,5 +1,5 @@
-Plotting api-doc
---------------------------
+Plotting
+--------
 
 raster_plot_with_context
 ^^^^^^^^^^^^^^^^^^^^^^^^

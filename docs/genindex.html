@@ -155,30 +155,43 @@ const thebe_selector_output = ".output, .cell_output"
         </ul>
         <p aria-level="2" class="caption" role="heading"><span class="caption-text">ROI</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="SAS_run_model.html">ROI - Stand Alone Service</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SAS_build_model.html">ROI - Modelbouw</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dhydro_data_api.html">DhydroData api-doc</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Hisreader</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="hisreader_usage.html">Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hisreader_api.html">Hisreader api-doc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SAS_run_model.html">ROI Stand Alone Service</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="SAS_build_model.html">ROI Modelbouw</a></li>
+
+
+
+
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Inundation toolbox</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1 has-children"><a class="reference internal" href="inundationtoolbox.html">Usage examples</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="clm_example_tol.html">Example for reading clm-file for example Tol</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fou_example_tol.html">Example for reading fou-file for example Tol</a></li>
-<li class="toctree-l2"><a class="reference internal" href="map_example_tol.html">Example for reading map-file for example Tol</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hisreader_usage.html">Reading a his-file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clm_example_tol.html">Reading a clm-file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fou_example_tol.html">Reading a fou-file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="map_example_tol.html">Reading a map-file</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API-documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="data_structures_api.html">ROI Toolbox</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="dhydro_data_api.html">Dhydro Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fixed_weirs_helpers_api.html">Fixed Weirs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hydamo_data_api.html">HYDAMO Data Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hydamo_helpers_api.html">HYDAMO Helper Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="roi_data_api.html">ROI Data Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="to_dhydro_helpers_api.html">To Dhydro Helpers</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="inundationtoolbox_api.html">Inundation toolbox api-doc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="flowmeshreader_api.html">Flowmeshreader api-doc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plotting_api.html">Plotting api-doc</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="IT-API-doc.html">Inundation Toolbox</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="hisreader_api.html">Hisreader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inundationtoolbox_api.html">Inundation toolbox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flowmeshreader_api.html">Flowmeshreader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting_api.html">Plotting</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">HYDROLIB demo</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="HYDROLIB_demo.html">Demo for reading fou-file for example Tol</a></li>
+</li>
 </ul>
 
     </div>
@@ -222,50 +235,18 @@ const thebe_selector_output = ".output, .cell_output"
 <div class="article-header-buttons">
 
 
-
-
-
-<div class="dropdown dropdown-source-buttons">
-  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
-    <i class="fab fa-github"></i>
-  </button>
-  <ul class="dropdown-menu">
-      
-      
-      
-      <li><a href="https://github.com/HydroLogicBV/D-HYDROLOGIC" target="_blank"
-   class="btn btn-sm btn-source-repository-button dropdown-item"
-   title="Source repository"
-   data-bs-placement="left" data-bs-toggle="tooltip"
->
-  
-
-<span class="btn__icon-container">
-  <i class="fab fa-github"></i>
-  </span>
-<span class="btn__text-container">Repository</span>
-</a>
-</li>
-      
-      
-      
-      
-      <li><a href="https://github.com/HydroLogicBV/D-HYDROLOGIC/issues/new?title=Issue%20on%20page%20%2Fgenindex.html&body=Your%20issue%20content%20here." target="_blank"
-   class="btn btn-sm btn-source-issues-button dropdown-item"
+<a href="https://github.com/HydroLogicBV/P1414/issues/new?title=Issue%20on%20page%20%2Fgenindex.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button"
    title="Open an issue"
-   data-bs-placement="left" data-bs-toggle="tooltip"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
   
 
 <span class="btn__icon-container">
   <i class="fas fa-lightbulb"></i>
   </span>
-<span class="btn__text-container">Open issue</span>
+
 </a>
-</li>
-      
-  </ul>
-</div>
 
 
 
@@ -332,17 +313,21 @@ document.write(`
 <div class="genindex-jumpbox">
  <a href="#_"><strong>_</strong></a>
  | <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
+ | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
+ | <a href="#V"><strong>V</strong></a>
  | <a href="#W"><strong>W</strong></a>
  
 </div>
@@ -366,13 +351,31 @@ document.write(`
   </ul></td>
 </tr></table>
 
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.brug">brug (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.brug">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dhydro_data_api.html#dhydro_data.DHydroData.clip_structures_by_branches">clip_structures_by_branches() (dhydro_data.DHydroData method)</a>
 </li>
+      <li><a href="hydamo_helpers_api.html#hydamo_helpers.convert_to_dhydamo_data">convert_to_dhydamo_data() (in module hydamo_helpers)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="fixed_weirs_helpers_api.html#fixedweirs_helpers.create_dambreak_data">create_dambreak_data() (in module fixedweirs_helpers)</a>
+</li>
+      <li><a href="fixed_weirs_helpers_api.html#fixedweirs_helpers.create_fixed_weir_data">create_fixed_weir_data() (in module fixedweirs_helpers)</a>
+</li>
       <li><a href="flowmeshreader_api.html#flowmeshreader.create_raster">create_raster() (in module flowmeshreader)</a>
 </li>
   </ul></td>
@@ -381,12 +384,95 @@ document.write(`
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="dhydro_data_api.html#dhydro_data.DHydroData.ddm">ddm (dhydro_data.DHydroData attribute)</a>
+      <li>
+    data_structures
+
+      <ul>
+        <li><a href="_autosummary/data_structures.html#module-data_structures">module</a>
 </li>
+      </ul></li>
+      <li>
+    data_structures.dhydamo_data_model_checks
+
+      <ul>
+        <li><a href="_autosummary/data_structures.dhydamo_data_model_checks.html#module-data_structures.dhydamo_data_model_checks">module</a>
+</li>
+      </ul></li>
+      <li>
+    data_structures.dhydamo_data_model_old
+
+      <ul>
+        <li><a href="_autosummary/data_structures.dhydamo_data_model_old.html#module-data_structures.dhydamo_data_model_old">module</a>
+</li>
+      </ul></li>
+      <li>
+    data_structures.dhydamo_data_old
+
+      <ul>
+        <li><a href="_autosummary/data_structures.dhydamo_data_old.html#module-data_structures.dhydamo_data_old">module</a>
+</li>
+      </ul></li>
+      <li>
+    data_structures.dhydro_data
+
+      <ul>
+        <li><a href="_autosummary/data_structures.dhydro_data.html#module-data_structures.dhydro_data">module</a>
+</li>
+      </ul></li>
+      <li>
+    data_structures.fixedweirs_helpers
+
+      <ul>
+        <li><a href="_autosummary/data_structures.fixedweirs_helpers.html#module-data_structures.fixedweirs_helpers">module</a>
+</li>
+      </ul></li>
+      <li>
+    data_structures.hydamo_data_model
+
+      <ul>
+        <li><a href="_autosummary/data_structures.hydamo_data_model.html#module-data_structures.hydamo_data_model">module</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    data_structures.hydamo_globals
+
+      <ul>
+        <li><a href="_autosummary/data_structures.hydamo_globals.html#module-data_structures.hydamo_globals">module</a>
+</li>
+      </ul></li>
+      <li>
+    data_structures.hydamo_helpers
+
+      <ul>
+        <li><a href="_autosummary/data_structures.hydamo_helpers.html#module-data_structures.hydamo_helpers">module</a>
+</li>
+      </ul></li>
+      <li>
+    data_structures.roi_data_model
+
+      <ul>
+        <li><a href="_autosummary/data_structures.roi_data_model.html#module-data_structures.roi_data_model">module</a>
+</li>
+      </ul></li>
+      <li>
+    data_structures.to_dhydro_helpers
+
+      <ul>
+        <li><a href="_autosummary/data_structures.to_dhydro_helpers.html#module-data_structures.to_dhydro_helpers">module</a>
+</li>
+      </ul></li>
+      <li><a href="dhydro_data_api.html#dhydro_data.DHydroData.ddm">ddm (dhydro_data.DHydroData attribute)</a>
+</li>
       <li><a href="dhydro_data_api.html#dhydro_data.DHydroData">DHydroData (class in dhydro_data)</a>
 </li>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.duiker">duiker (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.duiker">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -401,11 +487,15 @@ document.write(`
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flowmeshreader_api.html#flowmeshreader.get_bounds">get_bounds() (in module flowmeshreader)</a>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.gemaal">gemaal (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.gemaal">(roi_data_model.ROIDataModel attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="dhydro_data_api.html#dhydro_data.DHydroData.gpkg_path">gpkg_path (dhydro_data.DHydroData attribute)</a>
+      <li><a href="flowmeshreader_api.html#flowmeshreader.get_bounds">get_bounds() (in module flowmeshreader)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -417,14 +507,34 @@ document.write(`
 </li>
       <li><a href="hisreader_api.html#hisreader.HisResults">HisResults (class in hisreader)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dhydro_data_api.html#dhydro_data.DHydroData.hydamo_from_gpkg">hydamo_from_gpkg() (dhydro_data.DHydroData method)</a>
 </li>
       <li><a href="dhydro_data_api.html#dhydro_data.DHydroData.hydamo_from_raw_data">hydamo_from_raw_data() (dhydro_data.DHydroData method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dhydro_data_api.html#dhydro_data.DHydroData.hydamo_to_gpkg">hydamo_to_gpkg() (dhydro_data.DHydroData method)</a>
 </li>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel">HydamoDataModel (class in hydamo_data_model)</a>
+</li>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.hydroobject_normgp">hydroobject_normgp (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.hydroobject_normgp">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.kunstwerkopening">kunstwerkopening (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.kunstwerkopening">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -453,10 +563,47 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flowmeshreader_api.html#flowmeshreader.mesh_data_to_raster">mesh_data_to_raster() (in module flowmeshreader)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flowmeshreader_api.html#flowmeshreader.mesh_to_tiff">mesh_to_tiff() (in module flowmeshreader)</a>
 </li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="_autosummary/data_structures.html#module-data_structures">data_structures</a>
+</li>
+        <li><a href="_autosummary/data_structures.dhydamo_data_model_checks.html#module-data_structures.dhydamo_data_model_checks">data_structures.dhydamo_data_model_checks</a>
+</li>
+        <li><a href="_autosummary/data_structures.dhydamo_data_model_old.html#module-data_structures.dhydamo_data_model_old">data_structures.dhydamo_data_model_old</a>
+</li>
+        <li><a href="_autosummary/data_structures.dhydamo_data_old.html#module-data_structures.dhydamo_data_old">data_structures.dhydamo_data_old</a>
+</li>
+        <li><a href="_autosummary/data_structures.dhydro_data.html#module-data_structures.dhydro_data">data_structures.dhydro_data</a>
+</li>
+        <li><a href="_autosummary/data_structures.fixedweirs_helpers.html#module-data_structures.fixedweirs_helpers">data_structures.fixedweirs_helpers</a>
+</li>
+        <li><a href="_autosummary/data_structures.hydamo_data_model.html#module-data_structures.hydamo_data_model">data_structures.hydamo_data_model</a>
+</li>
+        <li><a href="_autosummary/data_structures.hydamo_globals.html#module-data_structures.hydamo_globals">data_structures.hydamo_globals</a>
+</li>
+        <li><a href="_autosummary/data_structures.hydamo_helpers.html#module-data_structures.hydamo_helpers">data_structures.hydamo_helpers</a>
+</li>
+        <li><a href="_autosummary/data_structures.roi_data_model.html#module-data_structures.roi_data_model">data_structures.roi_data_model</a>
+</li>
+        <li><a href="_autosummary/data_structures.to_dhydro_helpers.html#module-data_structures.to_dhydro_helpers">data_structures.to_dhydro_helpers</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.normgeparamprofielwaarde">normgeparamprofielwaarde (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.normgeparamprofielwaarde">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -465,6 +612,32 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="hisreader_api.html#hisreader.HisResults.parse_structures">parse_structures() (hisreader.HisResults method)</a>
 </li>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.pomp">pomp (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.pomp">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.profielgroep">profielgroep (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.profielgroep">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.profiellijn">profiellijn (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.profiellijn">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.profielpunt">profielpunt (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.profielpunt">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -473,12 +646,26 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="plotting_api.html#plotting.raster_plot_with_context">raster_plot_with_context() (in module plotting)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="hisreader_api.html#hisreader.HisResults.read_all_netcdf_variables">read_all_netcdf_variables() (hisreader.HisResults method)</a>
 </li>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.regelmiddel">regelmiddel (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.regelmiddel">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="inundationtoolbox_api.html#inundation_toolbox.rising_speeds">rising_speeds() (in module inundation_toolbox)</a>
 </li>
+      <li><a href="roi_data_api.html#roi_data_model.ROIDataModel">ROIDataModel (class in roi_data_model)</a>
+</li>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.ruwheidsprofiel">ruwheidsprofiel (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.ruwheidsprofiel">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -487,6 +674,20 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="hisreader_api.html#hisreader.HisResults.structure_types">structure_types (hisreader.HisResults attribute)</a>
 </li>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.sturing">sturing (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.sturing">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.stuw">stuw (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.stuw">(roi_data_model.ROIDataModel attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -494,17 +695,49 @@ document.write(`
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dhydro_data_api.html#dhydro_data.DHydroData.to_dhydro">to_dhydro() (dhydro_data.DHydroData method)</a>
+
+      <ul>
+        <li><a href="to_dhydro_helpers_api.html#to_dhydro_helpers.to_dhydro">(in module to_dhydro_helpers)</a>
 </li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.to_gpkg">to_gpkg() (hydamo_data_model.HydamoDataModel method)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.to_gpkg">(roi_data_model.ROIDataModel method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.validate_codes">validate_codes() (hydamo_data_model.HydamoDataModel class method)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.validate_codes">(roi_data_model.ROIDataModel class method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="hisreader_api.html#hisreader.HisResults.write_csv">write_csv() (hisreader.HisResults method)</a>
+      <li><a href="hydamo_data_api.html#hydamo_data_model.HydamoDataModel.waterloop">waterloop (hydamo_data_model.HydamoDataModel attribute)</a>
+
+      <ul>
+        <li><a href="roi_data_api.html#roi_data_model.ROIDataModel.waterloop">(roi_data_model.ROIDataModel attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="hisreader_api.html#hisreader.HisResults.write_csv">write_csv() (hisreader.HisResults method)</a>
+</li>
+      <li><a href="to_dhydro_helpers_api.html#to_dhydro_helpers.write_dimr">write_dimr() (in module to_dhydro_helpers)</a>
+</li>
       <li><a href="flowmeshreader_api.html#flowmeshreader.write_tiff">write_tiff() (in module flowmeshreader)</a>
 </li>
   </ul></td>
