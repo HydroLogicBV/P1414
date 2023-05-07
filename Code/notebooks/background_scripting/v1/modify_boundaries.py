@@ -339,8 +339,8 @@ class ModifyRhineDischarge(ModifyBoundaries, WidgetStyling):
             raise Exception("tstart or tstop is not valid")
         self.T = []
         self.Q = []
-        duration = self.settings['Rhine event duration'] * 60 * 60
-        offset = self.settings['Rhine event start'] * 60 * 60
+        duration = self.settings['Rhine event duration (hours)'] * 60 * 60
+        offset = self.settings['Rhine event start (hour)'] * 60 * 60
         for t in range(self.tStart, self.tStop + 300, 300):
             self.T.append(t)
             if t < offset + duration and t > offset:

@@ -1,8 +1,8 @@
-DhydroData api-doc
-==================
+Dhydro Data
+===========
 
-DhydroData
-----------
+Dhydro Data
+-----------
 .. autoclass:: dhydro_data.DHydroData
    :members: 
    
