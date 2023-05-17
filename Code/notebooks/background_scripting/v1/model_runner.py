@@ -107,4 +107,5 @@ class ModelRunner(WidgetStyling):
             logging.value = ""
         
         if p.returncode != 0:
+            print(f"The notebook failed to run your model. You can also try running the model manually, by going to the folder where you model is created, and double clicking the run.bat file. \nThis folder is: {self.model_folder}")
             raise subprocess.CalledProcessError(p.returncode, p.args)

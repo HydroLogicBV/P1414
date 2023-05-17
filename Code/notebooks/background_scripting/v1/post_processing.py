@@ -13,15 +13,48 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+
+def read_output_folder(model_folder):
+    files = os.listdir(os.path.join(model_folder, 'dflowfm'))
+    mdu_file = [file for file in files if file.endswith('.mdu')][0]
+    mdu_file = os.path.join(model_folder, 'dflowfm', mdu_file)
+    model_name =  os.path.basename(mdu_file).split('.')[0]
+    fm_folder = os.path.dirname(mdu_file)
+
+    # find the outputdir according to the mdu file
+    output_dir_lines = []
+    with open(mdu_file, 'r') as f:
+        for line in f.readlines():
+            if line.lower().strip().startswith('outputdir'):
+                output_dir_lines.append(line)
+
+    if len(output_dir_lines) > 1:
+        raise Exception("Found multiple output dir in mdu file!")
+
+    if len(output_dir_lines) == 0:
+        output_dir = os.path.join(fm_folder, "DFM_OUTPUT_{}".format(model_name))
+    elif len(output_dir_lines) == 1:
+        output_dir_line = output_dir_lines[0]
+        if '#' in output_dir_line:
+            output_dir_line = output_dir_line.split('#')[0]
+        output_dir_name = output_dir_line.split('=')[-1].strip()
+        if output_dir_name == '.':
+            output_dir = fm_folder
+        else:
+            output_dir = os.path.join(fm_folder, output_dir_name)
+    return output_dir
+
+
 class PlotSettingsBreach(WidgetStyling):
     """
     Class that contains all the widgetes and settings for plotting the dike breach information.
     """
-    def __init__(self, output_folder):
+    def __init__(self, model_folder):
+        output_folder = read_output_folder(model_folder)
         self.settings = {}
         his_files = [x for x in os.listdir(output_folder) if x.endswith('his.nc')]
         if len(his_files) != 1:
-            raise Exception(f"Found {len(his_files)} his files in {output_folder}, should be 1.")
+            raise Exception(f"Found {len(his_files)} his files in {output_folder}, should be 1. Are you sure the model has finished computing? If so, check if you can find the output in the model folder, which should be {model_folder}")
         self.settings['his_path'] = os.path.join(output_folder, his_files[0])
         self.settings['output_file_path'] = os.path.join(output_folder,  "post_processing")
 
@@ -99,11 +132,12 @@ class PlotSettingsMap(WidgetStyling):
     """
     Class that contains all the widgetes and settings for plotting model results on the 2D map.
     """
-    def __init__(self, output_folder):
+    def __init__(self, model_folder):
+        output_folder = read_output_folder(model_folder)
         self.settings = {}
         map_files = [x for x in os.listdir(output_folder) if x.endswith('map.nc')]
         if len(map_files) != 1:
-            raise Exception(f"Found {len(map_files)} map files in {output_folder}, should be 1.")
+            raise Exception(f"Found {len(map_files)} map files in {output_folder}, should be 1. Are you sure the model has finished computing? If so, check if you can find the output in the model folder, which should be {model_folder}")
         self.settings['map_path'] = os.path.join(output_folder, map_files[0])
         self.settings['output_file_path'] = os.path.join(output_folder,  "post_processing")
 
