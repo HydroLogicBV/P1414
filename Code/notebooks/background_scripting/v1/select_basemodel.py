@@ -9,10 +9,10 @@ class ModelSettings(WidgetStyling):
     Class that contains all the settings that need to be used to create the model.
     Also contians the functions that communicate with the widgets from the jupyter notebook. 
     """
-    def __init__(self):
+    def __init__(self, git_dir):
         # initiate default values for settings
         self.settings = {}
-        self.settings['folder'] = r"D:\work\Project\P1414\Models_SAS\Model_database"
+        self.settings['folder'] = os.path.join(git_dir, 'Model_database')
         try: 
             self.settings['model_options'] = self.select_models(self.settings['folder'])
             self.settings['model'] = self.settings['model_options'][0]

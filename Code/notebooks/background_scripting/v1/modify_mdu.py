@@ -201,7 +201,8 @@ class ModifyMDU(WidgetStyling):
             self.settings[setting] = self.convert_to_mdu(setting, widget_value)
             self.modify_parameter_mdu(parameter = setting, new_value = self.settings[setting])
 
-        self.settings['DHYDRO location'] = self.widgets['DHYDRO location'].value
+        self.settings['DHYDRO location'] = self.widgets['DHYDRO location'].value.strip('"')
+        self.widgets['DHYDRO location'].value = self.widgets['DHYDRO location'].value.strip('"')
         self.modify_run_bat()    
         
         self.save_mdu()
