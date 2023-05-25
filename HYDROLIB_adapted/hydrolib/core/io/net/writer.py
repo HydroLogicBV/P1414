@@ -78,11 +78,13 @@ class UgridWriter:
     @staticmethod
     def _set_global_attributes(ncfile: nc.Dataset, path: Path) -> None:  # type: ignore[import]
         ncfile.Conventions = "CF-1.8 UGRID-1.0"
-        ncfile.title = "Delft3D-FM 1D2D network for model " + path.name.rstrip(
-            "_net.nc"
+        ncfile.title = "Delft3D-FM 1D2D network for model " + path.name.rstrip("_net.nc")
+        ncfile.source = (
+            f"HYDROLIB-core v.{__version__}, D-HyDAMO, model {path.name.rstrip('_net.nc')}"
         )
-        ncfile.source = f"HYDROLIB-core v.{__version__}, D-HyDAMO, model {path.name.rstrip('_net.nc')}"
-        ncfile.history = f"Created on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} by {Path(__file__).name}."
+        ncfile.history = (
+            f"Created on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} by {Path(__file__).name}."
+        )
         ncfile.institution = "Deltares/HKV"
         ncfile.references = "https://github.com/openearth/delft3dfmpy/; https://www.deltares.nl; https://www.hkv.nl"
 
@@ -100,9 +102,7 @@ class UgridWriter:
             ncfile.createDimension("Two", 2)
 
     def _init_2dmesh(self, ncfile: nc.Dataset, mesh2d: Mesh2d) -> None:  # type: ignore[import]
-        ncfile.createDimension(
-            "max_nMesh2d_face_nodes", mesh2d.mesh2d_face_nodes.shape[1]
-        )
+        ncfile.createDimension("max_nMesh2d_face_nodes", mesh2d.mesh2d_face_nodes.shape[1])
         ncfile.createDimension("Mesh2d_nEdges", mesh2d.mesh2d_edge_nodes.shape[0])
         ncfile.createDimension("Mesh2d_nFaces", mesh2d.mesh2d_face_nodes.shape[0])
         ncfile.createDimension("Mesh2d_nNodes", mesh2d.mesh2d_node_x.size)
@@ -150,17 +150,13 @@ class UgridWriter:
         )
 
         # network nodes
-        ntw_node_x = ncfile.createVariable(
-            "network_node_x", np.float64, "network_nNodes"
-        )
+        ntw_node_x = ncfile.createVariable("network_node_x", np.float64, "network_nNodes")
         ntw_node_x.standard_name = "projection_x_coordinate"
         ntw_node_x.long_name = "x coordinates of network nodes"
         ntw_node_x.units = "m"
         ntw_node_x[:] = mesh1d.network1d_node_x
 
-        ntw_node_y = ncfile.createVariable(
-            "network_node_y", np.float64, "network_nNodes"
-        )
+        ntw_node_y = ncfile.createVariable("network_node_y", np.float64, "network_nNodes")
         ntw_node_y.standard_name = "projection_y_coordinate"
         ntw_node_y.long_name = "y coordinates of network nodes"
         ntw_node_y.units = "m"
@@ -170,9 +166,7 @@ class UgridWriter:
             "network_branch_id", "c", ("network_nEdges", "idstrlength")
         )
         ntw_branch_id_name.long_name = "ID of branch geometries"
-        ntw_branch_id_name[:] = self.to_char_list(
-            mesh1d.network1d_branch_id, self.idstrlength
-        )
+        ntw_branch_id_name[:] = self.to_char_list(mesh1d.network1d_branch_id, self.idstrlength)
 
         ntw_branch_id_longname = ncfile.createVariable(
             "network_branch_long_name", "c", ("network_nEdges", "longstrlength")
@@ -189,9 +183,7 @@ class UgridWriter:
         ntw_edge_length.units = "m"
         ntw_edge_length[:] = mesh1d.network1d_branch_length
 
-        ntw_branch_order = ncfile.createVariable(
-            "network_branch_order", "i4", "network_nEdges"
-        )
+        ntw_branch_order = ncfile.createVariable("network_branch_order", "i4", "network_nEdges")
         ntw_branch_order.long_name = "Order of branches for interpolation"
         ntw_branch_order.mesh = "network"
         ntw_branch_order.location = "edge"
@@ -272,14 +264,10 @@ class UgridWriter:
         mesh1d_edge_node.start_index = 1
         mesh1d_edge_node[:] = mesh1d.mesh1d_edge_nodes + mesh1d_edge_node.start_index
 
-        mesh1d_edge_branch = ncfile.createVariable(
-            "mesh1d_edge_branch", "i4", "mesh1d_nEdges"
-        )
+        mesh1d_edge_branch = ncfile.createVariable("mesh1d_edge_branch", "i4", "mesh1d_nEdges")
         mesh1d_edge_branch.long_name = "Index of branch on which mesh edges are located"
         mesh1d_edge_branch.start_index = 1
-        mesh1d_edge_branch[:] = (
-            mesh1d.mesh1d_edge_branch_id + mesh1d_edge_branch.start_index
-        )
+        mesh1d_edge_branch[:] = mesh1d.mesh1d_edge_branch_id + mesh1d_edge_branch.start_index
 
         mesh1d_edge_offset = ncfile.createVariable(
             "mesh1d_edge_offset", np.float64, "mesh1d_nEdges"
@@ -288,14 +276,23 @@ class UgridWriter:
         mesh1d_edge_offset.units = "m"
         mesh1d_edge_offset[:] = mesh1d.mesh1d_edge_branch_offset
 
-        mesh1d_node_branch = ncfile.createVariable(
-            "mesh1d_node_branch", "i4", "mesh1d_nNodes"
-        )
+        # mesh1d edge nodes
+        mesh_edge_x = ncfile.createVariable("mesh1d_edge_x", np.float64, "mesh1d_nEdges")
+        mesh_edge_x.standard_name = "projection_x_coordinate"
+        mesh_edge_x.long_name = "Characteristic x-coordinate of the mesh edge (e.g. midpoint)"
+        mesh_edge_x.units = "m"
+        mesh_edge_x[:] = mesh1d.mesh1d_edge_x
+
+        mesh_edge_y = ncfile.createVariable("mesh1d_edge_y", np.float64, "mesh1d_nEdges")
+        mesh_edge_y.standard_name = "projection_y_coordinate"
+        mesh_edge_y.long_name = "Characteristic y-coordinate of the mesh edge (e.g. midpoint)"
+        mesh_edge_y.units = "m"
+        mesh_edge_y[:] = mesh1d.mesh1d_edge_y
+
+        mesh1d_node_branch = ncfile.createVariable("mesh1d_node_branch", "i4", "mesh1d_nNodes")
         mesh1d_node_branch.long_name = "Index of branch on which mesh nodes are located"
         mesh1d_node_branch.start_index = 1
-        mesh1d_node_branch[:] = (
-            mesh1d.mesh1d_node_branch_id + mesh1d_node_branch.start_index
-        )
+        mesh1d_node_branch[:] = mesh1d.mesh1d_node_branch_id + mesh1d_node_branch.start_index
 
         mesh1d_node_offset = ncfile.createVariable(
             "mesh1d_node_offset", np.float64, "mesh1d_nNodes", fill_value=np.nan
@@ -303,6 +300,19 @@ class UgridWriter:
         mesh1d_node_offset.long_name = "Offset along branch of mesh nodes"
         mesh1d_node_offset.units = "m"
         mesh1d_node_offset[:] = mesh1d.mesh1d_node_branch_offset
+
+        # mesh1d nodes
+        mesh_node_x = ncfile.createVariable("mesh1d_node_x", np.float64, "mesh1d_nNodes")
+        mesh_node_x.standard_name = "projection_x_coordinate"
+        mesh_node_x.long_name = "x coordinates of mesh nodes"
+        mesh_node_x.units = "m"
+        mesh_node_x[:] = mesh1d.mesh1d_node_x
+
+        mesh_node_y = ncfile.createVariable("mesh1d_node_y", np.float64, "mesh1d_nNodes")
+        mesh_node_y.standard_name = "projection_y_coordinate"
+        mesh_node_y.long_name = "y coordinates of mesh nodes"
+        mesh_node_y.units = "m"
+        mesh_node_y[:] = mesh1d.mesh1d_node_y
 
     def _set_2dmesh(self, ncfile: nc.Dataset, mesh2d: Mesh2d) -> None:  # type: ignore[import]
 
@@ -422,9 +432,7 @@ class UgridWriter:
         nc_link1d2d.start_index = 1
         nc_link1d2d[:, :] = link1d2d.link1d2d + nc_link1d2d.start_index
 
-        link1d2d_ids = ncfile.createVariable(
-            "links_ids", "c", ("nLinks_edge", "idstrlength")
-        )
+        link1d2d_ids = ncfile.createVariable("links_ids", "c", ("nLinks_edge", "idstrlength"))
         link1d2d_ids.long_name = "ids of the contact"
         link1d2d_ids[:] = self.to_char_list(link1d2d.link1d2d_id, self.idstrlength)
 
@@ -432,9 +440,7 @@ class UgridWriter:
             "links_long_names", "c", ("nLinks_edge", "longstrlength")
         )
         link1d2d_long_names.long_name = "long names of the contact"
-        link1d2d_long_names[:] = self.to_char_list(
-            link1d2d.link1d2d_long_name, self.longstrlength
-        )
+        link1d2d_long_names[:] = self.to_char_list(link1d2d.link1d2d_long_name, self.longstrlength)
 
         link1d2d_contact_type = ncfile.createVariable(
             "links_contact_type",
