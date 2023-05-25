@@ -13,13 +13,15 @@ from plotting import raster_plot_with_context
 
 # set paths
 # output_folder = r"D:\Work\Project\P1414\Models\HHR\HM\run_fw_model\dflowfm\output"
-output_folder = r"D:\Work\Project\P1414\Models\Combined\V18_WBD_v3\run_model\dflowfm\output"
+output_folder = (
+    r"D:\Work\Project\P1414\Models\Combined\V21_WBD_HD\run_model_changed_coords\dflowfm\output"
+)
 input_file_path = output_folder + r"\DFM_map.nc"
 
 
 # raster options
-resolution = 160  # m
-dhydro_resolution = 500  # m
+resolution = 33  # m
+dhydro_resolution = 100  # m
 distance_tol = np.ceil(np.sqrt(2 * dhydro_resolution**2))  # m
 interpolation = r"nearest"
 
@@ -52,7 +54,7 @@ for n in range(2):
     # If both don't exist, create both
 
     frames = []
-    for ix in tqdm(range(5, 505, 25)):
+    for ix in tqdm(range(140, 505, 1)):
         # for ix in tqdm(range(0, 72, 3)):
         # for ix in tqdm(range(1, 13, 1)):
         output_png_file_path = output_fig_path + r"\{}.png".format(ix)

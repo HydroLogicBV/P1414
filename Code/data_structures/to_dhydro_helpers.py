@@ -11,14 +11,11 @@ from geo_tools.roughness_to_mesh import create_roughness_xyz
 from hydrolib.core.basemodel import DiskOnlyFileModel
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
-from hydrolib.core.io.friction.models import (FrictBranch, FrictGlobal,
-                                              FrictionModel)
+from hydrolib.core.io.friction.models import FrictBranch, FrictGlobal, FrictionModel
 from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
-from hydrolib.core.io.inifield.models import (IniFieldModel, InitialField,
-                                              ParameterField)
+from hydrolib.core.io.inifield.models import IniFieldModel, InitialField, ParameterField
 from hydrolib.core.io.mdu.models import FMModel
-from hydrolib.core.io.onedfield.models import (OneDFieldBranch,
-                                               OneDFieldGlobal, OneDFieldModel)
+from hydrolib.core.io.onedfield.models import OneDFieldBranch, OneDFieldGlobal, OneDFieldModel
 from hydrolib.core.io.polyfile.models import Description, Metadata
 from hydrolib.core.io.polyfile.models import Point as hPoint
 from hydrolib.core.io.polyfile.models import PolyFile, PolyObject
@@ -36,6 +33,7 @@ from shapely.geometry import Polygon, box
 from data_structures.roi_data_model import ROIDataModel as DataModel
 
 FM_FOLDER = "dflowfm"
+OUTPUTDIR = "output"
 
 
 def to_dhydro(
@@ -973,7 +971,7 @@ def to_dhydro(
                     network=network,
                     branchids=branch_list,
                     dist_factor=None,  # within=extent.buffer(1e3)
-                    max_length = max_lat_dist
+                    max_length=max_lat_dist,
                 )
 
         return fm
@@ -1029,6 +1027,8 @@ def to_dhydro(
         self.fm = simple_fm_model(
             start_time=model_config.FM.start_time, stop_time=model_config.FM.stop_time
         )
+        self.fm.output.outputdir = OUTPUTDIR
+
         self.hydamo = HyDAMO()
 
         if model_config.FM.two_d_bool:  # compute extent of 1D network
