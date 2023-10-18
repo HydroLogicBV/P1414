@@ -26,9 +26,9 @@ from hydrolib.dhydamo.geometry import mesh
 from hydrolib.dhydamo.io.dimrwriter import DIMRWriter
 from rasterstats import zonal_stats
 from scipy.spatial import KDTree
-from shapely.geometry import LineString
+from shapely.geometry import LineString, MultiLineString
 from shapely.geometry import Point as sPoint
-from shapely.geometry import Polygon, box
+from shapely.geometry import Polygon
 
 from data_structures.roi_data_model import ROIDataModel as DataModel
 
@@ -354,6 +354,25 @@ def to_dhydro(
         return fm
 
     def add_fixed_weirs(ddm: DataModel, fm=FMModel, data: List = [0, 0, 5, 4, 4, 0]) -> FMModel:
+        def split_line_by_point(line, max_length: float = 500, max_seg_length: float = 25):
+            length = line.length
+            if length < max_length:
+                return line
+
+            n_seg = np.ceil(length / max_length).astype(int)
+            l_list = []
+            for n in range(0, n_seg):
+                sp = n / n_seg
+                ep = (n + 1) / n_seg
+                points_norm = np.linspace(sp, ep, np.ceil(max_length / max_seg_length).astype(int))
+                points = []
+                for p in points_norm:
+                    points.append(line.interpolate(p, normalized=True))
+                l_list.append(LineString(points))
+
+            mls = MultiLineString(l_list)
+            return mls
+
         fw_list = []
         if hasattr(ddm, "keringen") and ddm.keringen is not None:
             fw_list.append(ddm.keringen)
@@ -362,6 +381,20 @@ def to_dhydro(
 
         line_list = []
         for fw_gdf in fw_list:
+            fw_gdf = (
+                fw_gdf.assign(
+                    geometry=fw_gdf.apply(
+                        lambda x: split_line_by_point(
+                            x.geometry,
+                        ),
+                        axis=1,
+                    )
+                )
+                .explode(index_parts=False)
+                .reset_index(drop=True)
+            )
+            fw_gdf["geometry"] = fw_gdf["geometry"].simplify(tolerance=1)
+
             for name, row in fw_gdf.iterrows():
                 coord_list = row.geometry.coords[:]
                 point_list = []

@@ -1,13 +1,16 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
+import geopandas as gpd
 import numpy as np
 import rasterio
+import rasterio.mask
 from netCDF4 import Dataset
 from rasterio.crs import CRS
 from rasterio.errors import CRSError
 from rasterio.transform import from_bounds
 from scipy.interpolate import griddata, interp1d
 from scipy.spatial import KDTree
+from shapely.geometry import Polygon
 from ugrid import UGrid
 
 
@@ -55,7 +58,9 @@ def load_meta_data(input_file_path) -> List:
             if not hasattr(nc.variables[variable], "coordinates"):
                 continue
 
-            if ("Mesh2d_face_x Mesh2d_face_y" in nc.variables[variable].coordinates) or ("mesh2d_face_x mesh2d_face_y" in nc.variables[variable].coordinates):
+            if ("Mesh2d_face_x Mesh2d_face_y" in nc.variables[variable].coordinates) or (
+                "mesh2d_face_x mesh2d_face_y" in nc.variables[variable].coordinates
+            ):
                 variables.append(variable)
 
     return variables
@@ -198,11 +203,15 @@ def load_classmap_data(
 
     if ret_map_data:
         map_data = np.reshape(map_data, map_dims)
+    else:
+        map_data = None
 
     clm_data = np.reshape(clm_data, map_dims)
     nc.close()  # close file
     return clm_data, map_data
 
+def clip_raster():
+    pass
 
 def create_raster(
     node_x: np.ndarray, node_y: np.ndarray, resolution: float, margin: float = 1.05
@@ -341,7 +350,10 @@ def mesh_data_to_raster(
 
 
 def write_tiff(
-    output_file_path: str, new_grid_data: np.ndarray, bounds: np.ndarray, epsg: int
+    output_file_path: str,
+    new_grid_data: np.ndarray,
+    bounds: np.ndarray,
+    epsg: int,
 ) -> None:
     """
     Saves new_grid_data to a tiff file. new_grid_data should be a raster.
@@ -361,8 +373,8 @@ def write_tiff(
         east=bounds[1],
         south=bounds[3],
         north=bounds[2],
-        width=new_grid_data.shape[0],
-        height=new_grid_data.shape[1],
+        width=new_grid_data.shape[1],
+        height=new_grid_data.shape[0],
     )
     try:
         raster_crs = CRS.from_epsg(epsg)
@@ -372,13 +384,14 @@ def write_tiff(
     t_file = rasterio.open(
         output_file_path,
         "w",
-        driver="GTiff",
-        height=new_grid_data.shape[1],
-        width=new_grid_data.shape[0],
+        compress="lzw",
         count=1,
-        dtype=new_grid_data.dtype,
         crs=raster_crs,
+        driver="GTiff",
+        dtype=new_grid_data.dtype,
+        height=new_grid_data.shape[0],
         transform=transform,
+        width=new_grid_data.shape[1],
     )
     t_file.write(new_grid_data, 1)
     t_file.close()
@@ -386,10 +399,11 @@ def write_tiff(
 
 def mesh_to_tiff(
     data: np.ndarray,
+    distance_tol: float,
     input_file_path: str,
     output_file_path: str,
     resolution: float,
-    distance_tol: float,
+    extent: Union[gpd.GeoDataFrame, Polygon] = None,
     interpolation: str = "nearest",
 ) -> None:
     """
@@ -430,6 +444,9 @@ def mesh_to_tiff(
     epsg = nc.variables["projected_coordinate_system"].getncattr("epsg")
 
     # write tif
-    write_tiff(output_file_path, new_grid_data, bounds, epsg)
+    write_tiff(output_file_path, new_grid_data, bounds, epsg, extent=extent)
+
+    if extent is not None:
+        pass
 
     return grid_x, grid_y, new_grid_data

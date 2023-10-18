@@ -379,7 +379,9 @@ document.write(`
   </button>
 `);
 </script>
-
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
 </div></div>
       
     </div>
@@ -395,6 +397,15 @@ document.write(`
     <div id="print-main-content">
         <div id="jb-print-toc">
             
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data">Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#modelbouw">Modelbouw</a></li>
+</ul>
+            </nav>
         </div>
     </div>
 </div>
@@ -406,12 +417,82 @@ document.write(`
                   
   <section class="tex2jax_ignore mathjax_ignore" id="roi-toolbox">
 <h1>ROI Toolbox<a class="headerlink" href="#roi-toolbox" title="Permalink to this heading">#</a></h1>
-<p>The ROI Toolbox consists of the <a class="reference internal" href="SAS_run_model.html"><span class="doc std std-doc">Stand Alone Service</span></a> to prepare and run models;
-and a toolchain to <a class="reference internal" href="SAS_build_model.html"><span class="doc std std-doc">build D-HYDRO models</span></a> from HYDAMO data.</p>
+<p>De ROI Toolbox is ontwikkeld binnen het Randstad Overstromingsmodel Instrumentarium (ROI) project.
+Het doel van de Toolbox is om de dataconversie en modelbouw van overstromingsmodellen voor de Randstad te automatiseren.
+Met deze Toolbox kunnen automatisch D-HYDRO overstromingsmodellen van de Randstad worden gegenereerd.</p>
+<section id="data">
+<h2>Data<a class="headerlink" href="#data" title="Permalink to this heading">#</a></h2>
+<p>In onderstaande tabel staat beschreven welke geo-databronnen gebruikt zijn om de ROI modellen te bouwen.</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Data</p></th>
+<th class="head"><p>Bron</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><ul><li>Binnendijkse hoofdwatergangen</li> <li>Locatie keringen</li><li> Objecten op hoodwatergangen</li></ul></p></td>
+<td><p><a class="reference external" href="https://data.nhi.nu/">NHI dataportaal</a>: <ul><li>Waterschap Amstel, Gooi en Vechtstreek.</li></ul> Legger: <ul><li><a class="reference external" href="https://www.rijnland.net/regels-op-een-rij/legger/">Hoogheemraadschap van Rijnland</a>,</li><li> <a class="reference external" href="https://www.hhdelfland.nl/over-ons/regelgeving/legger/">Hoogheemraadschap van Delfland</a>,</li><li> <a class="reference external" href="https://www.schielandendekrimpenerwaard.nl/wat-doen-we/regels-en-afspraken-over-beheer-keur-en-leggers/">Hoogheemraadschap van Schieland en de Krimpenerwaard</a>,</li><li> <a class="reference external" href="https://www.hdsr.nl/werk/leggers-watergangen/">Hoogheemraadschap de Stichtse Rijnlanden</a>.</li></ul> Rijkswaterstaat (ARK/NZK)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Rijntakken model</p></td>
+<td><p><a class="reference external" href="https://iplo.nl/thema/water/applicaties-modellen/modelschematisaties/rivieren/">Rijkswaterstaat</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Rijn Maasmonding model</p></td>
+<td><p><a class="reference external" href="https://iplo.nl/thema/water/applicaties-modellen/modelschematisaties/zuidwestelijke-delta/">Rijkswaterstaat</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Bodemhoogte</p></td>
+<td><p><a class="reference external" href="https://www.ahn.nl/ahn-4">AHN4 DTM</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Landgebruikskaart</p></td>
+<td><p>Landgebruikskaart 2021 STOWA</p></td>
+</tr>
+<tr class="row-odd"><td><p>Hoofdwegen</p></td>
+<td><p><a class="reference external" href="https://www.pdok.nl/introductie/-/article/basisregistratie-topografie-brt-topnl">BGT TOP10NL</a> Wegen</p></td>
+</tr>
+<tr class="row-even"><td><p>Spoorwegen</p></td>
+<td><p><a class="reference external" href="https://www.pdok.nl/introductie/-/article/basisregistratie-topografie-brt-topnl">BGT TOP10NL</a> Spoorwegen</p></td>
+</tr>
+<tr class="row-odd"><td><p>Overige Lijnelementen</p></td>
+<td><p><a class="reference external" href="https://www.pdok.nl/introductie/-/article/basisregistratie-topografie-brt-topnl">BGT TOP10NL</a> Reliëf</p></td>
+</tr>
+<tr class="row-even"><td><p>Onderdoorgangen</p></td>
+<td><p><a class="reference external" href="https://www.pdok.nl/introductie/-/article/basisregistratie-topografie-brt-topnl">BGT TOP10NL</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Tunnels</p></td>
+<td><p><a class="reference external" href="https://www.pdok.nl/introductie/-/article/basisregistratie-topografie-brt-topnl">BGT TOP10NL</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Viaducten</p></td>
+<td><p><a class="reference external" href="https://www.pdok.nl/introductie/-/article/basisregistratie-topografie-brt-topnl">BGT TOP10NL</a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="modelbouw">
+<h2>Modelbouw<a class="headerlink" href="#modelbouw" title="Permalink to this heading">#</a></h2>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head text-center"><p><img alt="Schematic overview" src="../_images/Software_diagram_v2.png" /></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-center"><p>Figure 1:  Schematische weergave van werkzaamheid ROI-Toolbox en de <span class="xref myst">DhydroData</span> class.</p></td>
+</tr>
+</tbody>
+</table>
+<p>In onderstaande figuur zijn de twee belangrijkste workflows in de ROI-Ttoolbox schematisch weergegeven.
+Links wordt ruwe (legger) data omgezet naar een ROI-datamodel wat gebaseerd is op de HYDAMO standaard en eventueel opgeslagen als Geopackage.
+In het ROI-datamodel wordt de data standaard gevalideerd om een aantal onvolkomenheden in de data op te sporen.</p>
+<p>Rechts wordt een ROI-datamodel omgezet naar een D-HYDRO model middels D-HYDAMO en HYDROLIB-CORE.
+Eventueel kan een Geopackage worden ingeladen om een ROI-datamodel in te laden.</p>
+<p>Voor beide workflows zijn Jupyter notebooks beschikbaar in de ROI SAS.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="SAS_build_model.html"><span class="doc std std-doc">Dataconversie</span></a></p></li>
+<li><p><a class="reference internal" href="SAS_run_model.html"><span class="doc std std-doc">Model runnen</span></a></p></li>
+</ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The API-reference of the ROI Toolbox can be found <a class="reference internal" href="../api-ref/data_structures_api.html"><span class="doc std std-doc">here</span></a></p>
+<p>De API-beschrijving van de ROI Toolbox staat <a class="reference internal" href="../api-ref/data_structures_api.html"><span class="doc std std-doc">hier</span></a></p>
 </div>
+</section>
 <div class="toctree-wrapper compound">
 </div>
 </section>
@@ -474,6 +555,21 @@ and a toolchain to <a class="reference internal" href="SAS_build_model.html"><sp
             </div>
             
             
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data">Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#modelbouw">Modelbouw</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
               
             
           </div>

@@ -1,10 +1,14 @@
+import os
 import sys
 from pathlib import Path
 
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
+
+from pp_helpers import bounds_from_grid
 
 sys.path.append(r"D:\Work\git\GIS_tools\HydroLogic_Inundation_Toolbox\Readers")
 
@@ -16,12 +20,19 @@ from plotting import raster_plot_with_context
 output_folder = (
     r"D:\Work\Project\P1414\Models\Combined\V21_WBD_HD\run_model_changed_coords\dflowfm\output"
 )
+extent_path = output_folder + r"\\clip.shp"
 input_file_path = output_folder + r"\DFM_map.nc"
 
+if not os.path.exists(extent_path):
+    extent = bounds_from_grid(mapfile=input_file_path, output_file=extent_path)
+else:
+    extent = gpd.read_file(extent_path)
 
-# raster options
-resolution = 33  # m
+
+# raster options -> put this in config
+resolution = 50  # m
 dhydro_resolution = 100  # m
+tres = 3
 distance_tol = np.ceil(np.sqrt(2 * dhydro_resolution**2))  # m
 interpolation = r"nearest"
 
@@ -34,7 +45,7 @@ for n in range(2):
         vmin = 0
         vmax = 10
         output_gif_path = output_folder + r"\wd.webp"
-        output_fig_path = output_folder + r"\fig_wd"
+        output_fig_path = output_folder + r"\fig_wd_v2"
         Path(output_fig_path).mkdir(exist_ok=True)
         map_data = load_map_data(input_file_path, variable)
         map_data[map_data < 0.01] = np.nan
@@ -54,11 +65,10 @@ for n in range(2):
     # If both don't exist, create both
 
     frames = []
-    for ix in tqdm(range(140, 505, 1)):
-        # for ix in tqdm(range(0, 72, 3)):
-        # for ix in tqdm(range(1, 13, 1)):
-        output_png_file_path = output_fig_path + r"\{}.png".format(ix)
-        output_tiff_file_path = output_fig_path + r"\{}.tiff".format(ix)
+    for ix in tqdm(range(tres, 505, tres)):
+        hr = ix // tres
+        output_png_file_path = output_fig_path + r"\{}.png".format(hr)
+        output_tiff_file_path = output_fig_path + r"\dataset{:4d}.tiff".format(hr)
 
         if Path(output_png_file_path).is_file():
             tqdm.write("{}.png found".format(ix))

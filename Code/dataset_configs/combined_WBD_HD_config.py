@@ -12,12 +12,12 @@ class Models:
         class one_d:
             max_dist_to_struct = 5
             max_snap_dist = 5
-            node_distance = 100
+            node_distance = 50
 
         class two_d:
             coupling_type = "1Dto2D"
-            dx = 100
-            dy = 100
+            dx = 50
+            dy = 50
             elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.TIF"
             extent_path = (
                 r"D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
