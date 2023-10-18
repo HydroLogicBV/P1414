@@ -40,8 +40,14 @@ class NetcdfNetwork():
             raise Exception("Mesh coordinates are not in network.nc, try importing and exporting your model in the D-HYDRO GUI.")
         mesh1d = [(ds.mesh1d_node_x.values[i], ds.mesh1d_node_y.values[i]) for i in range(len(ds.mesh1d_node_x.values))]
         mesh2d = [(ds.Mesh2d_face_x.values[i], ds.Mesh2d_face_y.values[i]) for i in range(len(ds.Mesh2d_face_x.values))]
-        links = ds.links.values
-        ds.close()
+
+        # find the link ids, these have different names, so look for name that contains link and id
+        for key in list(ds.keys()):
+            if ('link' in key) and ('id' in key):
+                links_ids = ds[key].values
+                links_ids = [l.decode("utf-8") for l in links_ids]
+                links = np.array([[int(l.split('_')[0]), int(l.split('_')[-1])] for l in links_ids])
+                break
 
         df = pd.DataFrame()
         df['coors'] = network
@@ -64,6 +70,7 @@ class NetcdfNetwork():
 
         mesh1d = np.array(mesh1d)
         mesh2d = np.array(mesh2d)
+
         links_geo = list(np.stack((mesh1d[links[:, 0].astype(int)], mesh2d[links[:, 1].astype(int)]), axis=1)) # van link (index - index) naar linestring (point - point)
         line_strings = [LineString(line) for line in links_geo]
         self.links_rd = gpd.GeoDataFrame({'geometry':line_strings}, crs = self.crs_rd)
@@ -118,7 +125,7 @@ class DambreakWidget(WidgetStyling):
         geojson = ipl.GeoJSON(data=json_data, name = layer_name)
         return geojson
     
-    def filter_gdf_based_on_location(self, location, dataframe, dist_max_x = 0.2, dist_max_y = 0.16):
+    def filter_gdf_based_on_location(self, location, dataframe, dist_max_x = 0.1, dist_max_y = 0.08):
         dataframe = dataframe[(location[1] - dist_max_x < dataframe.geometry.x) & (dataframe.geometry.x < location[1] + dist_max_x)]
         dataframe = dataframe.loc[(location[0] - dist_max_y < dataframe.geometry.y) & (dataframe.geometry.y < location[0] + dist_max_y)]
         return dataframe
