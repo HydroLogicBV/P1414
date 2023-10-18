@@ -76,9 +76,9 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-build_tool/
+#build_tool/
 jupyter_execute/
-jupyter_book/
+#jupyter_book/
 .jupyter_cache/
 
 
