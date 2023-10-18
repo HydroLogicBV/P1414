@@ -49,6 +49,7 @@ def add_tunnel_dims(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 if __name__ == "__main__":
+    underpass_length = 50
     ahn_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.tif"
     brug_output_path = r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\brug.shp"
     input_path = r"D:\Work\Project\P1414\GIS\Wegen\Top10NLwegen_en_spoorwegen_clipped.shp"
@@ -90,7 +91,7 @@ if __name__ == "__main__":
     brug_gdf = gpd.GeoDataFrame(data=out_branches_list, geometry="geometry", crs=in_gdf.crs)
 
     brug_gdf = brug_gdf.loc[
-        (brug_gdf["geometry"].length < 500) & (brug_gdf["geometry"].length > 10), :
+        (brug_gdf["geometry"].length < underpass_length) & (brug_gdf["geometry"].length > 10), :
     ]
 
     wl_gdf["geometry"] = wl_gdf["geometry"].buffer(25, cap_style=2)
@@ -109,7 +110,7 @@ if __name__ == "__main__":
 
     rd_out_gdf.to_file(r"D:\Work\Project\P1414\GIS\Wegen\underpass_buffers.shp")
 
-    blen = np.sqrt(2 * 500**2) + 1
+    blen = np.sqrt(2 * underpass_length**2) + 1
     interp_range = 0.1
     in_gdf = copy(brug_gdf)
     u_list = []
@@ -182,4 +183,6 @@ if __name__ == "__main__":
     out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=11)
     out_u_gdf = add_tunnel_dims(gdf=out_u_gdf)
     out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=10)
-    out_u_gdf.to_file(r"D:\Work\Project\P1414\GIS\Wegen\Underpasses_filtered_500m.shp")
+    out_u_gdf.to_file(
+        r"D:\Work\Project\P1414\GIS\Wegen\Underpasses_filtered_{}m.shp".format(underpass_length)
+    )

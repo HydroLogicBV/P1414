@@ -367,14 +367,11 @@ document.write(`
 <span class="kn">from</span> <span class="nn">hydrolib.core.basemodel</span> <span class="kn">import</span> <span class="n">DiskOnlyFileModel</span>
 <span class="kn">from</span> <span class="nn">hydrolib.core.io.crosssection.models</span> <span class="kn">import</span> <span class="n">CrossDefModel</span><span class="p">,</span> <span class="n">CrossLocModel</span>
 <span class="kn">from</span> <span class="nn">hydrolib.core.io.dimr.models</span> <span class="kn">import</span> <span class="n">DIMR</span><span class="p">,</span> <span class="n">FMComponent</span>
-<span class="kn">from</span> <span class="nn">hydrolib.core.io.friction.models</span> <span class="kn">import</span> <span class="p">(</span><span class="n">FrictBranch</span><span class="p">,</span> <span class="n">FrictGlobal</span><span class="p">,</span>
-                                              <span class="n">FrictionModel</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">hydrolib.core.io.friction.models</span> <span class="kn">import</span> <span class="n">FrictBranch</span><span class="p">,</span> <span class="n">FrictGlobal</span><span class="p">,</span> <span class="n">FrictionModel</span>
 <span class="kn">from</span> <span class="nn">hydrolib.core.io.ini.models</span> <span class="kn">import</span> <span class="n">INIBasedModel</span><span class="p">,</span> <span class="n">INIGeneral</span><span class="p">,</span> <span class="n">INIModel</span>
-<span class="kn">from</span> <span class="nn">hydrolib.core.io.inifield.models</span> <span class="kn">import</span> <span class="p">(</span><span class="n">IniFieldModel</span><span class="p">,</span> <span class="n">InitialField</span><span class="p">,</span>
-                                              <span class="n">ParameterField</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">hydrolib.core.io.inifield.models</span> <span class="kn">import</span> <span class="n">IniFieldModel</span><span class="p">,</span> <span class="n">InitialField</span><span class="p">,</span> <span class="n">ParameterField</span>
 <span class="kn">from</span> <span class="nn">hydrolib.core.io.mdu.models</span> <span class="kn">import</span> <span class="n">FMModel</span>
-<span class="kn">from</span> <span class="nn">hydrolib.core.io.onedfield.models</span> <span class="kn">import</span> <span class="p">(</span><span class="n">OneDFieldBranch</span><span class="p">,</span>
-                                               <span class="n">OneDFieldGlobal</span><span class="p">,</span> <span class="n">OneDFieldModel</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">hydrolib.core.io.onedfield.models</span> <span class="kn">import</span> <span class="n">OneDFieldBranch</span><span class="p">,</span> <span class="n">OneDFieldGlobal</span><span class="p">,</span> <span class="n">OneDFieldModel</span>
 <span class="kn">from</span> <span class="nn">hydrolib.core.io.polyfile.models</span> <span class="kn">import</span> <span class="n">Description</span><span class="p">,</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">hydrolib.core.io.polyfile.models</span> <span class="kn">import</span> <span class="n">Point</span> <span class="k">as</span> <span class="n">hPoint</span>
 <span class="kn">from</span> <span class="nn">hydrolib.core.io.polyfile.models</span> <span class="kn">import</span> <span class="n">PolyFile</span><span class="p">,</span> <span class="n">PolyObject</span>
@@ -385,13 +382,14 @@ document.write(`
 <span class="kn">from</span> <span class="nn">hydrolib.dhydamo.io.dimrwriter</span> <span class="kn">import</span> <span class="n">DIMRWriter</span>
 <span class="kn">from</span> <span class="nn">rasterstats</span> <span class="kn">import</span> <span class="n">zonal_stats</span>
 <span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">KDTree</span>
-<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">LineString</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">LineString</span><span class="p">,</span> <span class="n">MultiLineString</span>
 <span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span> <span class="k">as</span> <span class="n">sPoint</span>
-<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span><span class="p">,</span> <span class="n">box</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
 
 <span class="kn">from</span> <span class="nn">data_structures.roi_data_model</span> <span class="kn">import</span> <span class="n">ROIDataModel</span> <span class="k">as</span> <span class="n">DataModel</span>
 
 <span class="n">FM_FOLDER</span> <span class="o">=</span> <span class="s2">&quot;dflowfm&quot;</span>
+<span class="n">OUTPUTDIR</span> <span class="o">=</span> <span class="s2">&quot;output&quot;</span>
 
 
 <div class="viewcode-block" id="to_dhydro"><a class="viewcode-back" href="../api-ref/to_dhydro_helpers_api.html#to_dhydro_helpers.to_dhydro">[docs]</a><span class="k">def</span> <span class="nf">to_dhydro</span><span class="p">(</span>
@@ -712,6 +710,25 @@ document.write(`
         <span class="k">return</span> <span class="n">fm</span>
 
     <span class="k">def</span> <span class="nf">add_fixed_weirs</span><span class="p">(</span><span class="n">ddm</span><span class="p">:</span> <span class="n">DataModel</span><span class="p">,</span> <span class="n">fm</span><span class="o">=</span><span class="n">FMModel</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FMModel</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">split_line_by_point</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">max_length</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">max_seg_length</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">25</span><span class="p">):</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">length</span>
+            <span class="k">if</span> <span class="n">length</span> <span class="o">&lt;</span> <span class="n">max_length</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">line</span>
+
+            <span class="n">n_seg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">length</span> <span class="o">/</span> <span class="n">max_length</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">l_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_seg</span><span class="p">):</span>
+                <span class="n">sp</span> <span class="o">=</span> <span class="n">n</span> <span class="o">/</span> <span class="n">n_seg</span>
+                <span class="n">ep</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_seg</span>
+                <span class="n">points_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">ep</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">max_length</span> <span class="o">/</span> <span class="n">max_seg_length</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
+                <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points_norm</span><span class="p">:</span>
+                    <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">normalized</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+                <span class="n">l_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LineString</span><span class="p">(</span><span class="n">points</span><span class="p">))</span>
+
+            <span class="n">mls</span> <span class="o">=</span> <span class="n">MultiLineString</span><span class="p">(</span><span class="n">l_list</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">mls</span>
+
         <span class="n">fw_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ddm</span><span class="p">,</span> <span class="s2">&quot;keringen&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ddm</span><span class="o">.</span><span class="n">keringen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">fw_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ddm</span><span class="o">.</span><span class="n">keringen</span><span class="p">)</span>
@@ -720,6 +737,20 @@ document.write(`
 
         <span class="n">line_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">fw_gdf</span> <span class="ow">in</span> <span class="n">fw_list</span><span class="p">:</span>
+            <span class="n">fw_gdf</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">fw_gdf</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+                    <span class="n">geometry</span><span class="o">=</span><span class="n">fw_gdf</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">split_line_by_point</span><span class="p">(</span>
+                            <span class="n">x</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span>
+                        <span class="p">),</span>
+                        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+                <span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="n">index_parts</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">fw_gdf</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fw_gdf</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">tolerance</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
             <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">fw_gdf</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
                 <span class="n">coord_list</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">coords</span><span class="p">[:]</span>
                 <span class="n">point_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1385,7 +1416,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">fm</span> <span class="o">=</span> <span class="n">simple_fm_model</span><span class="p">(</span>
             <span class="n">start_time</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">FM</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="n">stop_time</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">FM</span><span class="o">.</span><span class="n">stop_time</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">outputdir</span> <span class="o">=</span> <span class="s2">&quot;output&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">outputdir</span> <span class="o">=</span> <span class="n">OUTPUTDIR</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">hydamo</span> <span class="o">=</span> <span class="n">HyDAMO</span><span class="p">()</span>
 

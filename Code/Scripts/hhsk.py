@@ -6,7 +6,7 @@ from data_structures.dhydro_data import DHydroData
 
 folder = r"D:\Work\Project\P1414"
 gpkg_file = folder + r"\GIS\HYDAMO\HHSK.gpkg"
-output_folder = folder + r"\Models\HHSK\V0"
+output_folder = folder + r"\Models\HHSK\V0b"
 
 config = r"hhsk_config"
 defaults = r"defaults"

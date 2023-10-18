@@ -5,7 +5,7 @@ sys.path.append("D:\Work\git\GIS_tools\Code")
 from data_structures.dhydro_data import DHydroData
 
 folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\Combined_test_v16_WBD.gpkg"
+gpkg_file = folder + r"\GIS\HYDAMO\Combined_test_v21_WBD.gpkg"
 gpkgs_list = [
     r"D:\Work\Project\P1414\GIS\HYDAMO\HHSK.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\HDSR.gpkg",
@@ -20,7 +20,7 @@ gpkgs_list = [
     r"D:\Work\Project\P1414\GIS\HYDAMO\tunnels.gpkg",
     r"D:\Work\Project\P1414\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
 ]
-output_folder = folder + r"\Models\Combined\V16_WBD_HD"
+output_folder = folder + r"\Models\Combined\V24_WBD_50"
 
 config_dhydro = r"combined_WBD_HD_config"
 config_list = [
@@ -40,7 +40,7 @@ snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 100, 100, 0, 0]
 defaults = r"defaults"
 
 build_database = False
-load_gpkgs = True
+load_gpkgs = False
 build_model = True
 
 

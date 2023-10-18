@@ -403,6 +403,7 @@ document.write(`
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-from-github">Installing from GitHub</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a></li>
 </ul>
             </nav>
         </div>
@@ -416,11 +417,11 @@ document.write(`
                   
   <section class="tex2jax_ignore mathjax_ignore" id="installation-guide">
 <h1>Installation Guide<a class="headerlink" href="#installation-guide" title="Permalink to this heading">#</a></h1>
-<p>The easiest way to install D-HydroLogic is through downloading it directly from GitHub.</p>
+<p>The easiest way to install D-HydroLogic is by setting up a Conda environment and by downloading D-HydroLogic directly from GitHub.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>In order to install the D-HydroLogic package, a Conda environment is required.
-The most recent environment specification can be found <a class="reference external" href="https://github.com/HydroLogicBV/P1414/blob/main/environment.yml">here</a>.</p>
+The most recent environment specification can be found <a class="reference external" href="https://github.com/HydroLogicBV/P1414/blob/main/environment_sas.yml">here</a>.</p>
 </div>
 <section id="installing-from-github">
 <h2>Installing from GitHub<a class="headerlink" href="#installing-from-github" title="Permalink to this heading">#</a></h2>
@@ -429,6 +430,14 @@ The most recent environment specification can be found <a class="reference exter
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">./</span><span class="n">hydrolib_adapted</span>
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading">#</a></h2>
+<p>Incase you get an error that includes the following: “Error: Could not install packages due to an OSError: [WinError 5] Access is denied …”.
+Try the following command to finish installing all required packages:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">ugrid</span> <span class="n">imod</span> <span class="n">ipympl</span> <span class="n">isort</span> <span class="n">tqdm</span> <span class="n">matplotlib_scalebar</span>
 </pre></div>
 </div>
 </section>
@@ -502,6 +511,7 @@ The most recent environment specification can be found <a class="reference exter
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-from-github">Installing from GitHub</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a></li>
 </ul>
   </nav></div>
 
