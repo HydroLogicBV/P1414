@@ -3,7 +3,7 @@ The easiest way to install D-HydroLogic is by setting up a Conda environment and
 
 ## 1. Creating a Python environment
 In order to succesfully install the D-HydroLogic package, a Python environment is required. 
-An easy way to do this is by creating a Conda environment using the .yml file that can be found on the [GitHub repository](https://github.com/HydroLogicBV/P1414/blob/main/environment_sas.yml).
+An easy way to create such an environment is by creating a Conda environment using the .yml file that can be found on the [GitHub repository](https://github.com/HydroLogicBV/P1414/blob/main/environment_sas.yml).
 This can be done using the code snippets below.
 ````
 conda env create -f environment_sas.yml
