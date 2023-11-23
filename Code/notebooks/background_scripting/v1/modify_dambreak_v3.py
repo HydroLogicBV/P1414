@@ -566,7 +566,8 @@ class ModifyDambreak(WidgetStyling):
         self.dambreak_settings['breachWidthIni'] = 5
         self.dambreak_settings['waterLevelDownstreamLocationX'] = self.dambreak_settings_widget['downstream'].iloc[0].geometry.x
         self.dambreak_settings['waterLevelDownstreamLocationY'] = self.dambreak_settings_widget['downstream'].iloc[0].geometry.y
-        self.dambreak_settings['waterLevelUpstreamNodeId'] =  self.dambreak_settings_widget['upstream_node']
+        self.dambreak_settings['waterLevelUpstreamLocationX'] = self.dambreak_settings_widget['upstream'].iloc[0].geometry.x
+        self.dambreak_settings['waterLevelUpstreamLocationY'] = self.dambreak_settings_widget['upstream'].iloc[0].geometry.y
     
     def use_template_dambreak(self, dambreak_template):
         self.dambreak_settings['id'] = 'comb_0.0'
