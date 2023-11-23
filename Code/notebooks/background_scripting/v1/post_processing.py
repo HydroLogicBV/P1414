@@ -370,11 +370,11 @@ class MapPlotter():
 
         # convert to raster and save as tiff
         _, _, grid_data = mesh_to_tiff(
-            data,
-            self.settings['map_path'],
-            raster_path,
-            self.settings['mesh_resolution'],
-            self.distance_tol,
+            data = data,
+            distance_tol = self.distance_tol,
+            input_file_path = self.settings['map_path'],
+            output_file_path = raster_path,
+            resolution = self.settings['mesh_resolution'],
             interpolation=self.interpolation,
         )
         fig, ax = raster_plot_with_context(

@@ -25,12 +25,13 @@ def load_mesh(input_file_path: str) -> Tuple[np.ndarray, np.ndarray]:
         node_x (np.ndarray): x-coordinates of the mesh nodes faces
         node_y (np.ndarray): y-coordinates of the mesh nodes faces
     """
+
+    # print(input_file_path)
     try:
         with UGrid(
             input_file_path,
             "r",
         ) as ug:
-
             node_x = ug.variable_get_data_double(r"Mesh2d_face_x")
             node_y = ug.variable_get_data_double(r"Mesh2d_face_y")
     except:
@@ -38,6 +39,7 @@ def load_mesh(input_file_path: str) -> Tuple[np.ndarray, np.ndarray]:
         with Dataset(input_file_path) as nc:
             node_x = np.asarray(nc.variables[r"Mesh2d_face_x"][:]).flatten()
             node_y = np.asarray(nc.variables[r"Mesh2d_face_y"][:]).flatten()
+
     return node_x, node_y
 
 
@@ -444,7 +446,7 @@ def mesh_to_tiff(
     epsg = nc.variables["projected_coordinate_system"].getncattr("epsg")
 
     # write tif
-    write_tiff(output_file_path, new_grid_data, bounds, epsg, extent=extent)
+    write_tiff(output_file_path, new_grid_data, bounds, epsg)
 
     if extent is not None:
         pass
