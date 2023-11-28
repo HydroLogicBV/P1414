@@ -190,8 +190,8 @@ class DambreakWidget(WidgetStyling):
                 self.html_log.value = '<b style="color:red;font-size:14px;">You do not have a valid dambreak yet, so you can not continue</b>'
         elif self.current_step == 2:
             self.current_step = 3
-            self.index_closest_1d = self.snap_to_closest_point(self.marker.location, self.netcdf.network_map, self.netcdf.network_rd)
-            self.upstream_point = self.netcdf.network_rd.iloc[self.index_closest_1d:self.index_closest_1d+1]
+            self.index_closest_1d = self.snap_to_closest_point(self.marker.location, self.netcdf.mesh1d_map, self.netcdf.mesh1d_rd)
+            self.upstream_point = self.netcdf.mesh1d_rd.iloc[self.index_closest_1d:self.index_closest_1d+1]
             self.upstream = GeoData(geo_dataframe = self.upstream_point.to_crs(self.crs_map),
                         point_style={'radius': 5, 'color': 'blue', 'fillOpacity': 1, 'fillColor': 'white', 'weight': 3},
                     name = 'UPSTREAM')
@@ -209,7 +209,6 @@ class DambreakWidget(WidgetStyling):
             self.settings['downstream'] = self.downstream_point
             self.settings['upstream'] = self.upstream_point
             self.settings['breach'] = self.breach_point
-            self.settings['upstream_node'] = self.netcdf.network_node_id[self.index_closest_1d].decode('utf-8')
             self.settings['breach_line'] = self.breach_line_rd
         elif self.current_step == 4:
             self.draw_map()
@@ -306,8 +305,8 @@ class DambreakWidget(WidgetStyling):
         
     def add_network(self):
         lat, lon= self.breach_point.to_crs(self.crs_map).iloc[0].geometry.x, self.breach_point.to_crs(self.crs_map).iloc[0].geometry.y
-        network = self.filter_gdf_based_on_location([lon, lat], self.netcdf.network_map, dist_max_x = 0.5, dist_max_y = 0.5)
-        network_1d_points = GeoData(geo_dataframe = network,
+        mesh1d = self.filter_gdf_based_on_location([lon, lat], self.netcdf.mesh1d_map, dist_max_x = 0.5, dist_max_y = 0.5)
+        network_1d_points = GeoData(geo_dataframe = mesh1d,
             point_style={'radius': 5, 'color': 'blue', 'fillOpacity': 1, 'fillColor': 'black', 'weight': 3},
             name = 'NETWORK')
         self.m.add_layer(network_1d_points)
