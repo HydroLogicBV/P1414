@@ -1006,7 +1006,10 @@ def to_dhydro(
                     dist_factor=None,  # within=extent.buffer(1e3)
                     max_length=max_lat_dist,
                 )
-
+            network._link1d2d.link1d2d, unique_idx = np.unique(network._link1d2d.link1d2d, axis=0, return_index=True)
+            network._link1d2d.link1d2d_id = network._link1d2d.link1d2d_id[unique_idx]
+            network._link1d2d.link1d2d_long_name = network._link1d2d.link1d2d_long_name[unique_idx]
+            network._link1d2d.link1d2d_contact_type = network._link1d2d.link1d2d_contact_type[unique_idx]
         return fm
 
     def set_hydrolib_core_options(fmmodel: FMModel, options):
