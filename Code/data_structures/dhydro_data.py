@@ -11,6 +11,7 @@ from data_structures.hydamo_helpers import (check_and_fix_duplicate_code,
                                             convert_to_dhydamo_data)
 from data_structures.roi_data_model import ROIDataModel as DataModel
 from data_structures.to_dhydro_helpers import to_dhydro, write_dimr
+import os
 
 
 class DHydroData:
@@ -97,11 +98,14 @@ class DHydroData:
         # if so, set them to the datamodel
         attributes = ddm.__dict__.keys()
         for attribute in attributes:
+            if not os.path.exists(gpkg_path):
+                raise Exception(f"gpkg path '{gpkg_path}' not found")
+            
             try:
-                # print("succesfully loaded {}".format(attribute))
+                print("succesfully loaded {}".format(attribute))
                 data = gpd.read_file(gpkg_path, layer=attribute)
             except ValueError:
-                # print("failed to load {}".format(attribute))
+                print("failed to load {}".format(attribute))
                 continue
 
             setattr(ddm, attribute, data)
