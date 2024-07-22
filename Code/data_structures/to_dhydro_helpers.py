@@ -948,16 +948,16 @@ def to_dhydro(
         if roughness_2d_raster_path is not None:
             path_f = os.path.split(roughness_2d_raster_path)[0]
             xyz_path = path_f + "\\roughness_sample.xyz"
-            # create_roughness_xyz(
-            #     xnodes=network._mesh2d.mesh2d_face_x,
-            #     ynodes=network._mesh2d.mesh2d_face_y,
-            #     dx=dx,
-            #     dy=dy,
-            #     roughness_tif_path=roughness_2d_raster_path,
-            #     roughness_mesh_name=path_f + "\\roughness_mesh_v2.tif",
-            #     roughness_xyz_name=xyz_path,
-            #     convert_to_manning=True,
-            # )
+            create_roughness_xyz(
+                xnodes=network._mesh2d.mesh2d_face_x,
+                ynodes=network._mesh2d.mesh2d_face_y,
+                dx=dx,
+                dy=dy,
+                roughness_tif_path=roughness_2d_raster_path,
+                roughness_mesh_name=path_f + "\\roughness_mesh_v2.tif",
+                roughness_xyz_name=xyz_path,
+                convert_to_manning=True,
+            )
 
             initial_rn = ParameterField(
                 quantity="frictioncoefficient",
