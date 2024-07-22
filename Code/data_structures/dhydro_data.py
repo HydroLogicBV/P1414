@@ -99,16 +99,19 @@ class DHydroData:
         attributes = ddm.__dict__.keys()
         for attribute in attributes:
             if not os.path.exists(gpkg_path):
-                raise Exception(f"gpkg path '{gpkg_path}' not found")
+                print(f"WARNING: gpkg path '{gpkg_path}' not found, skipping this GPKG layer")
+                continue
             
             try:
-                print("succesfully loaded {}".format(attribute))
                 data = gpd.read_file(gpkg_path, layer=attribute)
+                print("succesfully loaded {}".format(attribute))
             except ValueError:
                 print("failed to load {}".format(attribute))
                 continue
+            
+            if len(data) > 0:
+                setattr(ddm, attribute, data)
 
-            setattr(ddm, attribute, data)
 
         # set datamodel to self
         self._set_ddm(branch_snap_dist=branch_snap_dist, ddm=ddm)
