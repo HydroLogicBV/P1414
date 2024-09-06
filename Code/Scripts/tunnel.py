@@ -1,13 +1,17 @@
 import sys
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
-# sys.path.append("D:\work\P1414_ROI\GitHub\GIS_tools\Code")
+# Specify where the scripts are located
+path_code = r"C:\Work\HL-P24050\P1414\Code"
+#sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append(path_code)
 from data_structures.dhydro_data import DHydroData
 
-folder = r"D:\Work\Project\P1414"
-# folder = r"D:\work\P1414_ROI"
-gpkg_file = folder + r"\GIS\HYDAMO\tunnels.gpkg"
-output_folder = folder + r"\Models\tunnels\V0"
+# Specify the location where the GIS folder is located and where the models must be saved:
+folder_path_GIS = r"D:\Work\Project\P1414"
+folder_path_output = r"D:\Work\Project\P1414"
+
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\tunnels.gpkg"
+output_folder = folder_path_output + r"\Models\tunnels\V0"
 
 config_list = [r"tunnel_config", "underpass_config"]
 defaults = r"defaults"

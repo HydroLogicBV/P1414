@@ -1,6 +1,8 @@
 from hydrolib.core.io.bc.models import ForcingBase, ForcingModel, QuantityUnitPair
 from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 
+# Specify here the folder (location) in which the GIS folder is located
+folder_path_GIS = r"D:\Work\Project\P1414"
 
 class Models:
     class FM:
@@ -18,8 +20,8 @@ class Models:
             coupling_type = "2Dto1D"
             dx = 500
             dy = 500
-            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            extent_path = "D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
+            elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN_merged.TIF"
+            extent_path = folder_path_GIS + r"\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
             two_d_buffer = 100
 
         class hydrolib_core_options:

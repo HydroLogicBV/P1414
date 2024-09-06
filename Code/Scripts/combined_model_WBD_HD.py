@@ -1,26 +1,32 @@
+# Specify where the scripts are located
+path_code = r"C:\Work\HL-P24050\P1414\Code"
+
 import sys
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
-
+#sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append(path_code)
 from data_structures.dhydro_data import DHydroData
 
-folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\Combined_test_v21_WBD.gpkg"
+# Specify the location where the GIS folder is located and where the models must be saved:
+folder_path_GIS = r"D:\Work\Project\P1414"
+folder_path_output = r"D:\Work\Project\P1414"
+
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_test_v21_WBD.gpkg"
 gpkgs_list = [
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HHSK.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HDSR.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HHD.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HHR.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\WAGV.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\ARKNZK.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\Rijntakken.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\RMM_HIJ_closed.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\noordzee.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\markermeer.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\tunnels.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\HHSK.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\HDSR.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\HHD.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\HHR.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\WAGV.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\ARKNZK.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\Rijntakken.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\RMM_HIJ_closed.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\noordzee.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\markermeer.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\tunnels.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
 ]
-output_folder = folder + r"\Models\Combined\V24_WBD_50"
+output_folder = folder_path_output + r"\Models\Combined\V24_WBD_50"
 
 config_dhydro = r"combined_WBD_HD_config"
 config_list = [

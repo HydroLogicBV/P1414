@@ -1,13 +1,20 @@
+# Specify where the scripts are located
+path_code = r"C:\Work\HL-P24050\P1414\Code"
+
 import sys
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
+#sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append(path_code)
 
 from data_structures.dhydro_data import DHydroData
 
-folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\rhine_combined_test.gpkg"
+# Specify the location where the GIS folder is located and where the models must be saved:
+folder_path_GIS = r"D:\Work\Project\P1414"
+folder_path_output = r"D:\Work\Project\P1414"
 
-output_folder = folder + r"\Models\Rijn\V0"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\rhine_combined_test.gpkg"
+
+output_folder = folder_path_output + r"\Models\Rijn\V0"
 
 config_dhydro = r"rijn_combined_config"
 config_list = [r"rijntakken_config", r"rijnmaasmonding_config"]
