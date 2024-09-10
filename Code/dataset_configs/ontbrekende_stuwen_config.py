@@ -1,7 +1,10 @@
+# Specify here the folder (location) in which the GIS folder is located
+folder_path_GIS = r"D:\Work\Project\P1414"
+
 class RawData:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
-    weir_path = r"D:\Work\Project\P1414\GIS\Keringen\stuwen.shp"
+    p_folder = folder_path_GIS + r"\GIS"
+    weir_path = folder_path_GIS + r"\GIS\Keringen\stuwen.shp"
 
     ## Weirs
     weir_index_mapping = dict(

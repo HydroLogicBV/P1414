@@ -1,3 +1,6 @@
+# Specify here the folder (location) in which the GIS folder is located
+folder_path_GIS = r"D:\Work\Project\P1414"
+
 class Models:
     class FM:
         one_d_bool = True
@@ -14,12 +17,12 @@ class Models:
             coupling_type = "1Dto2D"  # "1Dto2D"
             dx = 500
             dy = 500
-            # elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.tif"
-            extent_path = "D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
-            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\peilen_jp_25m_full.tif"
+            # elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN4_WSS_filled.tif"
+            extent_path = folder_path_GIS + r"\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
+            initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\peilen_jp_25m_full.tif"
             roughness_2d_raster_path = (
-                r"D:\Work\Project\P1414\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
+                folder_path_GIS + r"\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )
             two_d_buffer = 0
 
@@ -40,7 +43,7 @@ class Models:
 
 class FixedWeirs:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = folder_path_GIS + r"\GIS"
     flood_defences_path = dict(
         [
             ("base", p_folder + r"\Keringen_met_hoogte\hhsk_primaire_kering.shp"),
@@ -59,7 +62,7 @@ class FixedWeirs:
 
 class RawData:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
     branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v3.shp"  # From V7
     culvert_path = p_folder + r"\HHSK\Legger\Duiker.shp"

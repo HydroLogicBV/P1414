@@ -4,10 +4,13 @@ from multiprocessing import Pool
 
 from hydrolib.core.io.ext.models import ExtModel, Lateral
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
+# Specify where the scripts are located
+path_code = r"C:\Work\HL-P24050\P1414\Code"
+#sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append(path_code)
+
 
 from data_structures.dhydro_data import DHydroData
-
 
 def write_model(config_path: str, gpkg_file: str, output_path: str):
     # load configuration file

@@ -2,6 +2,8 @@ from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel, QHTable,
                                         QuantityUnitPair)
 from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 
+# Specify here the folder (location) in which the GIS folder is located
+folder_path_GIS = r"D:\Work\Project\P1414"
 
 class Models:
     class FM:
@@ -19,11 +21,11 @@ class Models:
             coupling_type = "1Dto2D"
             dx = 500
             dy = 500
-            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.TIF"
-            extent_path = "D:\Work\Project\P1414\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
-            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\wd_0_v4.tif"
+            elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN4_WSS_filled.TIF"
+            extent_path = folder_path_GIS + r"\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
+            initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\wd_0_v4.tif"
             roughness_2d_raster_path = (
-                r"D:\Work\Project\P1414\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
+                folder_path_GIS + r"\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )
             two_d_buffer = 0
 
@@ -153,7 +155,7 @@ class Models:
 
 class Dambreak:
     ## PATHS
-    dambreak_path = r"D:\Work\Project\P1414\GIS\Dijkdoorbraken\Dijkdoorbraken_v0_lijn.shp"
+    dambreak_path = folder_path_GIS + r"\GIS\Dijkdoorbraken\Dijkdoorbraken_v0_lijn.shp"
     dambreak_index_mapping = dict(
         [
             ("algorithm", None),

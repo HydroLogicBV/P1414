@@ -1,3 +1,6 @@
+# Specify here the folder (location) in which the GIS folder is located
+folder_path_GIS = r"D:\Work\Project\P1414"
+
 class Models:
     class FM:
         one_d_bool = True
@@ -15,7 +18,7 @@ class Models:
             dx = 500
             dy = 500
             # elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
         class hydrolib_core_options:
@@ -35,7 +38,7 @@ class Models:
 
 class FixedWeirs:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = folder_path_GIS + r"\GIS"
     flood_defences_path = dict(
         [
             ("base", p_folder + r"\Keringen_met_hoogte\hhr_primaire_kering.shp"),
@@ -53,7 +56,7 @@ class FixedWeirs:
 
 class RawData:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
     branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v3.shp"  # From V7
     bridges_path = p_folder + r"\HHRijnland\Niet legger\brug_edited.shp"

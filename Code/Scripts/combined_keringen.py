@@ -1,17 +1,24 @@
+# Specify where the scripts are located
+path_code = r"C:\Work\HL-P24050\P1414\Code"
+
 import sys
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
+#sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append(path_code)
 
 from data_structures.dhydro_data import DHydroData
 
-folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\Combined_keringen.gpkg"
+# Specify the location where the GIS folder is located and where the models must be saved:
+folder_path_GIS = r"D:\Work\Project\P1414"
+folder_path_output = r"D:\Work\Project\P1414"
+
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_keringen.gpkg"
 gpkgs_list = [
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HHSK.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HDSR.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HHD.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\HHR.gpkg",
-    r"D:\Work\Project\P1414\GIS\HYDAMO\WAGV.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\HHSK.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\HDSR.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\HHD.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\HHR.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\WAGV.gpkg",
 ]
 
 config_list = [

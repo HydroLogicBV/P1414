@@ -1,3 +1,6 @@
+# Specify here the folder (location) in which the GIS folder is located
+folder_path_GIS = r"D:\Work\Project\P1414"
+
 class Models:
     class FM:
         one_d_bool = True
@@ -14,13 +17,13 @@ class Models:
             coupling_type = "1Dto2D"
             dx = 500
             dy = 500
-            elevation_raster_path = "D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
+            elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN_merged.TIF"
             two_d_buffer = 100
 
 
 class RawData:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = folder_path_GIS + r"\GIS"
     branches_path = p_folder + r"\Rijntakken\without_waal\RTK_Branches.shp"
     river_profile_path = p_folder + r"\Rijntakken\without_waal\ZW_cross.csv"
     river_roughness_path = p_folder + r"\Rijntakken\without_waal\roughness.csv"

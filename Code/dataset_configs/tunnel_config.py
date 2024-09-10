@@ -1,3 +1,6 @@
+# Specify here the folder (location) in which the GIS folder is located
+folder_path_GIS = r"D:\Work\Project\P1414"
+
 class Models:
     class FM:
         one_d_bool = True
@@ -14,14 +17,14 @@ class Models:
             coupling_type = "1Dto2D"
             dx = 500
             dy = 500
-            elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\peilen_jp_25m_full.tif"
+            elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN_merged.TIF"
+            initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\peilen_jp_25m_full.tif"
             two_d_buffer = 100
 
 
 class RawData:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
     branches_path = p_folder + r"\Wegen\tunnel.shp"
     culvert_path = p_folder + r"\Wegen\tunnel.shp"

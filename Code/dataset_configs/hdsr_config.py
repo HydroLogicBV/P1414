@@ -2,6 +2,8 @@ from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel,
                                         QuantityUnitPair)
 from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 
+# Specify here the folder (location) in which the GIS folder is located
+folder_path_GIS = r"D:\Work\Project\P1414"
 
 class Models:
     class FM:
@@ -19,8 +21,8 @@ class Models:
             coupling_type = "2Dto1D"
             dx = 500
             dy = 500
-            elevation_raster_path = r"D:\Work\Project\P1414\GIS\AHN\AHN_merged.TIF"
-            initial_peil_raster_path = r"D:\Work\Project\P1414\GIS\peilen\peilen_jp_25m_full.tif"
+            elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN_merged.TIF"
+            initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\peilen_jp_25m_full.tif"
             two_d_buffer = 100
 
         class hydrolib_core_options:
@@ -64,7 +66,7 @@ class Models:
 
 class FixedWeirs:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = folder_path_GIS + r"\GIS"
     flood_defences_path = p_folder + r"\Keringen_met_hoogte\hdsr.shp"
 
     fixed_weir_index_mapping = dict(
@@ -78,7 +80,7 @@ class FixedWeirs:
 
 class RawData:
     ## PATHS
-    p_folder = r"D:\Work\Project\P1414\GIS"
+    p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
     branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v3.shp"  # Corrected from V7
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"

@@ -1,12 +1,17 @@
 import sys
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
-
+# Specify where the scripts are located
+path_code = r"C:\Work\HL-P24050\P1414\Code"
+#sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append(path_code)
 from data_structures.dhydro_data import DHydroData
 
-folder = r"D:\Work\Project\P1414"
-gpkg_file = folder + r"\GIS\HYDAMO\Rijntakken_with_Waal.gpkg"
-output_folder = folder + r"\Models\Rijntakken\SOBEK_vergelijking"
+# Specify the location where the GIS folder is located and where the models must be saved:
+folder_path_GIS = r"D:\Work\Project\P1414"
+folder_path_output = r"D:\Work\Project\P1414"
+
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Rijntakken_with_Waal.gpkg"
+output_folder = folder_path_output + r"\Models\Rijntakken\SOBEK_vergelijking"
 
 config = r"rijntakken_compare_config"
 defaults = r"defaults"

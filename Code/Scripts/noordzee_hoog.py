@@ -1,14 +1,19 @@
-import sys
+# Specify where the scripts are located
+path_code = r"C:\Work\HL-P24050\P1414\Code"
 
-sys.path.append("D:\Work\git\GIS_tools\Code")
-# sys.path.append("D:\work\P1414_ROI\GitHub\GIS_tools\Code")
+import sys
+#sys.path.append("D:\Work\git\GIS_tools\Code")
+sys.path.append(path_code)
+
 from data_structures.dhydro_data import DHydroData
 
-folder = r"D:\Work\Project\P1414"
-# folder = r"D:\work\P1414_ROI"
-gpkg_file = folder + r"\GIS\HYDAMO\noordzee_hoog.gpkg"
-gpkg_file_2 = folder + r"\GIS\HYDAMO\noordzee_hoog_KW_open.gpkg"
-output_folder = folder + r"\Models\noordzee\V0"
+# Specify the location where the GIS folder is located and where the models must be saved:
+folder_path_GIS = r"D:\Work\Project\P1414"
+folder_path_output = r"D:\Work\Project\P1414"
+
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\noordzee_hoog.gpkg"
+gpkg_file_2 = folder_path_GIS + r"\GIS\HYDAMO\noordzee_hoog_KW_open.gpkg"
+output_folder = folder_path_output + r"\Models\noordzee\V0"
 
 config = r"noordzee_hoog_config"
 defaults = r"defaults"
