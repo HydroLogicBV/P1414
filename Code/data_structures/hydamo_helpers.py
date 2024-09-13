@@ -3,6 +3,7 @@ import uuid
 import warnings
 from copy import copy
 from typing import Any, List, Tuple
+import os
 
 import geopandas as gpd
 import numpy as np
@@ -389,7 +390,7 @@ def merge_to_dm(dm, feature: str, feature_gdf: gpd.GeoDataFrame):
     return dm
 
 
-def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datamodel:
+def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_folder: str) -> Datamodel:
     """
     This function creates a full DHYDAMO DataModel, based on an empty DataModel and a defaults and config file. It creates the
     DataModel by adding elements in the following order.
@@ -405,6 +406,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
       ddm (Datamodel): empty DataModel, to be filled
       defaults (str): The path to the default file (should be in ./dataset_configs/)
       config (str): The path to the config file (should be in ./dataset_configs/).
+      GIS_folder (str): The absolute path to the general GIS folder, containing the geopackages, and input data
     Returns:
       ddm (Datamodel): a fully HYDAMO compliant DataModel
     """
@@ -1938,8 +1940,12 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str) -> Datam
             return in_branches_gdf
 
     # ddm = DHydamoDataModel()
+    # Make the GIS folder path global in environment to access it in all configs
+    os.environ['GIS_folder_path'] = GIS_folder
+    
     defaults = importlib.import_module("dataset_configs." + defaults)
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
+
     code_padding = config[:4] + r"_"  # add prefix of length 4 to all objects with codes
     if code_padding == "rijn":
         code_padding = ""

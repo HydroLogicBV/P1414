@@ -59,7 +59,7 @@ class DHydroData:
         self._set_ddm(ddm=dm)
 
     def hydamo_from_raw_data(
-        self, config: str, defaults: str, branch_snap_dist: float = 10
+        self, config: str, defaults: str, GIS_folder: str, branch_snap_dist: float = 10
     ) -> None:
         """
         Class method to load raw_data into a DHydamoDataModel. This datamodel validates data against expected values
@@ -73,7 +73,7 @@ class DHydroData:
         """
         # load features and add to DHydamoDataModel
         ddm = DataModel()
-        ddm = convert_to_dhydamo_data(ddm=ddm, defaults=defaults, config=config)
+        ddm = convert_to_dhydamo_data(ddm=ddm, defaults=defaults, config=config, GIS_folder=GIS_folder)
 
         self._set_ddm(branch_snap_dist=branch_snap_dist, ddm=ddm)
 

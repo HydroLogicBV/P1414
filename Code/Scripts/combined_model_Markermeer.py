@@ -57,7 +57,7 @@ if build_database:
         print("\n" + config)
 
         dhd.hydamo_from_raw_data(
-            defaults=defaults, config=config, branch_snap_dist=snap_dist_list[ix]
+            defaults=defaults, config=config, branch_snap_dist=snap_dist_list[ix], GIS_folder=folder_path_GIS
         )
         try:
             dhd.fixed_weirs_from_raw_data(config=config, defaults=defaults)

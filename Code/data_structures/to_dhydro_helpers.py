@@ -464,7 +464,7 @@ def to_dhydro(
                     ("totalWidths", profile["totalWidths"].values.tolist()),
                 ]
             )
-            if prof["frictionids"] is None:
+            if prof["frictionids"] is None or not isinstance(prof['frictionids'], str):
                 kwargs["frictionids"] = None
             else:
                 kwargs["frictionids"] = prof["frictionids"].split(",")

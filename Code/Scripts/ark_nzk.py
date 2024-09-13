@@ -1,8 +1,6 @@
 # Specify where the scripts are located
 path_code = r"C:\Work\HL-P24050\P1414\Code"
-
 import sys
-
 #sys.path.append("D:\Work\git\GIS_tools\Code")
 sys.path.append(path_code)
 
@@ -27,7 +25,7 @@ if build_database:
     dhd = DHydroData()
 
     # 2. convert raw data to hydamo data
-    dhd.hydamo_from_raw_data(defaults=defaults, config=config)
+    dhd.hydamo_from_raw_data(defaults=defaults, config=config, GIS_folder=folder_path_GIS)
     dhd.clip_structures_by_branches(buffer=10)
     dhd.fixed_weirs_from_raw_data(config=config, defaults=defaults)
 
