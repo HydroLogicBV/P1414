@@ -515,7 +515,7 @@ def to_dhydro(
                     continue
 
                 branch = branches.loc[branches["code"] == row["branchid"], :]
-                if row["chainage"] is not None:
+                if row["chainage"] is not None and not (isinstance(row["chainage"], float) and np.isnan(row["chainage"])):
                     chainage = np.amax([float(c) for c in row["chainage"].split(",")])
                     if chainage > np.ceil(branch.geometry.length.values[:]):
                         print("roughness too far on branch")
@@ -536,7 +536,7 @@ def to_dhydro(
                     ]
                 )
 
-                if kwargs["chainage"] is not None:
+                if kwargs["chainage"] is not None and not (isinstance(kwargs["chainage"], float) and np.isnan(kwargs["chainage"])):
                     chainage = [float(i) for i in kwargs["chainage"].split(",")]
                     numlocations = int(kwargs["numlocations"])
                 else:
@@ -546,7 +546,7 @@ def to_dhydro(
                 kwargs = kwargs.drop("numlocations")
 
                 frictionvalues = [float(i) for i in kwargs["frictionvalues"].split(",")]
-                if kwargs["levels"] is not None:
+                if kwargs["levels"] is not None and not (isinstance(kwargs["levels"], float) and np.isnan(kwargs["levels"])):
                     levels = [float(i) for i in kwargs["levels"].split(",")]
                     numlevels = int(kwargs["numlevels"])
                     frictionvalues = (

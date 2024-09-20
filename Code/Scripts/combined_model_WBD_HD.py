@@ -6,6 +6,9 @@ import os
 
 #sys.path.append("D:\Work\git\GIS_tools\Code")
 sys.path.append(path_code)
+sys.path.append(r'C:\Work\HL-P24050\P1414\HYDROLIB_adapted\hydrolib')
+sys.path.append(r'C:\Work\HL-P24050\P1414\HYDROLIB_adapted')
+
 from data_structures.dhydro_data import DHydroData
 
 # Specify the location where the GIS folder is located and where the models must be saved:
