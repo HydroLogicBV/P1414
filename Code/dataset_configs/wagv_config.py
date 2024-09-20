@@ -62,8 +62,9 @@ class RawData:
     # ]
     branches_path = dict(
         [
-            ("base", p_folder + r"\Uitgesneden watergangen\AGV_v3.shp"),
-            ("sjoin", p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"),
+            ("base", p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"),
+            #("base", p_folder + r"\Uitgesneden watergangen\AGV_v3.shp"),
+            #("sjoin", p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"),
         ]
     )
 

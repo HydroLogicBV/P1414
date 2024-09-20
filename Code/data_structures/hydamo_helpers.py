@@ -4,6 +4,7 @@ import warnings
 from copy import copy
 from typing import Any, List, Tuple
 import os
+from time import time
 
 import geopandas as gpd
 import numpy as np
@@ -11,6 +12,10 @@ import pandas as pd
 from shapely import affinity
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
 from shapely.geometry.base import BaseGeometry
+from shapely.ops import linemerge, nearest_points
+
+from scipy.spatial import KDTree
+from tqdm import tqdm
 
 from data_structures.hydamo_globals import (
     BRANCH_FRICTION_FUNCTION,
@@ -410,6 +415,368 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
     Returns:
       ddm (Datamodel): a fully HYDAMO compliant DataModel
     """
+
+    def validate_branches(
+        branches_gdf: gpd.GeoDataFrame,
+        buffer_dist=5,
+        max_distance: float = 2,
+        min_connectivity: int = 2,
+    ) -> gpd.GeoDataFrame:
+        
+        """
+        Wrapper function that performs all actions required to validate the branches
+        and drops branches that are not connected to at least one other branches
+
+        Args:
+            branches_gdf (gpd.GeoDataFrame): GeoDataFrame with the initial branches
+            buffer_dist (float): distance around lines where buffer is applied
+            max_distance (float): max_distance that start and end of branch are allowed to lay apart
+                                used to check how many branches are connected in one point
+            min_connectivity (int): number indicating how many branches should connect in one point in order to keep a branch
+                                    default 2 means 1 other branch should connect
+
+        Returns:
+            branches_gdf (gpd.GeoDataFrame): GeoDataFrame contianing the clipped branches that fullfill:
+                                            1. At least 1 other branch connects to the branch
+
+        """
+
+        def delete_branches(gdf: gpd.GeoDataFrame, snap_distance: float) -> gpd.GeoDataFrame:
+            """
+            Function which deletes the branches that are outside the snap_distance
+            """
+            _gdf = gdf.loc[gdf.geometry.length > snap_distance, :]
+
+            short_branches_ix = np.where(gdf.geometry.length <= snap_distance)[0]
+            #print(gdf.shape[0], _gdf.shape[0], short_branches_ix)
+            boundaries = []
+            for branch_ix in short_branches_ix:
+                branch = gdf.iloc[branch_ix, :]
+                boundary = branch.geometry.boundary
+                if boundary not in boundaries:
+                    boundaries.append(boundary)
+
+            l_points = []
+            r_points = []
+            for ix, boundary in enumerate(boundaries):
+                l_point = Point(boundary.geoms[0].x, boundary.geoms[0].y)
+                r_point = Point(boundary.geoms[1].x, boundary.geoms[1].y)
+
+                l_points.append(l_point)
+                r_points.append(r_point)
+
+            l_mpoints = MultiPoint(l_points)
+
+            gdf = copy(_gdf)
+            for ix, (name, branch) in enumerate(_gdf.iterrows()):
+                # Delete z-dimensison of linestring if it exists
+                if np.array(branch.geometry.coords).shape[1] > 2:
+                    geometry = [Point(x, y) for x, y, _ in branch.geometry.coords]
+                    try:
+                        gdf.geometry.iloc[ix] = LineString(geometry)
+                    except ValueError:
+                        print("Could not convert geometry to a LineString")
+                else:
+                    geometry = [Point(x, y) for x, y in branch.geometry.coords]
+
+                boundary = branch.geometry.boundary
+
+                if l_mpoints.contains(geometry[0]):
+                    jx = l_points.index(geometry[0])
+                    _branch = copy(branch)
+                    geometry[0] = r_points[jx]
+                    _branch.geometry = LineString(geometry)
+                    gdf.iloc[ix] = _branch
+
+                if l_mpoints.contains(geometry[-1]):
+                    jx = l_points.index(geometry[-1])
+                    _branch = copy(branch)
+                    geometry[-1] = r_points[jx]
+                    _branch.geometry = LineString(geometry)
+                    gdf.iloc[ix] = _branch
+
+            return gdf
+
+        def skip_branches_con(
+            in_branches: gpd.GeoDataFrame, max_distance: float = 0.5, min_connectivity: int = 2
+        ) -> gpd.GeoDataFrame:
+            """
+            Function that removes branches from GeoDataFrame if they are not sufficiently connected to other branches
+            The criterion for this is min_connectivity for the number of branches that should coincide in a point
+            Max_distance is the distance tolerance for branches starting and ending in a point
+
+            Args:
+                in_branches (gpd.GeoDataFrame): GeoDataFrame with branches containging a geometry column with LineStrings
+                max_distance (float): maximum distance at which branches are considered connected
+                min_connectivity (int): minumum number of branches that should meet in a point
+
+            Returns:
+                out_branhces (gpd.GeoDataFrame): GeoDataFrame with branches that fullfill the connectivity criterion
+            """
+            n_in = in_branches.shape[0]
+
+            # skip branches further than max_dist away from another branch
+            point_list = []
+            for ix, branch in in_branches.iterrows():
+                coords = branch.geometry.coords
+                point_list.append(coords[0])
+                point_list.append(coords[-1])
+
+            # build spatial KDTree from start and end points
+            kdtree = KDTree(point_list)
+            sdm = kdtree.sparse_distance_matrix(
+                kdtree, max_distance=max_distance, output_type="coo_matrix"
+            )
+
+            # matrix is symetrical, so picking one of the two axis to count number of non empty entries (explicit zeros allowed)
+            nnz = sdm.getnnz(axis=0)
+
+            # compare number of points within max_distance to min_connectivity
+            bool_array = nnz < min_connectivity
+
+            # Drop branches with insufficient connectivity on both sides
+            out_branches = copy(in_branches)
+            for ix, (name, branch) in enumerate(in_branches.iterrows()):
+                if (bool_array[ix * 2]) & (bool_array[ix * 2 + 1]):
+                    out_branches.drop(index=name, inplace=True)
+
+            n_out = out_branches.shape[0]
+            print("Dropped {} isolated branches".format(n_in - n_out))
+            return out_branches
+
+        def validate_network_topology(
+            branches_gdf: gpd.GeoDataFrame, snap_distance: float = None
+        ) -> gpd.GeoDataFrame:
+            """
+            Function to validate the toplogy of the network.
+            Specifically, this function ensures all connections between branches are valid
+            and that each branch connects to another at the end of a branch.
+
+            TODO: change to networkx
+
+            Args:
+                branches_gdf (gpd.GeoDataFrame): input geodataframe with branches (geometry should be linestrings)
+
+            Returns:
+                branches_gdf (gpd.GeoDataFrame): output geodataframe with branches that properly connect to one another
+            """
+
+            """ Original:
+            MLS_branches_bool = branches_gdf.geometry.type == "MultiLineString"
+            if np.sum(MLS_branches_bool) > 0:
+                print("warning: found multilinestrings")
+                branches_gdf = branches_gdf.explode(ignore_index=True, index_parts=False)
+
+            # First ensure that line-segments dont extend past connection points this is done using shapely function unary_union
+            union_result = branches_gdf.geometry.unary_union
+
+            # Secondly, add the correct data from the origingal gdf to the new branches, this is done by adding data from old buffered branches to all new branches that fall within each polygon
+            buffered_branches = copy(branches_gdf)
+            buffered_branches = buffered_branches.to_crs(epsg=28992)
+            buffered_branches.geometry = buffered_branches.geometry.buffer(0.1)
+            gdf = gpd.GeoDataFrame(union_result, columns=["geometry"], geometry="geometry", crs=28992)
+
+            # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
+            intersected_gdf = gdf.sjoin(buffered_branches, how="left", predicate="within")
+
+            if snap_distance is not None:
+                if snap_distance > 0:
+                    intersected_gdf = delete_branches(gdf=intersected_gdf, snap_distance=snap_distance)
+                else:
+                    raise ValueError("Snap_distance should be > 0")
+
+            return intersected_gdf
+            """
+            def snap_nodes(in_branches: gpd.GeoDataFrame, geometry_accuracy: float):
+                in_branches["t_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
+                in_branches.set_index("t_id", inplace=True)
+                out_branches = copy(in_branches)
+                for ix, branch in in_branches.iterrows():
+
+                    point_list = []
+                    for x, y, *_ in branch.geometry.coords[:]:
+                        point_list.append(
+                            (np.around(x, int(geometry_accuracy)), np.around(y, int(geometry_accuracy)))
+                        )
+
+                    geometry = LineString(point_list)
+                    if geometry.length > 0:
+                        out_branches.loc[ix, "geometry"] = LineString(point_list)
+                    else:
+                        out_branches = out_branches.drop(index=ix)
+
+                return out_branches
+
+            def create_nodes_at_junctions(branches_gdf):
+
+                # First ensure that line-segments dont extend past connection points
+                # this is done using shapely function unary_union
+                union_result = branches_gdf.geometry.unary_union
+
+                # Secondly, add the correct data from the origingal gdf to the new branches
+                # this is done by adding data from old buffered branches to all new branches that fall within each polygon
+                buffered_branches = copy(branches_gdf)
+                buffered_branches.geometry = buffered_branches.geometry.buffer(0.1)
+                gdf = gpd.GeoDataFrame(union_result, columns=["geometry"], geometry="geometry", crs=28992)
+
+                # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
+                intersected_gdf = gdf.sjoin(buffered_branches, how="left", predicate="within")
+                intersected_gdf = intersected_gdf.drop(['index_right'], axis=1)
+                return intersected_gdf
+
+            MLS_branches_bool = branches_gdf.geometry.type == "MultiLineString"
+            if np.sum(MLS_branches_bool) > 0:
+                print("Warning: found multilinestrings")
+                branches_gdf = branches_gdf.explode(ignore_index=True, index_parts=False)
+
+            # For now: geometry_accuracy=2 (1 cm accurate)
+            geometry_accuracy = 2
+
+            # Create nodes at the junctions of lines and snap nodes
+            branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf, snap_dist=snap_distance)
+            branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+            branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_junctions, geometry_accuracy=geometry_accuracy)
+
+            while count != 0:
+                branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_snapped, snap_dist=snap_distance)
+                branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+                branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_junctions, geometry_accuracy=geometry_accuracy)
+            
+            # Perform this proces once more to remove errors
+            #branches_gdf = create_nodes_at_junctions(branches_gdf = branches_gdf)
+            #branches_gdf = snap_nodes(in_branches=branches_gdf, geometry_accuracy=geometry_accuracy)   
+            
+            # if snap_distance is not None:
+            #     if snap_distance > 0:
+            #         intersected_gdf = delete_branches(gdf=intersected_gdf, snap_distance=snap_distance)
+            #     else:
+            #         raise ValueError("snap_distance should be > 0")
+
+            return branches_gdf_snapped
+
+        def snap_nearest_branches(in_branches: gpd.GeoDataFrame, snap_dist):
+            outbranches = copy(in_branches)
+            count = 0
+            starttime = time()
+
+            for ix, branch in in_branches.iterrows():
+
+                # Specify a new snap_dist of 2 m for a specific branch
+                """ Specific for Rijnland model which Ludo used
+                if branch['CODE_WTRG'] == 'OR-4.09.1.1_6':
+                    snap_dist_n = 2.5
+                else:
+                    snap_dist_n = snap_dist
+                
+                point_list = branch.geometry.coords[:]
+                if branch['CODE_WTRG'] == '468-058-00001-01':
+                    point_list = point_list[1:]
+                    startpoint = Point(branch.geometry.coords[1])
+                    endpoint = Point(branch.geometry.coords[-1])
+                """
+                #else:
+                snap_dist_n = snap_dist
+                point_list = branch.geometry.coords[:]
+                startpoint = Point(branch.geometry.coords[0])
+                endpoint = Point(branch.geometry.coords[-1])
+                
+                for point in [startpoint, endpoint]:
+                    # Set the index for which node needs to be altered later
+                    if point == startpoint: point_index = 0
+                    else: point_index = -1
+
+                    buffer_point = point.buffer(distance=snap_dist_n)
+                    intersect_bool = in_branches.geometry.intersects(buffer_point)
+                    
+                    match = outbranches.geometry[intersect_bool]
+
+                    # Drop the intersection with its own branch
+                    match.drop(index=ix, inplace=True)
+                    
+                    # If no matches have been found, continue
+                    if not match.any(): continue
+
+                    # Check if one of the near branches has a matching coordinate. If so, skip
+                    one_match_bool = False
+                    for idx_sec in match.index:
+                        if point.coords[:][0] in match.loc[idx_sec].coords[:]:
+                            one_match_bool = True
+                    
+                    if one_match_bool: continue
+                    
+                    else:
+                            dist = [point.distance(Point(x)) for x in match.iloc[0].coords[:]]
+                            if min(dist) <= snap_dist_n:
+                                min_idx = np.argmin(dist)
+                                point_list[point_index] = match.iloc[0].coords[:][min_idx]
+                                outbranches.loc[ix, 'geometry'] = LineString(point_list)
+
+                            else: 
+                                # If no point is close enough in the matching branch, create a nearest point
+                                count += 1
+                                nearest_point = nearest_points(match.iloc[0],point)[0]
+
+
+                                """ It should not add a third dimension here, this is from original Ludo Rijnland
+                                # Check if third dimension is already present:
+                                if len(nearest_point.coords[:][0]) == 3: 
+                                    new_coord = nearest_point.coords[:][0]
+                                else: 
+                                    new_coord = nearest_point.coords[:][0] + (0.0,)"""
+                                new_coord = nearest_point.coords[:][0]
+                                # Assign the new start/end coord to the branch
+                                point_list[point_index] = new_coord
+                                outbranches.loc[ix, 'geometry'] = LineString(point_list)
+
+
+                                # Create the new nearest_point on the branch that is it closest to
+                                dist_line = [nearest_point.distance(Point(x)) for x in match.iloc[0].coords[:]]
+                                
+                                # Find the index where the distance is least and find the split_direction.
+                                # The split direction indicates whether the nearest_point is to the right or to the left 
+                                # of the min_idx_coord
+                                min_idx_coord = np.argmin(dist_line)
+                                if min_idx_coord == 0: 
+                                    split_direction = 'up'
+                                if min_idx_coord == (len(dist_line)-1): 
+                                    split_direction = 'down'
+                                else: # If not at one of the edgenodes, find out on which side of the min_idx node it is
+                                    prev_line = LineString([match.iloc[0].coords[:][min_idx_coord -1], match.iloc[0].coords[:][min_idx_coord]])
+                                    if prev_line.distance(Point(new_coord)) < 0.001:
+                                        split_direction = 'down'
+                                    else: 
+                                        split_direction ='up'
+                                    #if dist_line[min_idx_coord - 1] > dist_line[min_idx_coord + 1]:
+                                        split_direction = 'up'
+                                # else:
+                                    #    split_direction = 'down'
+
+                                # Add the nearest point to the connecting branch
+                                if split_direction == 'up':
+                                    point_list_part1 = match.iloc[0].coords[:][0:min_idx_coord+1]
+                                    point_list_part2 = match.iloc[0].coords[:][min_idx_coord+1:]
+                                elif split_direction == 'down':
+                                    point_list_part1 = match.iloc[0].coords[:][0:min_idx_coord]
+                                    point_list_part2 = match.iloc[0].coords[:][min_idx_coord:]
+
+                                point_list_branch = point_list_part1 + [new_coord] + point_list_part2
+                                outbranches.loc[match.index[0], 'geometry'] = LineString(point_list_branch)
+
+
+            endtime = time()
+            print(f'Elapsed time: {endtime - starttime} seconds')
+            print(f'Nodes not in reach in {count} cases')
+                
+            return outbranches, count   
+    
+        # Validate the topology of the network
+        print('Start validating branches')
+        branches_gdf = validate_network_topology(branches_gdf=branches_gdf, snap_distance=buffer_dist)
+
+        # Validate the connection of the branches with each other
+        branches_gdf = skip_branches_con(in_branches=branches_gdf, max_distance=max_distance, min_connectivity=min_connectivity)
+        print('Validated branches succesfully')
+        return branches_gdf
 
     def add_default_peil_to_branch(
         branches_gdf: gpd.GeoDataFrame, default_peil: float = None
@@ -1942,6 +2309,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
     # ddm = DHydamoDataModel()
     # Make the GIS folder path global in environment to access it in all configs
     os.environ['GIS_folder_path'] = GIS_folder
+    print('Set the GIS_folder as environment variable')
     
     defaults = importlib.import_module("dataset_configs." + defaults)
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
@@ -1961,6 +2329,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 data_config.branch_selection["value"],
             )
             branches_gdf = branches_gdf.loc[branches_gdf[column] == value, :]
+
+        # Validate the branches topography and connections
+        branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8)
 
         branches_gdf, index_mapping = map_columns(
             code_pad=code_padding + "wl_",

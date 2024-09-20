@@ -67,7 +67,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v3.shp"  # From V7
+    branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"  # From V7
     culvert_path = p_folder + r"\HHSK\Legger\Duiker.shp"
     norm_profile_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Legger\Peilvakken.shp"

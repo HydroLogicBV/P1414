@@ -84,7 +84,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HDSR_v3.shp"  # Corrected from V7
+    branches_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"  # Corrected from V7
     bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
     norm_profile_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject_primair.shp"
