@@ -2,16 +2,21 @@
 path_code = r"C:\Work\HL-P24050\P1414\Code"
 
 import sys
+import os
 
 #sys.path.append("D:\Work\git\GIS_tools\Code")
 sys.path.append(path_code)
+sys.path.append(r'C:\Work\HL-P24050\P1414\HYDROLIB_adapted\hydrolib')
+sys.path.append(r'C:\Work\HL-P24050\P1414\HYDROLIB_adapted')
+
 from data_structures.dhydro_data import DHydroData
 
 # Specify the location where the GIS folder is located and where the models must be saved:
 folder_path_GIS = r"D:\Work\Project\P1414"
 folder_path_output = r"D:\Work\Project\P1414"
+os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_test_v21_WBD.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_test_v22_WBD.gpkg"
 gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\HHSK.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\HDSR.gpkg",
@@ -37,7 +42,7 @@ config_list = [
     r"wagv_config",
     r"ark_nzk_config",
     r"rijntakken_config",
-    r"rijnmaasmonding_config",
+    r"rijnmaasmonding_open_config",
     r"noordzee_config",
     r"markermeer_config",
 ]
@@ -56,7 +61,7 @@ if build_database:
         print("\n" + config)
 
         dhd.hydamo_from_raw_data(
-            defaults=defaults, config=config, branch_snap_dist=snap_dist_list[ix]
+            defaults=defaults, config=config, branch_snap_dist=snap_dist_list[ix], GIS_folder=folder_path_GIS
         )
         try:
             dhd.fixed_weirs_from_raw_data(config=config, defaults=defaults)

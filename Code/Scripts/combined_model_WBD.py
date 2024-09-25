@@ -2,6 +2,7 @@
 path_code = r"C:\Work\HL-P24050\P1414\Code"
 
 import sys
+import os
 #sys.path.append("D:\Work\git\GIS_tools\Code")
 sys.path.append(path_code)
 
@@ -10,8 +11,9 @@ from data_structures.dhydro_data import DHydroData
 # Specify the location where the GIS folder is located and where the models must be saved:
 folder_path_GIS = r"D:\Work\Project\P1414"
 folder_path_output = r"D:\Work\Project\P1414"
+os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_test_v20_WBD.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_test_v22_WBD.gpkg"
 gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\HHSK.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\HDSR.gpkg",
@@ -45,9 +47,9 @@ snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 100, 100, 0, 0]
 
 defaults = r"defaults"
 
-build_database = False
+build_database = True
 load_gpkgs = False
-build_model = True
+build_model = False
 
 
 if build_database:
@@ -76,7 +78,7 @@ if load_gpkgs:
         print("\n" + gpkg)
 
         # 2. load data
-        dhd.hydamo_from_gpkg(gpkg, branch_snap_dist=snap_dist_list[ix])
+        dhd.hydamo_from_gpkg(gpkg, branch_snap_dist=snap_dist_list[ix], GIS_folder=folder_path_GIS)
 
     dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
     dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)

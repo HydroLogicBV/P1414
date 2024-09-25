@@ -1,5 +1,8 @@
-# Specify here the folder (location) in which the GIS folder is located
-folder_path_GIS = r"D:\Work\Project\P1414"
+import os
+
+# Specify the default path to the GIS folder in the case it is not defined in the environment/main script
+default_GIS_path = r"D:\Work\Project\P1414_default"
+folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 
 class Models:
     class FM:
@@ -64,7 +67,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHSK_v3.shp"  # From V7
+    branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"  # From V7
     culvert_path = p_folder + r"\HHSK\Legger\Duiker.shp"
     norm_profile_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Legger\Peilvakken.shp"

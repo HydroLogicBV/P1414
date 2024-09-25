@@ -1,5 +1,8 @@
-# Specify here the folder (location) in which the GIS folder is located
-folder_path_GIS = r"D:\Work\Project\P1414"
+import os
+
+# Specify the default path to the GIS folder in the case it is not defined in the environment/main script
+default_GIS_path = r"D:\Work\Project\P1414_default"
+folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 
 class Models:
     class FM:
@@ -59,8 +62,9 @@ class RawData:
     # ]
     branches_path = dict(
         [
-            ("base", p_folder + r"\Uitgesneden watergangen\AGV_v3.shp"),
-            ("sjoin", p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"),
+            ("base", p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"),
+            #("base", p_folder + r"\Uitgesneden watergangen\AGV_v3.shp"),
+            #("sjoin", p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"),
         ]
     )
 
