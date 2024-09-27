@@ -1,4 +1,7 @@
 import os
+from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel, QHTable,
+                                        QuantityUnitPair)
+from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 
 # Specify the default path to the GIS folder in the case it is not defined in the environment/main script
 default_GIS_path = r"D:\Work\Project\P1414_default"
@@ -16,13 +19,41 @@ class Models:
             max_snap_dist = 0.1
             node_distance = 50
 
+        class hydrolib_core_options:
+            class external_forcing:             
+                # Add a timeseries data on the Markermeer nodes
+                # The relevant nodes are: "127216.410000_487088.580000", "130578.000000_483044.000000", "137695.530000_482384.620000"
+        
+                # Provide here the timeseries for the markermeer, per 1 hour
+                _timeseries_markermeer = [[i,0] for i in range(24)]
+                _markermeer_forcings = []
+                _forcing_nodes = ["127216.410000_487088.580000", "130578.000000_483044.000000", "137695.530000_482384.620000"]
+                
+                for i in range(len(_forcing_nodes)):
+                    forcing=ForcingBase(
+                        name=_forcing_nodes[i],
+                        function="timeseries",
+                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since 2016-06-01 00:00:00"),
+                                        QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
+                        datablock=_timeseries_markermeer,
+                    )
+                    _markermeer_forcings.append(forcing)
+
+                __boundaries = [
+                    Boundary(
+                        quantity="waterlevelbnd",
+                        nodeid="127216.410000_487088.580000",
+                        forcingfile=ForcingModel(forcing=_markermeer_forcings),
+                    )
+                ]
+                extforcefilenew = ExtModel(boundary=__boundaries)
 
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
-    branches_path = p_folder + r"\Markermeer\Markermeer.shp"
-    norm_profile_path = p_folder + r"\Markermeer\Markermeer.shp"
+    branches_path = p_folder + r"\Markermeer\MarkermeerV2.shp"
+    norm_profile_path = p_folder + r"\Markermeer\MarkermeerV2.shp"
 
     class Peil:
         default_peil = 0

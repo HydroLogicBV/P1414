@@ -140,6 +140,8 @@ class RawData:
     #         ("water_width_index", None),
     #     ]
     # )
+
+    # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
         [
             ("code", "CODE"),

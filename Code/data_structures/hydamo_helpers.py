@@ -420,7 +420,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         branches_gdf: gpd.GeoDataFrame,
         buffer_dist=5,
         max_distance: float = 2,
-        min_connectivity: int = 2,
+        min_connectivity: int = 1,
     ) -> gpd.GeoDataFrame:
         
         """
@@ -498,7 +498,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             return gdf
 
         def skip_branches_con(
-            in_branches: gpd.GeoDataFrame, max_distance: float = 0.5, min_connectivity: int = 2
+            in_branches: gpd.GeoDataFrame, max_distance: float = 0.5, min_connectivity: int = 1
         ) -> gpd.GeoDataFrame:
             """
             Function that removes branches from GeoDataFrame if they are not sufficiently connected to other branches
@@ -541,7 +541,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                     out_branches.drop(index=name, inplace=True)
 
             n_out = out_branches.shape[0]
-            print("Dropped {} isolated branches".format(n_in - n_out))
+            #print("Dropped {} isolated branches".format(n_in - n_out))
             return out_branches
 
         def validate_network_topology(
@@ -561,32 +561,6 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 branches_gdf (gpd.GeoDataFrame): output geodataframe with branches that properly connect to one another
             """
 
-            """ Original:
-            MLS_branches_bool = branches_gdf.geometry.type == "MultiLineString"
-            if np.sum(MLS_branches_bool) > 0:
-                print("warning: found multilinestrings")
-                branches_gdf = branches_gdf.explode(ignore_index=True, index_parts=False)
-
-            # First ensure that line-segments dont extend past connection points this is done using shapely function unary_union
-            union_result = branches_gdf.geometry.unary_union
-
-            # Secondly, add the correct data from the origingal gdf to the new branches, this is done by adding data from old buffered branches to all new branches that fall within each polygon
-            buffered_branches = copy(branches_gdf)
-            buffered_branches = buffered_branches.to_crs(epsg=28992)
-            buffered_branches.geometry = buffered_branches.geometry.buffer(0.1)
-            gdf = gpd.GeoDataFrame(union_result, columns=["geometry"], geometry="geometry", crs=28992)
-
-            # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
-            intersected_gdf = gdf.sjoin(buffered_branches, how="left", predicate="within")
-
-            if snap_distance is not None:
-                if snap_distance > 0:
-                    intersected_gdf = delete_branches(gdf=intersected_gdf, snap_distance=snap_distance)
-                else:
-                    raise ValueError("Snap_distance should be > 0")
-
-            return intersected_gdf
-            """
             def snap_nodes(in_branches: gpd.GeoDataFrame, geometry_accuracy: float):
                 in_branches["t_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
                 in_branches.set_index("t_id", inplace=True)
@@ -608,7 +582,6 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 return out_branches
 
             def create_nodes_at_junctions(branches_gdf):
-
                 # First ensure that line-segments dont extend past connection points
                 # this is done using shapely function unary_union
                 union_result = branches_gdf.geometry.unary_union
@@ -641,16 +614,6 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_snapped, snap_dist=snap_distance)
                 branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
                 branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_junctions, geometry_accuracy=geometry_accuracy)
-            
-            # Perform this proces once more to remove errors
-            #branches_gdf = create_nodes_at_junctions(branches_gdf = branches_gdf)
-            #branches_gdf = snap_nodes(in_branches=branches_gdf, geometry_accuracy=geometry_accuracy)   
-            
-            # if snap_distance is not None:
-            #     if snap_distance > 0:
-            #         intersected_gdf = delete_branches(gdf=intersected_gdf, snap_distance=snap_distance)
-            #     else:
-            #         raise ValueError("snap_distance should be > 0")
 
             return branches_gdf_snapped
 
@@ -660,21 +623,6 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             starttime = time()
 
             for ix, branch in in_branches.iterrows():
-
-                # Specify a new snap_dist of 2 m for a specific branch
-                """ Specific for Rijnland model which Ludo used
-                if branch['CODE_WTRG'] == 'OR-4.09.1.1_6':
-                    snap_dist_n = 2.5
-                else:
-                    snap_dist_n = snap_dist
-                
-                point_list = branch.geometry.coords[:]
-                if branch['CODE_WTRG'] == '468-058-00001-01':
-                    point_list = point_list[1:]
-                    startpoint = Point(branch.geometry.coords[1])
-                    endpoint = Point(branch.geometry.coords[-1])
-                """
-                #else:
                 snap_dist_n = snap_dist
                 point_list = branch.geometry.coords[:]
                 startpoint = Point(branch.geometry.coords[0])
@@ -715,19 +663,11 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                                 # If no point is close enough in the matching branch, create a nearest point
                                 count += 1
                                 nearest_point = nearest_points(match.iloc[0],point)[0]
-
-
-                                """ It should not add a third dimension here, this is from original Ludo Rijnland
-                                # Check if third dimension is already present:
-                                if len(nearest_point.coords[:][0]) == 3: 
-                                    new_coord = nearest_point.coords[:][0]
-                                else: 
-                                    new_coord = nearest_point.coords[:][0] + (0.0,)"""
                                 new_coord = nearest_point.coords[:][0]
+                                
                                 # Assign the new start/end coord to the branch
                                 point_list[point_index] = new_coord
                                 outbranches.loc[ix, 'geometry'] = LineString(point_list)
-
 
                                 # Create the new nearest_point on the branch that is it closest to
                                 dist_line = [nearest_point.distance(Point(x)) for x in match.iloc[0].coords[:]]
@@ -761,7 +701,6 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
                                 point_list_branch = point_list_part1 + [new_coord] + point_list_part2
                                 outbranches.loc[match.index[0], 'geometry'] = LineString(point_list_branch)
-
 
             endtime = time()
             print(f'Elapsed time: {endtime - starttime} seconds')
@@ -2326,8 +2265,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         if hasattr(data_config, "branch_selection"):
             column, value = (
                 data_config.branch_selection["column"],
-                data_config.branch_selection["value"],
+                data_config.branch_selection["value"].upper(),
             )
+
             branches_gdf = branches_gdf.loc[branches_gdf[column] == value, :]
 
         # Validate the branches topography and connections

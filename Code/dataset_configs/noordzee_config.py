@@ -1,4 +1,7 @@
 import os
+from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel, QHTable,
+                                        QuantityUnitPair)
+from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 
 # Specify the default path to the GIS folder in the case it is not defined in the environment/main script
 default_GIS_path = r"D:\Work\Project\P1414_default"
@@ -16,7 +19,35 @@ class Models:
             max_snap_dist = 1
             node_distance = 50
 
+        class hydrolib_core_options:
+            class external_forcing:             
+                # Add a timeseries data on the North Sea nodes
+                # The relevant nodes are: 100240.000000_497850.000000; 85410.000000_471795.000000; 58820.000000_446520.000000; 49883.000000_431591.000000 or 49885.000000_431680.000000 depending on the model
+        
+                # Provide here the timeseries for the northsea, per 1 hour
+                _timeseries_noordzee = [[i,0] for i in range(24)]
+                _northsea_forcings = []
+                _forcing_nodes = ["100240.000000_497850.000000", "85410.000000_471795.000000", "58820.000000_446520.000000", "49883.000000_431591.000000","49885.000000_431680.000000"]
+                
+                for i in range(len(_forcing_nodes)):
+                    forcing=ForcingBase(
+                        name=_forcing_nodes[i],
+                        function="timeseries",
+                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since 2016-06-01 00:00:00"),
+                                        QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
+                        datablock=_timeseries_noordzee,
+                    )
+                    _northsea_forcings.append(forcing)
 
+                __boundaries = [
+                    Boundary(
+                        quantity="waterlevelbnd",
+                        nodeid="85410.000000_471795.000000",
+                        forcingfile=ForcingModel(forcing=_northsea_forcings),
+                    )
+                ]
+                extforcefilenew = ExtModel(boundary=__boundaries)
+        
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"

@@ -33,12 +33,6 @@ class Models:
 
         class hydrolib_core_options:
             class external_forcing:
-                # __fb1 = ForcingBase(
-                #     name="172541.443336_513910.402941",
-                #     function="constant",
-                #     quantityunitpair=[QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
-                #     datablock=[[0]],
-                # )
                 __fb1 = QHTable(
                     name="172541.443336_513910.402941",
                     quantityunitpair=[
@@ -112,12 +106,53 @@ class Models:
                         [0.832, 5000],
                     ],
                 )
+
+                # Provide here the timeseries for the northsea, per 1 hour
+                _timeseries_noordzee = [[i,0] for i in range(24)]
+                _northsea_forcings = []
+                _forcing_nodes = ["100240.000000_497850.000000", "85410.000000_471795.000000", "58820.000000_446520.000000", "49883.000000_431591.000000","49885.000000_431680.000000"]
+                
+                for i in range(len(_forcing_nodes)):
+                    forcing=ForcingBase(
+                        name=_forcing_nodes[i],
+                        function="timeseries",
+                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since 2016-06-01 00:00:00"),
+                                        QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
+                        datablock=_timeseries_noordzee,
+                    )
+                    _northsea_forcings.append(forcing)
+                
+                # Provide here the timeseries for the markermeer, per 1 hour
+                _timeseries_markermeer = [[i,0] for i in range(24)]
+                _markermeer_forcings = []
+                _forcing_nodes = ["127216.410000_487088.580000", "130578.000000_483044.000000", "137695.530000_482384.620000"]
+                
+                for i in range(len(_forcing_nodes)):
+                    forcing=ForcingBase(
+                        name=_forcing_nodes[i],
+                        function="timeseries",
+                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since 2016-06-01 00:00:00"),
+                                        QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
+                        datablock=_timeseries_markermeer,
+                    )
+                    _markermeer_forcings.append(forcing)
+
                 __boundaries = [
                     Boundary(
                         quantity="qhbnd",
                         nodeid="172541.443336_513910.402941",
                         forcingfile=ForcingModel(forcing=[__fb1]),
                     ),
+                    Boundary(
+                        quantity="waterlevelbnd",
+                        nodeid="127216.410000_487088.580000",
+                        forcingfile=ForcingModel(forcing=_markermeer_forcings),
+                    ),
+                    Boundary(
+                        quantity="waterlevelbnd",
+                        nodeid="85410.000000_471795.000000",
+                        forcingfile=ForcingModel(forcing=_northsea_forcings),
+                    )
                 ]
                 __laterals = [
                     Lateral(

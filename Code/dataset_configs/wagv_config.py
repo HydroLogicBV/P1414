@@ -93,6 +93,7 @@ class RawData:
         default_peil = -0.4
 
     ## Branches
+    # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
         [
             ("code", "code"),
