@@ -62,7 +62,6 @@ class FixedWeirs:
         ]
     )
 
-
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
@@ -78,6 +77,7 @@ class RawData:
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
+    # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
         [
             ("code", "CODE"),

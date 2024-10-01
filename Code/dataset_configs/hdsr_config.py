@@ -107,7 +107,7 @@ class RawData:
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
-    # branch_selection = dict([("column", "CATEGORIEO"), ("value", 1)])
+    # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
         [
             ("bodembreedte", "IWS_W_BODB"),

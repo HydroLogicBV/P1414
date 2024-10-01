@@ -1,10 +1,12 @@
-# Specify where the scripts are located
-path_code = r"C:\Work\HL-P24050\P1414\Code"
-
 import sys
 import os
+
+# Specify where the scripts are located
+path_code = r"C:\Work\HL-P24050\P1414\Code"
 #sys.path.append("D:\Work\git\GIS_tools\Code")
 sys.path.append(path_code)
+sys.path.append(r'C:\Work\HL-P24050\P1414\HYDROLIB_adapted\hydrolib')
+sys.path.append(r'C:\Work\HL-P24050\P1414\HYDROLIB_adapted')
 
 from data_structures.dhydro_data import DHydroData
 
@@ -13,7 +15,7 @@ folder_path_GIS = r"D:\Work\Project\P1414"
 folder_path_output = r"D:\Work\Project\P1414"
 os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_test_v22_WBD.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_test_v25_WBD.gpkg"
 gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\HHSK.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\HDSR.gpkg",
@@ -28,7 +30,7 @@ gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\tunnels.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
 ]
-output_folder = folder_path_output + r"\Models\Combined\V24_WBD_500"
+output_folder = folder_path_output + r"\Models\Combined\V25_WBD_500"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
@@ -39,7 +41,7 @@ config_list = [
     r"wagv_config",
     r"ark_nzk_config",
     r"rijntakken_config",
-    r"rijnmaasmonding_config",
+    r"rijnmaasmonding_open_config",
     r"noordzee_config",
     r"markermeer_config",
 ]
@@ -47,10 +49,9 @@ snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 100, 100, 0, 0]
 
 defaults = r"defaults"
 
-build_database = True
+build_database = False
 load_gpkgs = False
-build_model = False
-
+build_model = True
 
 if build_database:
     dhd = DHydroData()
@@ -58,7 +59,7 @@ if build_database:
         print("\n" + config)
 
         dhd.hydamo_from_raw_data(
-            defaults=defaults, config=config, branch_snap_dist=snap_dist_list[ix]
+            defaults=defaults, config=config, branch_snap_dist=snap_dist_list[ix], GIS_folder=folder_path_GIS
         )
         try:
             dhd.fixed_weirs_from_raw_data(config=config, defaults=defaults)

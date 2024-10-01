@@ -61,7 +61,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\HHRijnland\Niet legger\Watergangen_edited_v3.shp"  # From V7
+    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v7_test.shp" # The next file is the original but does not exist: r"\HHRijnland\Niet legger\Watergangen_edited_v3.shp"  # From V7
     bridges_path = p_folder + r"\HHRijnland\Niet legger\brug_edited.shp"
     culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
     norm_profile_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as_primair.shp"
@@ -78,7 +78,7 @@ class RawData:
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     ## Branches
-    #branch_selection = dict([("column", "CATEGORIEO"), ("value", "primair")])
+    # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
         [
             ("code", "CODE"),
