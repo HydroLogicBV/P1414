@@ -30,7 +30,7 @@ gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\tunnels.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
 ]
-output_folder = folder_path_output + r"\Models\Combined\V25_WBD_500"
+output_folder = folder_path_output + r"\Models\Combined\V29_WBD_500"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
@@ -97,8 +97,8 @@ if build_model:
 
     # remove brug as it needs a cs
     del dhd.ddm.brug
-    #dhd.features.remove("brug")
-    #dhd.ddm.pomp["maximalecapaciteit"] = 0
+    dhd.features.remove("brug")
+    dhd.ddm.pomp["maximalecapaciteit"] = 0
 
     # 3. save as dhydro model
     dhd.to_dhydro(config=config_dhydro, output_folder=output_folder)

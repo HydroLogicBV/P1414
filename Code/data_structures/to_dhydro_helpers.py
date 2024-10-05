@@ -3,7 +3,8 @@ import os
 from copy import copy
 from pathlib import Path
 from typing import List, Union
-
+from datetime import datetime, timedelta
+import pandas as pd
 import geopandas as gpd
 import numpy as np
 import rasterio
@@ -28,7 +29,8 @@ from rasterstats import zonal_stats
 from scipy.spatial import KDTree
 from shapely.geometry import LineString, MultiLineString
 from shapely.geometry import Point as sPoint
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
+from shapely.ops import unary_union
 
 from data_structures.roi_data_model import ROIDataModel as DataModel
 
@@ -797,6 +799,9 @@ def to_dhydro(
         initial_peil_raster_path: str,
         roughness_2d_raster_path: str,
         two_d_buffer: float,
+        clip_extent: gpd.GeoDataFrame = None,
+        clip_buffer: int = 0,
+        lateral_branches: list = None,
         one_d: bool = False,
         bound_ids: list = ["mark", "noor", "rijn"],
         max_lat_dist: float = 2e3,
@@ -813,6 +818,59 @@ def to_dhydro(
 
         mesh.mesh2d_add_rectilinear(network=network, polygon=polygon, dx=dx, dy=dy)
         print("created 2D mesh")
+
+        # ---> Added by Pepijn: clip main branches and give them lateral links
+        # Clip polygons from the 2D mesh
+        clipped = 0
+        if clip_extent is not None:
+            if len(clip_extent) == 1:
+                clip_polygons = clip_extent.loc[0, 'geometry']
+                mesh.mesh2d_clip(network=network, polygon=clip_polygons)
+                print('Clipped 1 polygon from the mesh\n')
+            else:
+                n_it = len(clip_extent)
+                n_finish = 0
+                if n_it < 300:
+                    divideby = 5
+                else:
+                    divideby = 25
+                for i, poly in clip_extent.iterrows():
+                    if n_finish % divideby == 0: # Give some feedback on where the construction is
+                        current_time = datetime.now()
+                        print(f'Clip progress: {round(n_finish/n_it*100,1)}% at {current_time.strftime("%H:%M")}')
+                    clip_polygons = poly.geometry.buffer(clip_buffer)
+
+                    if clip_polygons.type == 'MultiPolygon':
+                        merged_polygon = unary_union(clip_polygons)
+                    else:
+                        merged_polygon = clip_polygons
+
+                    # Ensure the result is a single polygon
+                    if merged_polygon.type == 'MultiPolygon':
+                        # If still a MultiPolygon, extract the largest polygon
+                        largest_polygon = max(merged_polygon, key=lambda p: p.area)
+                    else:
+                        largest_polygon = merged_polygon
+
+                    clip_polygon = Polygon(largest_polygon.exterior)    # Make a polygon with the exterior = filling up potential holes
+                    clipped += 1
+                    mesh.mesh2d_clip(network=network, polygon=clip_polygon)
+                    n_finish +=1
+                print(f'Clipped {clipped} polygons one by one from the mesh\n')
+
+            # Add lateral 1D-2D links because the regular links are removed when clipped
+            if len(lateral_branches) > 0:
+                mesh.links1d2d_add_links_2d_to_1d_lateral(
+                        network=network,
+                        branchids=lateral_branches,
+                        dist_factor=None,   # within=extent.buffer(1e3)
+                        max_length=2*dx,      # Set the maximum length to the grid resolution
+                    )
+                
+                # Remove the links that go to end points as these deliver problems when running the simulation
+                #mesh.links1d2d_remove_1d_endpoints(network=network)
+                print('Added lateral links for the clipped branches and removed the ones to end points.')
+        # ---> End add Pepijn
 
         if elevation_raster_path is not None:
             # mesh.mesh2d_altitude_from_raster(
@@ -1192,6 +1250,50 @@ def to_dhydro(
                 else:
                     kwargs[option] = None
 
+
+            # Get the geometries that must be clipped
+            CRS = 'EPSG:28992'        
+            if hasattr(model_config.FM.two_d, "clip_extent_path") and (model_config.FM.two_d.clip_extent_path is not None):
+                clip_extent_gdf = gpd.read_file(model_config.FM.two_d.clip_extent_path, crs=CRS)
+                clip_extent = clip_extent_gdf[clip_extent_gdf['geometry'].apply(lambda geom: isinstance(geom, Polygon))]    # Only select the ones with a polygon, because that can only be clipped
+                
+                # Apply selection criteria:
+                #   1. all shapes that have 'meer, plas' in their 'typewater' column must be clipped (must remain in clip_extent)
+                #   2. all shapes that meet the clip_selection criteria for the 'breedtekla' column must be clipped
+                if hasattr(model_config.FM.two_d, "clip_selection") and (model_config.FM.two_d.clip_selection is not None):
+                    condition1 = (clip_extent['typewater'] == 'meer, plas')
+                    condition2 = (clip_extent['typewater'] == 'waterloop') & (clip_extent['breedtekla'].isin(model_config.FM.two_d.clip_selection))
+                    clip_extent = clip_extent[condition1 | condition2]
+            else:
+                clip_extent = None
+            
+            # Ensure that only unique column names exist
+            if 'index_left' in clip_extent.columns:
+                clip_extent = clip_extent.rename(columns={'index_left': 'clip_index_left'})
+            if 'index_right' in clip_extent.columns:
+                clip_extent = clip_extent.rename(columns={'index_right': 'clip_index_right'})
+
+            # Get the clip buffer, because it is not defined everywhere, to prevent errors set the buffer to 100m if not defined.
+            if hasattr(model_config.FM.two_d, "clip_buffer"):
+                clip_buffer = model_config.FM.two_d.clip_buffer
+            else:
+                clip_buffer = 100
+                print('** Assumed default clip buffer of 100m because no buffer was given.')
+            
+            # Get a list of the branchid's that are clipped and now need 1D-2D lateral links
+            if hasattr(model_config.FM.two_d, "clip_extent_path") and (model_config.FM.two_d.clip_extent_path is not None):
+                all_branches_gdf = gpd.GeoDataFrame(self.hydamo.branches, geometry='geometry', crs=CRS)
+                clip_extent_buffer = clip_extent.copy()
+                               
+                clip_extent_buffer = clip_extent_buffer.set_geometry('geometry')
+                all_branches_gdf = all_branches_gdf.set_geometry('geometry')
+                clip_extent_buffer = clip_extent_buffer.to_crs(CRS)
+                all_branches_gdf = all_branches_gdf.to_crs(CRS)
+
+                clipped_branches_gdf = gpd.sjoin(all_branches_gdf, clip_extent_buffer, how='inner', op='intersects')
+                lst_temp = clipped_branches_gdf.code_left.tolist()
+                lateral_branches = lst_temp 
+            
             # add 2D model
             print("\nBuilding 2D model grid\n")
             self.fm = build_2D_model(
@@ -1200,6 +1302,9 @@ def to_dhydro(
                 extent=extent,
                 fm=self.fm,
                 one_d=model_config.FM.one_d_bool,
+                clip_extent=clip_extent,
+                clip_buffer=clip_buffer,
+                lateral_branches=lateral_branches,
                 **kwargs,
             )
 

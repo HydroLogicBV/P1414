@@ -7,12 +7,15 @@ import os
 default_GIS_path = r"D:\Work\Project\P1414_default"
 folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 
+STARTTIME = 20000101
+STOPTIME = 86400*7
+
 class Models:
     class FM:
         one_d_bool = True
         two_d_bool = True
-        start_time = 20000101
-        stop_time = 86400 * 7
+        start_time = STARTTIME
+        stop_time = STOPTIME
 
         class one_d:
             max_dist_to_struct = 5
@@ -31,7 +34,8 @@ class Models:
             )
             two_d_buffer = 0
             clip_extent_path = folder_path_GIS+r"\GIS\peilen\boezem_v2.shp"       # waterways that must be clipped from 2D
-            clip_buffer = 100                                                     # int, buffer around the polygons that must be clipped in [meters]
+            clip_buffer = 0.5*dx                                                     # int, buffer around the polygons that must be clipped in [meters], 0.5*grid size works often to get a sharp clip
+            clip_selection = ['> 125 meter', '50 - 125 meter']                    # selection of the buffer layer that must be kept, based on the 'breedtekla' column in the shapefile
 
         class hydrolib_core_options:
             class external_forcing:
@@ -119,41 +123,43 @@ class Models:
                 __forcings = [__fb1]
                 __boundaries = [__boundary1]
 
-                __timeseries_noordzee = [[i,2+i/24] for i in range(24)]
+                __starttime_str = str(STARTTIME)[0:4]+"-"+str(STARTTIME)[4:6]+"-"+str(STARTTIME)[6:8]
+                __n_hours = int(STOPTIME/3600)
+                __timeseries_noordzee = [[__i,0] for __i in range(__n_hours)]
                 __forcing_nodes = ["100240.000000_497850.000000", "85410.000000_471795.000000", "58820.000000_446520.000000", "49883.000000_431591.000000","49885.000000_431680.000000"]
                 
-                for i in range(len(__forcing_nodes)):
+                for __i in range(len(__forcing_nodes)):
                     __forcing=ForcingBase(
-                        name=__forcing_nodes[i],
+                        name=__forcing_nodes[__i],
                         function="timeseries",
-                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since 2016-06-01 00:00:00"),
+                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since {__starttime_str} 00:00:00"),
                                         QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
                         datablock=__timeseries_noordzee,
                     )
 
                     __boundary = Boundary(
                         quantity="waterlevelbnd",
-                        nodeid=__forcing_nodes[i],
+                        nodeid=__forcing_nodes[__i],
                         forcingfile=ForcingModel(forcing=__forcing),
                     )
 
                     __forcings.append(__forcing)
                     __boundaries.append(__boundary)
 
-                __timeseries_markermeer = [[i,0] for i in range(24)]
+                __timeseries_markermeer = [[__i,0] for __i in range(__n_hours)]
                 __forcing_nodes = ["127216.410000_487088.580000", "130578.000000_483044.000000", "137695.530000_482384.620000"]
                 
-                for i in range(len(__forcing_nodes)):
+                for __i in range(len(__forcing_nodes)):
                     __forcing=ForcingBase(
-                        name=__forcing_nodes[i],
+                        name=__forcing_nodes[__i],
                         function="timeseries",
-                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since 2016-06-01 00:00:00"),
+                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since {__starttime_str} 00:00:00"),
                                         QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
                         datablock=__timeseries_markermeer,
                     )
                     __boundary = Boundary(
                         quantity="waterlevelbnd",
-                        nodeid=__forcing_nodes[i],
+                        nodeid=__forcing_nodes[__i],
                         forcingfile=ForcingModel(forcing=__forcing),
                     )
 
