@@ -11,7 +11,7 @@ class Models:
     class FM:
         one_d_bool = True
         two_d_bool = False
-        start_time = 20160601
+        start_time = 20000101
         stop_time = 86400
 
         class one_d:
@@ -21,6 +21,8 @@ class Models:
 
         class hydrolib_core_options:
             class external_forcing:             
+                pass             
+                """ *** Forcing is added in combined config script ***
                 # Add a timeseries data on the Markermeer nodes
                 # The relevant nodes are: "127216.410000_487088.580000", "130578.000000_483044.000000", "137695.530000_482384.620000"
         
@@ -47,6 +49,7 @@ class Models:
                     )
                 ]
                 extforcefilenew = ExtModel(boundary=__boundaries)
+                """
 
 class RawData:
     ## PATHS

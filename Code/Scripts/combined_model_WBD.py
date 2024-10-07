@@ -30,7 +30,7 @@ gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\tunnels.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
 ]
-output_folder = folder_path_output + r"\Models\Combined\V25_WBD_500"
+output_folder = folder_path_output + r"\Models\Combined\V29_WBD_500"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [

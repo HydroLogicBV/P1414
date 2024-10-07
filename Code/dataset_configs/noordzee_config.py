@@ -11,7 +11,7 @@ class Models:
     class FM:
         one_d_bool = True
         two_d_bool = False
-        start_time = 20160601
+        start_time = 20000101
         stop_time = 86400
 
         class one_d:
@@ -20,7 +20,9 @@ class Models:
             node_distance = 50
 
         class hydrolib_core_options:
-            class external_forcing:             
+            class external_forcing:
+                pass             
+                """ *** Forcing is added in combined config script ***
                 # Add a timeseries data on the North Sea nodes
                 # The relevant nodes are: 100240.000000_497850.000000; 85410.000000_471795.000000; 58820.000000_446520.000000; 49883.000000_431591.000000 or 49885.000000_431680.000000 depending on the model
         
@@ -46,7 +48,7 @@ class Models:
                         forcingfile=ForcingModel(forcing=_northsea_forcings),
                     )
                 ]
-                extforcefilenew = ExtModel(boundary=__boundaries)
+                extforcefilenew = ExtModel(boundary=__boundaries) """
         
 class RawData:
     ## PATHS

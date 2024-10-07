@@ -8,7 +8,7 @@ class Models:
     class FM:
         one_d_bool = True
         two_d_bool = True
-        start_time = 20160601
+        start_time = 20000101
         stop_time = 86400
 
         class one_d:
