@@ -69,7 +69,11 @@ def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
 
     if (not isinstance(gdf, int)) | (not isinstance(gdf, float)):
-        gdf = gdf.astype(float)
+        try:
+            gdf = gdf.astype(float)
+        except:
+            gdf = gdf.apply(lambda x: str(x).replace(',', '.') if isinstance(x,str) else x)
+            gdf = gdf.astype(float)
     return gdf
 
 
@@ -135,10 +139,10 @@ def load_geo_file(
     if isinstance(file_path, dict):
         for key, value in file_path.items():
             if "base" in key:
-                gdf = load_geo_file(file_path=value)
+                gdf = load_geo_file(file_path=value).to_crs('epsg:28992')
             elif "concat" in key:
                 gdf = gpd.GeoDataFrame(
-                    data=pd.concat([gdf, load_geo_file(file_path=value)]),
+                    data=pd.concat([gdf, load_geo_file(file_path=value).to_crs(gdf.crs)]),
                     geometry="geometry",
                     crs=gdf.crs,
                 )
@@ -150,8 +154,8 @@ def load_geo_file(
 
     elif isinstance(file_path, list):
         if len(file_path) <= 2:
-            gdf_1 = load_geo_file(file_path=file_path[0])
-            gdf_2 = load_geo_file(file_path=file_path[1])
+            gdf_1 = load_geo_file(file_path=file_path[0]).to_crs('epsg:28992')
+            gdf_2 = load_geo_file(file_path=file_path[1]).to_crs('epsg:28992')
 
             gdf_2_buffer = gdf_2.copy()
             gdf_2_buffer.geometry = gdf_2_buffer.geometry.buffer(1)
@@ -161,10 +165,10 @@ def load_geo_file(
             raise ValueError("Can only join two shapefiles together")
 
     elif file_path.endswith(r".shp"):
-        gdf = gpd.read_file(file_path)
+        gdf = gpd.read_file(file_path).to_crs('epsg:28992')
     elif file_path.endswith(r".gpkg"):
         if layer is not None:
-            gdf = gpd.read_file(file_path, layer=layer)
+            gdf = gpd.read_file(file_path, layer=layer).to_crs('epsg:28992')
         else:
             raise ValueError("provide a layer when loading a gpkg")
     else:
@@ -621,8 +625,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             outbranches = copy(in_branches)
             count = 0
             starttime = time()
+            sindex = in_branches.sindex
 
-            for ix, branch in in_branches.iterrows():
+            for ix, branch in tqdm(in_branches.iterrows()):
                 snap_dist_n = snap_dist
                 point_list = branch.geometry.coords[:]
                 startpoint = Point(branch.geometry.coords[0])
@@ -634,9 +639,14 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                     else: point_index = -1
 
                     buffer_point = point.buffer(distance=snap_dist_n)
-                    intersect_bool = in_branches.geometry.intersects(buffer_point)
+
+                    # Get potential matches
+                    possible_match_index = list(sindex.intersection(buffer_point.bounds))
+                    possible_matches = in_branches.iloc[possible_match_index]
+
+                    intersect_bool = possible_matches.geometry.intersects(buffer_point)
                     
-                    match = outbranches.geometry[intersect_bool]
+                    match = possible_matches.geometry[intersect_bool]
 
                     # Drop the intersection with its own branch
                     match.drop(index=ix, inplace=True)
@@ -2125,7 +2135,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             and ("diepte" in data_config.np_index_mapping)
             and (data_config.np_index_mapping["diepte"] is not None)
         ):
-            peil_gebieden_gdf = gpd.read_file(data_config.peil_gebieden_path)
+            peil_gebieden_gdf =load_geo_file(data_config.peil_gebieden_path)
             peil_gebieden_gdf, _ = map_columns(
                 defaults=defaults,
                 gdf=peil_gebieden_gdf,
@@ -2263,12 +2273,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             data_config.branches_path, layer="waterloop", geom_type="LineString", has_z_coord=False
         )
         if hasattr(data_config, "branch_selection"):
-            column, value = (
-                data_config.branch_selection["column"],
-                data_config.branch_selection["value"].upper(),
-            )
-
-            branches_gdf = branches_gdf.loc[branches_gdf[column] == value, :]
+            branches_gdf = select_features(data_config.branch_selection, branches_gdf)
 
         # Validate the branches topography and connections
         branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8)
@@ -2279,7 +2284,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             gdf=branches_gdf,
             index_mapping=data_config.branch_index_mapping,
         )
-
+        # Add a new globalid if missing
+        #branches_gdf['globalid'] = branches_gdf['globalid'].apply(lambda x: x if pd.notnull(x) else str(uuid.uuid4()))
+        branches_gdf['globalid'] = [str(uuid.uuid4()) for _ in range(branches_gdf.shape[0])]
         branches_out_gdf = copy(branches_gdf)
         for ix, branch in branches_gdf.iterrows():
             type_ruwheid = check_roughness(branch)
@@ -2293,11 +2300,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             np_gdf = load_geo_file(data_config.norm_profile_path)
 
             if hasattr(data_config, "np_selection"):
-                column, value = (
-                    data_config.np_selection["column"],
-                    data_config.np_selection["value"],
-                )
-                np_gdf = np_gdf.loc[np_gdf[column] == value, :]
+                np_gdf = select_features(data_config.np_selection, np_gdf)
 
             np_gdf, index_mapping = map_columns(
                 code_pad=code_padding + "np_",
@@ -2337,23 +2340,37 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
     if hasattr(data_config, "bridges_path") and (data_config.bridges_path is not None):
         ## Bridges
+        bridges_gdf = load_geo_file(data_config.bridges_path, layer="brug")
+
+        if hasattr(data_config, "bridge_selection"):
+            bridges_gdf = select_features(data_config.bridge_selection, bridges_gdf)
+
         bridges_gdf, _ = map_columns(
             code_pad=code_padding + "br_",
             defaults=defaults.Bridges,
-            gdf=load_geo_file(data_config.bridges_path, layer="brug"),
+            gdf=bridges_gdf,
             index_mapping=data_config.bridge_index_mapping,
         )
+        
         ddm.brug = create_bridge_data(bridge_gdf=bridges_gdf)
+        print('Created bridge data')
 
     if hasattr(data_config, "culvert_path") and (data_config.culvert_path is not None):
         ## Culverts
+        culvert_gdf = load_geo_file(data_config.culvert_path, layer="duiker")
+
+        if hasattr(data_config, "culvert_selection"):
+            culvert_gdf = select_features(data_config.culvert_selection, culvert_gdf)
+
         culvert_gdf, _ = map_columns(
             code_pad=code_padding + "cu_",
             defaults=defaults.Culverts,
-            gdf=load_geo_file(data_config.culvert_path, layer="duiker"),
+            gdf=culvert_gdf,
             index_mapping=data_config.culvert_index_mapping,
         )
+
         ddm.duiker = create_culvert_data(culvert_gdf=culvert_gdf)
+        print('Created duiker data')
 
     if hasattr(data_config, "measured_profile_path") and (
         data_config.measured_profile_path is not None
@@ -2379,6 +2396,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         ddm = merge_to_ddm(ddm=ddm, feature="profiellijn", feature_gdf=profiellijn)
         ddm = merge_to_ddm(ddm=ddm, feature="profielpunt", feature_gdf=profielpunt)
         ddm = merge_to_ddm(ddm=ddm, feature="ruwheidsprofiel", feature_gdf=ruwheidsprofiel)
+        
 
     if hasattr(data_config, "peil_gebieden_path") and (data_config.peil_gebieden_path is not None):
         peil_gdf = load_geo_file(data_config.peil_gebieden_path, layer="peilgebieden")
@@ -2391,6 +2409,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         # replace waterlopen with extra info
         ddm.peilgebieden = peil_gdf
         ddm.waterloop = add_peil_to_branch(branches_gdf=ddm.waterloop, peil_gdf=peil_gdf)
+        print('Added peil to branches')
 
     if (
         hasattr(data_config, "Peil")
@@ -2400,17 +2419,23 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         ddm.waterloop = add_default_peil_to_branch(
             branches_gdf=ddm.waterloop, default_peil=data_config.Peil.default_peil
         )
+        print('Added default peil')
     if hasattr(data_config, "pump_path") and (data_config.pump_path is not None):
         ## Pumps
         pump_gdf = load_geo_file(data_config.pump_path, layer="gemaal")
+        
+        if hasattr(data_config, "pump_selection"):
+            pump_gdf = select_features(data_config.pump_selection, pump_gdf)
+
         pump_gdf, _ = map_columns(
-            code_pad=code_padding + "pu_",
-            defaults=defaults.Pumps,
-            gdf=pump_gdf,
-            index_mapping=data_config.pump_index_mapping,
-        )
+                    code_pad=code_padding + "pu_",
+                    defaults=defaults.Pumps,
+                    gdf=pump_gdf,
+                    index_mapping=data_config.pump_index_mapping,
+                )
 
         ddm.gemaal, ddm.pomp, ddm.sturing = create_pump_data(pump_gdf=pump_gdf)
+        print('Created pump data')
 
     if hasattr(data_config, "river_profile_path") and (data_config.river_profile_path is not None):
         if hasattr(data_config, "river_roughness_path") and (
@@ -2431,15 +2456,20 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             code_padding=code_padding + "wl_",
             rough_df=rough_df,
         )
+        print('Added river profiles')
 
     if hasattr(data_config, "sluice_path") and (data_config.sluice_path is not None):
         sluice_gdf = load_geo_file(data_config.sluice_path, layer="sluis")
+
+        if hasattr(data_config, "sluice_selection"):
+            sluice_gdf = select_features(data_config.sluice_selection,sluice_gdf)
+            
         sluice_gdf, _ = map_columns(
             code_pad=code_padding + "sl_",
             defaults=defaults.Weirs,
             gdf=sluice_gdf,
             index_mapping=data_config.sluice_index_mapping,
-        )
+        )       
 
         stuw, kunstwerkopening, regelmiddel = create_weir_data(
             branches_gdf=ddm.waterloop, weir_gdf=sluice_gdf
@@ -2447,21 +2477,41 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         ddm = merge_to_ddm(ddm=ddm, feature="stuw", feature_gdf=stuw)
         ddm = merge_to_ddm(ddm=ddm, feature="kunstwerkopening", feature_gdf=kunstwerkopening)
         ddm = merge_to_ddm(ddm=ddm, feature="regelmiddel", feature_gdf=regelmiddel)
+        print('Created sluice data')
 
     if hasattr(data_config, "weir_path") and (data_config.weir_path is not None):
         ## Weirs
         weir_gdf = load_geo_file(data_config.weir_path, layer="stuw")
+
+        if hasattr(data_config, "weir_selection"):
+            weir_gdf = select_features(data_config.weir_selection, weir_gdf)
+        
         weir_gdf, _ = map_columns(
             code_pad=code_padding + "we_",
             defaults=defaults.Weirs,
             gdf=weir_gdf,
             index_mapping=data_config.weir_index_mapping,
         )
+
+        
         stuw, kunstwerkopening, regelmiddel = create_weir_data(
             branches_gdf=ddm.waterloop, weir_gdf=weir_gdf
         )
         ddm = merge_to_ddm(ddm=ddm, feature="stuw", feature_gdf=stuw)
         ddm = merge_to_ddm(ddm=ddm, feature="kunstwerkopening", feature_gdf=kunstwerkopening)
         ddm = merge_to_ddm(ddm=ddm, feature="regelmiddel", feature_gdf=regelmiddel)
+        print('Created weir data')
 
     return ddm
+
+def select_features(data_config, gdf):
+    
+    # Select features based on a criterion
+    column, value = (
+            data_config["column"],
+            data_config["value"].upper(),
+        )
+
+    gdf = gdf.loc[gdf[column].str.upper() == value, :]
+
+    return gdf

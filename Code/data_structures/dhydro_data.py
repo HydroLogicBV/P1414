@@ -44,7 +44,7 @@ class DHydroData:
         Returns:
             None
         """
-
+        print(f'Clipping structures with a buffer of {buffer} meter')
         self.ddm = _clip_structures_by_branches(self, buffer=buffer, min_overlap=min_overlap)
 
     def dambreaks_from_config(self, config: str, defaults: str):
@@ -56,6 +56,7 @@ class DHydroData:
     def fixed_weirs_from_raw_data(self, config: str, defaults: str, min_length: float = None):
         dm = DataModel()
         dm = create_fixed_weir_data(config=config, defaults=defaults, dm=dm, min_length=min_length)
+        print('Fixed weirs added')
         self._set_ddm(ddm=dm)
 
     def hydamo_from_raw_data(

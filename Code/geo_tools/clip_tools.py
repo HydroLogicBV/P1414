@@ -77,8 +77,8 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
                 )
 
         elif ddm_feature.shape[0] > 0:
-            print(feature)
-            print(ddm_feature.shape[0])
+            #print(feature)
+            #print(ddm_feature.shape[0])
             # clipped_gdf = gpd.overlay(
             #     ddm_feature, buffered_branches, how="intersection", keep_geom_type=True
             # )
@@ -88,8 +88,8 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             )
             clipped_gdf = clipped_gdf.loc[clipped_gdf["index_right"].notnull(), :]
             clipped_gdf = clipped_gdf[columns]
-            print(clipped_gdf.shape[0])
-
+            #print(clipped_gdf.shape[0])
+            print(f'{feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
             # mls_struct_bool = clipped_gdf.geometry.type == "MultiLineString"
             # if np.sum(mls_struct_bool) > 0:
             #     _clipped_gdf = copy(clipped_gdf)

@@ -4,12 +4,13 @@ import numpy as np
 ## Branches
 class Branches:
     bodembreedte = None
-    bodemhoogte_benedenstrooms = None
-    bodemhoogte_bovenstrooms = None
+    bodemhoogte_benedenstrooms = -90 # Was None, maar voor HHSK aangepast! 
+    bodemhoogte_bovenstrooms = -90 # Was None, maar voor HHSK aangepast! 
     hoogte_insteek_linkerzijde = None
     hoogte_insteek_rechterzijde = None
     ruwheidhoog = 23
     ruwheidlaag = 23
+    diepte = 1
     taludhelling_linkerzijde = 0
     taludhelling_rechterzijde = 0
     typeruwheid = "Bos en Bijkerk"
@@ -67,6 +68,7 @@ class Pumps:
     doelvariabele = "waterstand"
     maximalecapaciteit = 0
     peil_marge = 0.1
+    streefwaarde = 0 # Toegevoegd voor HHSK
 
 
 ## Weirs

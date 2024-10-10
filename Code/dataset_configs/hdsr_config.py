@@ -69,7 +69,7 @@ class Models:
 class FixedWeirs:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    flood_defences_path = p_folder + r"\Keringen_met_hoogte\hdsr.shp"
+    flood_defences_path = p_folder + r"\HDSR\Keringen met hoogte\hdsr.shp"
 
     fixed_weir_index_mapping = dict(
         [
@@ -83,31 +83,34 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject.shp"  # Corrected from V7
-    bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
-    culvert_path = p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_edited.shp"
-    norm_profile_path = p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject_primair.shp"
+    branches_path = p_folder + r"\HDSR\HydroObject\HydroObject.shp"  # Corrected from V7
+    bridges_path = p_folder + r"\HDSR\Bruggen\Bruggen.shp"
+    culvert_path = p_folder + r"\HDSR\Kokers_Lijnen\Kokers_Lijnen.shp"
+    norm_profile_path = p_folder + r"\HDSR\HydroObject\HydroObject.shp"
     # norm_profile_path = dict(
     #     [
     #         ("base", p_folder + r"\Uitgesneden watergangen\HDSR_v3.shp"),
     #         ("sjoin", p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject_primair.shp"),
     #     ]
     # )
-    peil_gebieden_path = p_folder + r"\HDSR\Legger\Peilgebieden\BR_Peilgebieden.shp"
-    pump_path = p_folder + r"\HDSR\Niet Legger\Gemalen_peil.shp"
-    sluice_path = p_folder + r"\HDSR\Legger\Sluizen_Lijnen\Sluizen_Lijnen.shp"
+    peil_gebieden_path = p_folder + r"\HDSR\BR_Peilgebieden\BR_Peilgebieden.shp"
+    pump_path = p_folder + r"\HDSR\Gemalen\Gemalen.shp"
+    sluice_path = p_folder + r"\HDSR\Sluizen_Lijnen\Sluizen_Lijnen.shp"
     weir_path = dict(
         [
-            ("base", p_folder + r"\HDSR\Legger\Stuwen\BR_Stuwen.shp"),
-            ("concat", p_folder + r"\HDSR\Niet Legger\Kokers_Lijnen_Kerend.shp"),
+            ("base", p_folder + r"\HDSR\BR_Stuwen\BR_Stuwen.shp"),
+            ("concat", p_folder + r"\HDSR\Kokers_Lijnen_Kerend\Kokers_Lijnen_Kerend.shp"),
         ]
     )
 
-    # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
+    # Selection criteria
+    branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    sluice_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    pump_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    culvert_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
 
     ## Branches
-    # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
         [
             ("bodembreedte", "IWS_W_BODB"),
@@ -199,7 +202,7 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("maximalecapaciteit", "MAXIMALECA"),
-            ("streefwaarde", "streefpeil"),
+            ("streefwaarde", None), # Was: "streefpeil"),
             ("peil_marge", None),
         ]
     )

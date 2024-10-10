@@ -49,9 +49,9 @@ class FixedWeirs:
     p_folder = folder_path_GIS + r"\GIS"
     flood_defences_path = dict(
         [
-            ("base", p_folder + r"\Keringen_met_hoogte\hhsk_primaire_kering.shp"),
-            ("concat_1", p_folder + r"\Keringen_met_hoogte\hhsk_regionale_kering.shp"),
-            ("concat_2", p_folder + r"\Keringen_met_hoogte\hhsk_overige_kering.shp"),
+            ("base", p_folder + r"\HHSK\Keringen met hoogte\hhsk_primaire_kering.shp"),
+            ("concat_1", p_folder + r"\HHSK\Keringen met hoogte\hhsk_regionale_kering.shp"),
+            ("concat_2", p_folder + r"\HHSK\Keringen met hoogte\hhsk_overige_kering.shp"),
         ]
     )
     fixed_weir_index_mapping = dict(
@@ -65,24 +65,34 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"  # From V7
-    culvert_path = p_folder + r"\HHSK\Legger\Duiker.shp"
-    norm_profile_path = p_folder + r"\HHSK\Legger\Hoofdwatergang.shp"
-    peil_gebieden_path = p_folder + r"\HHSK\Legger\Peilvakken.shp"
-    pump_path = p_folder + r"\HHSK\Niet legger\Gemaal_peil.shp"
-    sluice_path = p_folder + r"\HHSK\Legger\Sluis.shp"
-    weir_path = p_folder + r"\HHSK\Legger\Stuw.shp"
+    
+    branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model.shp"  # From V7
+    culvert_path = p_folder + r"\HHSK\Duiker\Duiker.shp"
+    norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model.shp"
+    #peil_gebieden_path = p_folder + r"\HHSK\Peilvakken\Praktijkpeilgebieden.shp"
+    Peil = -0.1 # Dummy peil om te zorgen dat ik de kunstwerken kan testen
+    pump_path = p_folder + r"\HHSK\Gemaal\Gemaal.shp"
+    sluice_path = p_folder + r"\HHSK\Sluis\Sluis.shp"
+    weir_path = dict(
+        [
+            ("base", p_folder + r"\HHSK\Stuw\Stuw.shp"),
+            ("concat_1", p_folder + r"\HHSK\Stuw\Coupures_primaire_waterkeringen.shp"),
+        ]
+    )
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
+    # Selection criteria
+    branch_selection = dict([("column", "TOEVOEGEN"), ("value", "JA")])
+    sluice_selection = dict([("column", "TOEVOEGEN"), ("value", "JA")])
+    weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+
     ## Branches
-    # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
         [
             ("code", "CODE"),
             ("geometry", "geometry"),
-            ("globalid", "globalid"),
+            ("globalid", "GLOBALIDWA"),
             ("tunnel", False),
             ("typeruwheid", None),
         ]
@@ -109,7 +119,7 @@ class RawData:
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("gesloten", None),
-            ("globalid", "globalid"),
+            ("globalid", "GlobalID"),
             ("hoogtebinnenonderkantbene", "HOOGTEBOK"),
             ("hoogtebinnenonderkantbov", "HOOGTEBOK"),
             ("hoogteopening", "HOOGTE"),
@@ -125,21 +135,21 @@ class RawData:
     ## Normprofielen
     np_index_mapping = dict(
         [
-            ("bodembreedte", "BODEMBREED"),
+            ("bodembreedte", "BREEDTE"),
             ("bodemhoogte benedenstrooms", None),
             ("bodemhoogte bovenstrooms", None),
             ("code", "CODE"),
-            ("diepte", ["DIEPTE", "MAXIMALEWA"]),
+            ("diepte", None), # Was: ["DIEPTE", "MAXIMALEWA"]), -> Aandachtspunt! 
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogte insteek linkerzijde", None),
             ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", "TALUDLINKS"),
-            ("taludhelling rechterzijde", "TALUDRECHT"),
+            ("taludhelling linkerzijde", None), # Was: "TALUDLINKS"),
+            ("taludhelling rechterzijde", None), #Was: "TALUDRECHT"),
             ("typeruwheid", None),
             ("ruwheidhoog", None),
             ("ruwheidlaag", None),
-            ("water_width_index", "WATERBREED"),
+            ("water_width_index", None), # Was: "WATERBREED"),
         ]
     )
 
@@ -161,7 +171,7 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("maximalecapaciteit", "CAPACITEIT"),
-            ("streefwaarde", "streefpeil"),
+            ("streefwaarde", None), # was: "streefpeil"), # Nog toevoegen aan script
             ("peil_marge", None),
         ]
     )
@@ -175,9 +185,9 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogstedoorstroombreedte", "BREEDTE"),
-            ("hoogstedoorstroomhoogte", None),
+            ("hoogstedoorstroomhoogte", "HOOGTE"),
             ("laagstedoorstroombreedte", "BREEDTE"),
-            ("laagstedoorstroomhoogte", None),
+            ("laagstedoorstroomhoogte", "HOOGTE"),
             ("overlaatonderlaat", None),
             ("soortregelbaarheid", None),
             ("soortstuw", None),
@@ -193,10 +203,10 @@ class RawData:
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogstedoorstroombreedte", "KRUINBREED"),
-            ("hoogstedoorstroomhoogte", ["KRUINHOOGT", "MINIMAALPE", "MAXIMAALPE"]),
-            ("laagstedoorstroombreedte", "KRUINBREED"),
-            ("laagstedoorstroomhoogte", ["KRUINHOOGT", "MINIMAALPE", "MAXIMAALPE"]),
+            ("hoogstedoorstroombreedte", ["KRUINBREED", "BREEDTEOPE"]),
+            ("hoogstedoorstroomhoogte", ["KRUINHOOGT", "MINIMAALPE", "MAXIMAALPE", "KERENDEHOO"]),
+            ("laagstedoorstroombreedte", ["BREEDTEOPE","KRUINBREED"]),
+            ("laagstedoorstroomhoogte", ["KRUINHOOGT", "MINIMAALPE", "MAXIMAALPE", "KERENDEHOO"]),
             ("overlaatonderlaat", None),
             ("soortregelbaarheid", None),
             ("soortstuw", None),
