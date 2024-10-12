@@ -769,15 +769,35 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             how="left",
             predicate="within",
         )
-
-        dups = out_branches.duplicated(subset="globalid", keep=False)
-        if np.sum(dups) > 0:
-            print(out_branches.loc[dups, :])
-            raise ValueError("duplicates found")
-
         out_branches["geometry"] = old_geom
+
+        # sort the duplicate global ids with largest peil first
+        out_branches_sorted = out_branches.sort_values(["globalid", "peil"], ascending=[True, False])
+
+        # drop duplicates, keeping the ones with the largest peil (as these are the first)
+        out_branches_no_dups = out_branches_sorted.drop_duplicates(subset='globalid', keep='first').reset_index(drop=True)
+
+        # Merge original sorted df with no_dups to display kept and discarded peil values
+        merged_df = pd.merge(out_branches_sorted, out_branches_no_dups[['globalid', 'peil']], on='globalid', how='left', suffixes=('_discarded', '_kept'))
+
+        # Filter out rows where peil_discarded == peil_kept to only show duplicate values
+        if len(merged_df) >0:
+            merged_df = merged_df[
+                (merged_df['peil_discarded'] != merged_df['peil_kept']) & 
+                merged_df['peil_discarded'].notna() & 
+                merged_df['peil_kept'].notna()
+            ].reset_index(drop=True)
+
+            print("Overview of kept and discarded 'peil' values for branches in multiple peilgebieden:")
+            print(merged_df[['globalid', 'code', 'peil_discarded', 'peil_kept']])
+        
+        dups = out_branches_no_dups.duplicated(subset="globalid", keep=False)
+        if np.sum(dups) > 0:
+            print(out_branches_no_dups.loc[dups, :])
+            raise ValueError("Still duplicates found")
+
         in_cols.append("peil")
-        return out_branches[in_cols]
+        return out_branches_no_dups[in_cols]
 
     def create_bridge_data(bridge_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """ """
@@ -2207,6 +2227,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                     if diepte == -99:
                         diepte = np.nan
 
+                    #if np.isnan(out_branches_gdf["bodemhoogte benedenstrooms"] 
                     bodem_hoogte = insteek_hoogte - diepte
                     out_branches_gdf.loc[bool_ix, "bodemhoogte benedenstrooms"] = bodem_hoogte
                     out_branches_gdf.loc[bool_ix, "bodemhoogte bovenstrooms"] = bodem_hoogte

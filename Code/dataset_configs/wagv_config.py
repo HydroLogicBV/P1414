@@ -54,46 +54,47 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    # p_folder = r"D:\work\P1414_ROI\GIS"
-    # branches_path = p_folder + r"\WAGV\Niet legger\hydrovak_combined_v10.shp"
-    # branches_path = [
-    #     p_folder + r"\Uitgesneden watergangen\AGV_v00_test.shp",
-    #     p_folder + r"\WAGV\hydrovak\hydrovak.shp",
-    # ]
-    branches_path = dict(
-        [
-            ("base", p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"),
-            #("base", p_folder + r"\Uitgesneden watergangen\AGV_v3.shp"),
-            #("sjoin", p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"),
-        ]
-    )
+    
+    branches_path = p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp"
+    #branches_path = dict(
+    #    [
+    #        ("base", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp")
+    #        #("base", p_folder + r"\Uitgesneden watergangen\AGV_v3.shp"),                # deze moet worden verwijderd?
+    #        #("sjoin", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp"),
+    #    ]
+    #)
 
-    bridges_path = p_folder + r"\WAGV\brug_v13\brug_v13_clipped.shp"
-    culvert_path = p_folder + r"\WAGV\duikersifonhevel_v13\duikersifonhevel_v13_clipped.shp"
-    measured_profile_path = (
-        p_folder + r"\WAGV\metingprofielpunt_v13\metingprofielpunt_v13_clipped_rm.shp"
-    )
+    bridges_path = p_folder + r"\WAGV\brug_v13_clipped\brug_v13_clipped.shp"
+    culvert_path = p_folder + r"\WAGV\AGV-Update\duikers\duikersifonhevel_v13_clipped.shp"
+    measured_profile_path = (p_folder + r"\WAGV\metingprofielpunt_v13_clipped\metingprofielpunt_v13_clipped.shp")
     norm_profile_path = dict(
         [
             ("base", p_folder + r"\WAGV\hydrovak\hydrovak.shp"),
-            ("sjoin", p_folder + r"\WAGV\hydroobject_v13\hydroobject_v13_clipped.shp"),
+            ("sjoin", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp"),
         ]
     )
     peil_gebieden_path = p_folder + r"\WAGV\vigerende_peilgebieden\peilgebieden.shp"
-    pump_path = dict(
-        [
-            ("base", p_folder + r"\WAGV\Niet legger\pomp_gemaal_v13_clipped_streefpeil.shp"),
-            ("concat", p_folder + r"\WAGV\gemaal_v13\gemaal_v13_clipped.shp"),
-        ]
-    )
-    sluice_path = p_folder + r"\WAGV\sluis\sluis.shp"
-    weir_path = p_folder + r"\WAGV\Niet legger\stuw_v13_clipped_with_do.shp"
+    pump_path = p_folder + r"\WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clipped.shp"
+    
+    #pump_path = dict(
+    #    [
+    #        #("base", p_folder + r"\WAGV\Niet legger\pomp_gemaal_v13_clipped_streefpeil.shp"),       # Nog aanpassen?, nieuwe in \WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clipped.shp
+    #        #("concat", p_folder + r"\WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clipped.shp"),
+    #        #("concat", p_folder + r"\WAGV\gemaal_v13\gemaal_v13_clipped.shp"),                      # Nog aanpassen?, nieuwe in \WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clipped.shp
+    #    ]
+    #)
 
+    sluice_path = p_folder + r"\WAGV\AGV-Update\sluizen\sluis.shp"                  
+    #weir_path = p_folder + r"\WAGV\Niet legger\stuw_v13_clipped_with_do.shp"        # Nog aanpassen?, nieuwe in \WAGV\AGV-Update\stuwen\stuw_v13_clipped.shp 
+    weir_path = p_folder + r"\WAGV\AGV-Update\stuwen\stuw_v13_clipped.shp"
+
+    ## Selection criteria
+    branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    
     class Peil:
         default_peil = -0.4
 
     ## Branches
-    # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
         [
             ("code", "code"),
@@ -121,20 +122,20 @@ class RawData:
     ## Culverts
     culvert_index_mapping = dict(
         [
-            ("breedteopening", "breedteope"),
+            ("breedteopening", "BREEDTE"),
             ("code", "code"),
             ("geometry", "geometry"),
             ("gesloten", None),
             ("globalid", "globalid"),
-            ("hoogtebinnenonderkantbene", "hoogtebinn"),
-            ("hoogtebinnenonderkantbov", "hoogtebin0"),
-            ("hoogteopening", "hoogteopen"),
+            ("hoogtebinnenonderkantbene", "HOOGTE_BE"),
+            ("hoogtebinnenonderkantbov", "HOOGTE_BO"),
+            ("hoogteopening", "HOOGTE"),
             ("intreeverlies", "intreeverl"),
             ("lengte", "lengte"),
             ("ruwheid", "ruwheid"),
-            ("typeruwheid", "ruwheidsty"),
+            ("typeruwheid", "typeruwhei"),
             ("uittreeverlies", "uittreever"),
-            ("vormkoker", "vormkokeri"),
+            ("vormkoker", "vormkoker"),
         ]
     )
 
@@ -191,7 +192,7 @@ class RawData:
             ("globalid", "globalid"),
             ("maximalecapaciteit", "maximaleca"),
             ("peil_marge", None),
-            ("streefwaarde", "peil1"),
+            ("streefwaarde", None),              # was "peil1"
         ]
     )
     ## Sluice
@@ -199,13 +200,13 @@ class RawData:
         [
             ("afvoercoefficient_stuw", None),
             ("afvoercoefficient_opening", None),
-            ("code", "KSLIDENT"),
+            ("code", "code"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogstedoorstroombreedte", None),
-            ("hoogstedoorstroomhoogte", "KWKKERHG"),
-            ("laagstedoorstroombreedte", "KSLDVBRE"),
-            ("laagstedoorstroomhoogte", "KWKKERHG"),
+            ("hoogstedoorstroomhoogte", "HOOGTE"),
+            ("laagstedoorstroombreedte", "BREEDTE"),
+            ("laagstedoorstroomhoogte", "HOOGTE"),
             ("overlaatonderlaat", None),
             ("soortregelbaarheid", None),
             ("soortstuw", None),
@@ -216,18 +217,18 @@ class RawData:
     ## Weirs
     weir_index_mapping = dict(
         [
-            ("afvoercoefficient_stuw", "afvoercoef"),
-            ("afvoercoefficient_opening", "afvoerco_1"),
+            ("afvoercoefficient_stuw", "afvoercoef"),       
+            ("afvoercoefficient_opening", "afvoercoef"),    
             ("code", "code"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogstedoorstroombreedte", None),
-            ("hoogstedoorstroomhoogte", "hoogstedo0"),
-            ("laagstedoorstroombreedte", "laagstedoo"),
-            ("laagstedoorstroomhoogte", "hoogstedo0"),
-            ("overlaatonderlaat", None),
-            ("soortregelbaarheid", "soortregel"),
-            ("soortstuw", "soortstuwi"),
+            ("hoogstedoorstroombreedte", None),             
+            ("hoogstedoorstroomhoogte", "HOOGTE"),     
+            ("laagstedoorstroombreedte", "BREEDTE"),     
+            ("laagstedoorstroomhoogte", "HOOGTE"),      
+            ("overlaatonderlaat", None),            
+            ("soortregelbaarheid", "typeregelb"),         
+            ("soortstuw", "typestuw"),                    
             ("vormopening", None),
         ]
     )

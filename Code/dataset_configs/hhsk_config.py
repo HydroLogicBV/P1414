@@ -65,25 +65,23 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    
-    branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model.shp"  # From V7
-    culvert_path = p_folder + r"\HHSK\Duiker\Duiker.shp"
-    norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model.shp"
-    #peil_gebieden_path = p_folder + r"\HHSK\Peilvakken\Praktijkpeilgebieden.shp"
-    Peil = -0.1 # Dummy peil om te zorgen dat ik de kunstwerken kan testen
+    branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model3.shp"  # From V7
+    culvert_path = p_folder + r"\HHSK\Duiker\Duikers_model.shp"
+    norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model3.shp"
+    peil_gebieden_path = p_folder + r"\HHSK\Peilvakken\Praktijkpeilgebieden.shp"
+    #Peil = -0.1 # Dummy peil om te zorgen dat ik de kunstwerken kan testen
     pump_path = p_folder + r"\HHSK\Gemaal\Gemaal.shp"
     sluice_path = p_folder + r"\HHSK\Sluis\Sluis.shp"
     weir_path = dict(
         [
             ("base", p_folder + r"\HHSK\Stuw\Stuw.shp"),
-            ("concat_1", p_folder + r"\HHSK\Stuw\Coupures_primaire_waterkeringen.shp"),
+            ("concat_1", p_folder + r"\HHSK\Stuw\Coupures_primaire_waterkeringen_V2.shp"),
         ]
     )
-
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
     # Selection criteria
-    branch_selection = dict([("column", "TOEVOEGEN"), ("value", "JA")])
+    branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     sluice_selection = dict([("column", "TOEVOEGEN"), ("value", "JA")])
     weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
 
@@ -115,20 +113,20 @@ class RawData:
     ## Culverts
     culvert_index_mapping = dict(
         [
-            ("breedteopening", "BREEDTE"),
+            ("breedteopening", "BREEDTEOPE"),
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("gesloten", None),
-            ("globalid", "GlobalID"),
-            ("hoogtebinnenonderkantbene", "HOOGTEBOK"),
-            ("hoogtebinnenonderkantbov", "HOOGTEBOK"),
-            ("hoogteopening", "HOOGTE"),
+            ("globalid", "globalid"),
+            ("hoogtebinnenonderkantbene", "HOOGTEBINN"),
+            ("hoogtebinnenonderkantbov", "HOOGTEBI_1"),
+            ("hoogteopening", "BREEDTEOPE"),   # temporary, must be HOOGTEOPEN, but has invalid values for now
             ("intreeverlies", None),
             ("lengte", "LENGTE"),
             ("typeruwheid", None),
             ("ruwheid", None),
             ("uittreeverlies", None),
-            ("vormkoker", "VORM"),
+            ("vormkoker", "VORMKOKER"),
         ]
     )
 
@@ -136,8 +134,8 @@ class RawData:
     np_index_mapping = dict(
         [
             ("bodembreedte", "BREEDTE"),
-            ("bodemhoogte benedenstrooms", None),
-            ("bodemhoogte bovenstrooms", None),
+            ("bodemhoogte benedenstrooms", "BODEMHGTE"),       # bodemhoogte alleen aanwezig voor coupures
+            ("bodemhoogte bovenstrooms", "BODEMHGTE"),
             ("code", "CODE"),
             ("diepte", None), # Was: ["DIEPTE", "MAXIMALEWA"]), -> Aandachtspunt! 
             ("geometry", "geometry"),

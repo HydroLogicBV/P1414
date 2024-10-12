@@ -44,8 +44,6 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             # clipped_gdf = gpd.overlay(
             #     ddm_feature, _buffered_branches, how="intersection", keep_geom_type=True
             # )
-            print(feature)
-            print(ddm_feature.shape[0])
             columns = ddm_feature.columns
             clipped_gdf = gpd.sjoin(
                 left_df=ddm_feature,
@@ -55,7 +53,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             )
             clipped_gdf = clipped_gdf.loc[clipped_gdf["index_right"].notnull(), :]
             clipped_gdf = clipped_gdf[columns]
-            print(clipped_gdf.shape[0])
+            print(f'{feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
             setattr(self.ddm, feature, clipped_gdf)
 
             if self.ddm.profielpunt is not None:

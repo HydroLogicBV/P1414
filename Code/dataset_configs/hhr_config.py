@@ -7,7 +7,7 @@ folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 class Models:
     class FM:
         one_d_bool = True
-        two_d_bool = False
+        two_d_bool = True
         start_time = 20000101
         stop_time = 86400
 
@@ -61,24 +61,27 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\Uitgesneden watergangen\HHR_v7_test.shp" # The next file is the original but does not exist: r"\HHRijnland\Niet legger\Watergangen_edited_v3.shp"  # From V7
-    bridges_path = p_folder + r"\HHRijnland\Niet legger\brug_edited.shp"
-    culvert_path = p_folder + r"\HHRijnland\Legger\Duiker\duiker.shp"
-    norm_profile_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as_primair.shp"
-    peil_gebieden_path = p_folder + r"\HHRijnland\Legger\Peilvakken\gerealiseerde_peilvakken.shp"
-    pump_path = p_folder + r"\HHRijnland\Niet legger\gemaal_peil.shp"
+    branches_path = p_folder + r"\HHRijnland\Watergang_as\Watergang_as.shp" # The next file is the original but does not exist: r"\HHRijnland\Niet legger\Watergangen_edited_v3.shp"  # From V7
+    bridges_path = p_folder + r"\HHRijnland\brug\brug.shp"
+    culvert_path = p_folder + r"\HHRijnland\duiker\duiker.shp"
+    norm_profile_path = p_folder + r"\HHRijnland\Watergang_as\Watergang_as.shp"
+    #norm_profile_path = p_folder + r"\HHRijnland\Legger\Watergang\Watergang_as_primair.shp"
+    peil_gebieden_path = p_folder + r"\HHRijnland\gerealiseerde_peilvakken\gerealiseerde_peilvakken.shp"
+    pump_path = p_folder + r"\HHRijnland\gemaal\gemaal.shp"
     sluice_path = dict(
         [
-            ("base", p_folder + r"\HHRijnland\Legger\Sluis\sluis.shp"),
-            ("concat", p_folder + r"\HHRijnland\Legger\Noodwaterkering\noodwaterkering.shp"),
+            ("base", p_folder + r"\HHRijnland\sluis\sluis.shp"),
+            ("concat", p_folder + r"\HHRijnland\noodwaterkering\noodwaterkering.shp"),
         ]
     )
-    weir_path = p_folder + r"\HHRijnland\Legger\Stuw\stuw.shp"
+    weir_path = p_folder + r"\HHRijnland\stuw\stuw.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
+    # Selection criteria
+    branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+
     ## Branches
-    # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
         [
             ("code", "CODE"),
@@ -163,7 +166,7 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("maximalecapaciteit", "MAXIMALECA"),
-            ("streefwaarde", "streefpeil"),
+            ("streefwaarde", None),     # Was: "streefpeil", wordt ingevuld in het script
             ("peil_marge", None),
         ]
     )
