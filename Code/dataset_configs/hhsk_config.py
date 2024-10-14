@@ -66,7 +66,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model3.shp"  # From V7
-    culvert_path = p_folder + r"\HHSK\Duiker\Duikers_model.shp"
+    culvert_path = p_folder + r"\HHSK\Duiker\Duiker_model2.shp"
     norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model3.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Peilvakken\Praktijkpeilgebieden.shp"
     #Peil = -0.1 # Dummy peil om te zorgen dat ik de kunstwerken kan testen
@@ -84,6 +84,7 @@ class RawData:
     branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     sluice_selection = dict([("column", "TOEVOEGEN"), ("value", "JA")])
     weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    np_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
 
     ## Branches
     branch_index_mapping = dict(
@@ -120,7 +121,7 @@ class RawData:
             ("globalid", "globalid"),
             ("hoogtebinnenonderkantbene", "HOOGTEBINN"),
             ("hoogtebinnenonderkantbov", "HOOGTEBI_1"),
-            ("hoogteopening", "BREEDTEOPE"),   # temporary, must be HOOGTEOPEN, but has invalid values for now
+            ("hoogteopening", "HOOGTEOPEN"),   # temporary, must be HOOGTEOPEN, but has invalid values for now
             ("intreeverlies", None),
             ("lengte", "LENGTE"),
             ("typeruwheid", None),

@@ -41,14 +41,14 @@ class Models:
 
 class FixedWeirs:
     ## PATHS
-    p_folder = folder_path_GIS + r"\GIS"
+    p_folder = folder_path_GIS + r"\GIS\HHDelfland"
     flood_defences_path = dict(
         [
-            ("base", p_folder + r"\Keringen_met_hoogte\hhd_zeewering.shp"),
-            ("concat_1", p_folder + r"\Keringen_met_hoogte\hhd_regionale_kering.shp"),
-            ("concat_2", p_folder + r"\Keringen_met_hoogte\hhd_polderkade.shp"),
-            ("concat_3", p_folder + r"\Keringen_met_hoogte\hhd_landscheiding.shp"),
-            ("concat_4", p_folder + r"\Keringen_met_hoogte\hhd_delflandsedijk.shp"),
+            ("base", p_folder + r"\Keringen met hoogte\hhd_zeewering.shp"),
+            ("concat_1", p_folder + r"\Keringen met hoogte\hhd_regionale_kering.shp"),
+            ("concat_2", p_folder + r"\Keringen met hoogte\hhd_polderkade.shp"),
+            ("concat_3", p_folder + r"\Keringen met hoogte\hhd_landscheiding.shp"),
+            ("concat_4", p_folder + r"\Keringen met hoogte\hhd_delflandsedijk.shp"),
         ]
     )
     fixed_weir_index_mapping = dict(
@@ -64,7 +64,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"  # Corrected from V7
+    branches_path = p_folder + r"\HHDelfland\Primair water\Primair water.shp"  # Corrected from V7
     # branches_path = (
     #     p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
     # )
@@ -75,30 +75,30 @@ class RawData:
             (
                 "base",
                 p_folder
-                + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Open duiker.shp",
+                + r"\HHDelfland\Open duiker\Open duiker.shp",
             ),
             (
                 "concat_1",
-                p_folder + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Sifon.shp",
+                p_folder + r"\HHDelfland\Sifon\Sifon.shp",
             ),
             (
                 "concat_2",
                 p_folder
-                + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Stuwende duiker.shp",
+                + r"\HHDelfland\Stuwende duiker\Stuwende duiker.shp",
             ),
             (
                 "concat_3",
                 p_folder
-                + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Vispassageduiker.shp",
+                + r"\HHDelfland\Vispassageduiker\Vispassageduiker.shp",
             ),
             (
                 "concat_4",
                 p_folder
-                + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Inlaatduiker.shp",
+                + r"\HHDelfland\Inlaatduiker\Inlaatduiker.shp",
             ),
         ]
     )
-    norm_profile_path = p_folder + r"\Uitgesneden watergangen\HHD_v3_ww.shp"
+    norm_profile_path = p_folder + r"\HHDelfland\Temp_Normprofile\HHD_v3_ww.shp"
     # norm_profile_path = dict(
     #     [
     #         ("base", p_folder + r"\Uitgesneden watergangen\HHD_v3.shp"),
@@ -109,14 +109,14 @@ class RawData:
     #         ),
     #     ]
     # )
-    peil_gebieden_path = p_folder + r"\HHDelfland\Peilbesluiten.shp\PeilgebiedPraktijk.shp"
-    pump_path = p_folder + r"\HHDelfland\Niet legger\Gemaal_peil.shp"
-    sluice_path = p_folder + r"\HHDelfland\Legger_Delfland_shp\Waterkeringen\Sluis.shp"
+    peil_gebieden_path = p_folder + r"\HHDelfland\PeilgebiedPraktijk\PeilgebiedPraktijk.shp"
+    pump_path = p_folder + r"\HHDelfland\Gemaal\Gemaal.shp"
+    sluice_path = p_folder + r"\HHDelfland\Sluis\Sluis.shp"
     watervlak_path = (
         p_folder
-        + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Watervoerend deel.shp"
+        + r"\HHDelfland\Watervoerend deel\Watervoerend deel.shp"
     )
-    weir_path = p_folder + r"\HHDelfland\Legger_Delfland_shp\Ondersteunende kunstwerken\Stuw.shp"
+    weir_path = p_folder + r"\HHDelfland\Stuw\Stuw.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
@@ -245,7 +245,7 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("maximalecapaciteit", "MAXCAPACIT"),
-            ("streefwaarde", "streefpeil"),
+            ("streefwaarde", None), # was "streefpeil"
             ("peil_marge", None),
         ]
     )

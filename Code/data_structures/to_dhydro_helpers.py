@@ -819,7 +819,7 @@ def to_dhydro(
         mesh.mesh2d_add_rectilinear(network=network, polygon=polygon, dx=dx, dy=dy)
         print("created 2D mesh")
 
-        # ---> Added by Pepijn: clip main branches and give them lateral links
+        # Clip main branches from the 2D meshand give them lateral links
         # Clip polygons from the 2D mesh
         clipped = 0
         if clip_extent is not None:

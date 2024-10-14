@@ -3,6 +3,7 @@ from copy import copy
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 
 def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0.95):
@@ -17,6 +18,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
     )
 
     for feature in self.features:
+        n_feature = self.features.index(feature)
         if (
             (feature == "waterloop")
             or (feature == "profielpunt")
@@ -25,6 +27,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             # or (feature == "rivier_profielen_data")
             # or (feature == "rivier_profielen_ruwheid")
         ):
+            print(f"Clipped {n_feature}/{len(self.features)} features: {feature}")
             continue
 
         ddm_feature = getattr(self.ddm, feature)
@@ -53,7 +56,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             )
             clipped_gdf = clipped_gdf.loc[clipped_gdf["index_right"].notnull(), :]
             clipped_gdf = clipped_gdf[columns]
-            print(f'{feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
+            print(f'Clipped {n_feature}/{len(self.features)} features. For {feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
             setattr(self.ddm, feature, clipped_gdf)
 
             if self.ddm.profielpunt is not None:
@@ -61,7 +64,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
 
                 profiel_punt_gdf_out = None
 
-                for ix, (name, line) in enumerate(clipped_gdf.iterrows()):
+                for ix, (name, line) in tqdm(enumerate(clipped_gdf.iterrows()),total=len(clipped_gdf),desc="    profielpunt progress", unit=" rows"):
                     points = profiel_punt_gdf.loc[
                         profiel_punt_gdf["profiellijnid"] == line["globalid"], :
                     ]
@@ -87,7 +90,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             clipped_gdf = clipped_gdf.loc[clipped_gdf["index_right"].notnull(), :]
             clipped_gdf = clipped_gdf[columns]
             #print(clipped_gdf.shape[0])
-            print(f'{feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
+            print(f'Clipped {n_feature}/{len(self.features)} features. For {feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
             # mls_struct_bool = clipped_gdf.geometry.type == "MultiLineString"
             # if np.sum(mls_struct_bool) > 0:
             #     _clipped_gdf = copy(clipped_gdf)

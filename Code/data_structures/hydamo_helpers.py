@@ -165,7 +165,13 @@ def load_geo_file(
             raise ValueError("Can only join two shapefiles together")
 
     elif file_path.endswith(r".shp"):
-        gdf = gpd.read_file(file_path).to_crs('epsg:28992')
+        gdf = gpd.read_file(file_path)
+        if gdf.crs is None:
+            gdf.set_crs('epsg:28992', inplace=True)     # Set to Rijksdriehoek if no crs is defined in the shapefile
+        else:
+            if gdf.crs.to_string() != 'epsg:28992':
+                gdf = gdf.to_crs('epsg:28992')
+
     elif file_path.endswith(r".gpkg"):
         if layer is not None:
             gdf = gpd.read_file(file_path, layer=layer).to_crs('epsg:28992')

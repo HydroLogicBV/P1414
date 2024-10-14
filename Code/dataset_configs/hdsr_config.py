@@ -105,6 +105,7 @@ class RawData:
 
     # Selection criteria
     branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    np_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     sluice_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     pump_selection = dict([("column", "OPNEMEN"), ("value", "JA")])

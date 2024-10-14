@@ -7,7 +7,7 @@ folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    weir_path = folder_path_GIS + r"\GIS\Keringen\stuwen.shp"
+    weir_path = folder_path_GIS + r"\GIS\Ontbrekende stuwen in keringen\stuwen.shp"
 
     ## Weirs
     weir_index_mapping = dict(

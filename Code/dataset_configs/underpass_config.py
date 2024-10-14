@@ -29,8 +29,15 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
-    branches_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
-    norm_profile_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
+    #branches_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
+    branches_path = dict(
+        [
+            ("base", p_folder + r"\Tunnels en onderdoorgangen\Underpasses_filtered_500m.shp"),
+            ("sjoin", p_folder + r"\WAGV\AGV_Onderdoorgangen_Extra\AGV_Onderdoorgangen_Extra.shp"),
+        ]
+    )
+    #norm_profile_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
+    norm_profile_path = branches_path
 
     class Peil:
         default_peil = -9.75
@@ -51,10 +58,10 @@ class RawData:
     ## Norm Profiles
     np_index_mapping = dict(
         [
-            ("bodembreedte", "width"),
-            ("bodemhoogte benedenstrooms", "z_min"),
-            ("bodemhoogte bovenstrooms", "z_min"),
-            ("code", "lokaalid"),
+            ("bodembreedte", ["width", "Width"]),
+            ("bodemhoogte benedenstrooms", ['z_min', 'z_height']),
+            ("bodemhoogte bovenstrooms", ['z_min', 'z_height']),
+            ("code", ["lokaalid", "id"]),
             ("diepte", "height"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),

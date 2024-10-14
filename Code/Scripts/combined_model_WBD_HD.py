@@ -46,7 +46,7 @@ config_list = [
     r"noordzee_config",
     r"markermeer_config",
 ]
-snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 100, 100, 0, 0]
+snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 200, 100, 0, 0]
 
 defaults = r"defaults"
 

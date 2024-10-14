@@ -18,7 +18,7 @@ folder_path_GIS = r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database"
 folder_path_output = r"D:\Work\Project\P1414"
 os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Test_HDSR.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_WBD_14okt.gpkg"
 gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\HHSK.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\HDSR.gpkg",
@@ -33,22 +33,25 @@ gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\tunnels.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
 ]
-output_folder = folder_path_output + r"\Models\Combined\V29_WBD_500"
+output_folder = folder_path_output + r"\Models\Combined\V30_WBD_500"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
-    #r"hhsk_config",
+    r"hhsk_config",
     r"hdsr_config",
-    # r"hhd_config",
-    # r"hhr_config",
-    # r"wagv_config",
-    # r"ark_nzk_config",
-    # r"rijntakken_config",
-    # r"rijnmaasmonding_open_config",
-    # r"noordzee_config",
-    # r"markermeer_config",
+    r"hhd_config",
+    r"hhr_config",
+    r"wagv_config",
+    r"ark_nzk_config",
+    r"rijntakken_config",
+    r"rijnmaasmonding_open_config",
+    r"noordzee_config",
+    r"markermeer_config",
+    r"ontbrekende_stuwen_config"
+    #r"tunnel_config",
+    #r"underpass_config"
 ]
-snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 100, 100, 0, 0]
+snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 200, 100, 50, 0]
 
 defaults = r"defaults"
 
@@ -70,10 +73,10 @@ if build_database:
             pass
 
     dhd.clip_structures_by_branches()
-    #dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
-    #dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)
+    dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
+    dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)
     #dhd.fixed_weirs_from_raw_data(config="noordzeekeringen_config", defaults=defaults)
-    # dhd.dambreaks_from_config(config="dambreak_v0_config", defaults=defaults)
+    #dhd.dambreaks_from_config(config="dambreak_v0_config", defaults=defaults)
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
 
 if load_gpkgs:
