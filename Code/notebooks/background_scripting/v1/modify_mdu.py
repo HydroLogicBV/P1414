@@ -35,6 +35,7 @@ class ModifyMDU(WidgetStyling):
     def __init__(self, model_folder):
         files = os.listdir(os.path.join(model_folder, 'dflowfm'))
         mdu_file = [file for file in files if file.endswith('.mdu')][0]
+        self.warning = None
         self.mdu_path = os.path.join(model_folder, 'dflowfm', mdu_file)
 
         self.run_bat_file = os.path.join(model_folder, 'run.bat')
@@ -118,6 +119,11 @@ class ModifyMDU(WidgetStyling):
         """
         modify run.bat line that calls dhydro
         """
+        new_location = self.settings['DHYDRO location']
+        if not new_location.endswith(".bat"):
+            self.set_warning("Warning: The specified location of the D-HYDRO run_dimr file does not end with .bat. It should end with .bat")
+        if os.path.exists(new_location) == False:
+            self.set_warning("Warning: The specified location of the D-HYDRO run_dimr file can not be found. Are you sure it is correct?")
         with open(self.run_bat_file, 'r') as f:
             lines = f.readlines()
         for i, line in enumerate(lines):
@@ -194,8 +200,12 @@ class ModifyMDU(WidgetStyling):
         output = ipy.Output()
         display(button, output)
         button.on_click(self.update_settings_widget)
+
+        if self.warning is not None:
+            display(self.warning)
     
     def update_settings_widget(self, b):
+        self.clear_warning()
         for setting in self.settings_to_modify:
             widget_value = self.widgets[setting].value 
             self.settings[setting] = self.convert_to_mdu(setting, widget_value)
@@ -214,3 +224,9 @@ class ModifyMDU(WidgetStyling):
             if key in self.settings_to_modify:
                 print_settings_dict[key] = self.convert_to_sas(key, self.settings[key])
         print(json.dumps(print_settings_dict, indent=4))
+
+    def set_warning(self, message):
+        self.warning = ipy.HTML(value=f'<b style="color:red;font-size:18px;">{message}</b>')
+
+    def clear_warning(self):
+        self.warning = None
