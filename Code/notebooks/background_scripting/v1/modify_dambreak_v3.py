@@ -4,7 +4,7 @@ import geopandas as gpd
 import os
 import pandas as pd
 import time
-from shapely.geometry import Point, LineString
+from shapely.geometry import Point, LineString, Polygon
 import re
 from scipy.spatial import KDTree
 import numpy as np
@@ -15,13 +15,14 @@ from IPython.display import display, clear_output, Image
 import json 
 from shapely.geometry import Point, LineString
 import geopandas as gpd
-from ipyleaflet import Map, Marker, projections, basemaps, GeoData
+from ipyleaflet import Map, Marker, projections, basemaps, GeoData, ImageOverlay, Popup
+from ipywidgets import HTML
 import ipyleaflet as ipl
 import pyproj
 from shapely.geometry import Point, LineString
 from shapely.ops import nearest_points
 from notebooks.background_scripting.v1.widget_styling import WidgetStyling
-
+from branca.colormap import linear
 
 class NetcdfNetwork():
     def __init__(self, location, crs_rd, crs_map, rd_to_map, map_to_rd):
@@ -30,16 +31,70 @@ class NetcdfNetwork():
         self.crs_map = crs_map
         self.rd_to_map = rd_to_map
         self.map_to_rd = map_to_rd
-
         self.generate_geodfs()
+    
+    def generate_mesh2d(self, point:Point, max_distance:int):
+
+        """Creates both a geodataframe with rectangles that reperesent the 2d mesh, and two geodataframes that contain all points of the 2d mesh (filtered around breach location) 
+
+        Args:
+            point (Point): Central point around which to draw rectangles
+            max_distance (int): maximum distance
+
+        Returns:
+            gpd.GeoDataFrame: GeoDataFrame with the rectangles and bed level as attribute
+        """
+        ds = xr.open_dataset(self.location)
+        distance_x = ds.Mesh2d_face_x - point.x
+        distance_y = ds.Mesh2d_face_y - point.y
+        distance = np.sqrt(np.square(distance_x) + np.square(distance_y)) 
+        max_rectangles = 1000
+        max_distance_treshold = np.partition(distance, max_rectangles)[max_rectangles]
+        treshold = min(max_distance, max_distance_treshold)
+        mask =  distance < treshold
+
+        mesh2d = np.column_stack([ds.Mesh2d_face_x.values[mask], ds.Mesh2d_face_y.values[mask]]) 
+        df = pd.DataFrame()
+        df['coors'] = [tuple(row) for row in mesh2d]
+        df['geometry'] = df['coors'].apply(Point)
+        self.mesh2d_rd = gpd.GeoDataFrame(df['geometry'], crs = self.crs_rd) 
+        self.mesh2d_map = self.mesh2d_rd.to_crs(self.crs_map)
+
+        Mesh2d_node_x = ds.Mesh2d_node_x.values
+        Mesh2d_node_y = ds.Mesh2d_node_y.values
+        Mesh2d_node_z = ds.Mesh2d_node_z.values
+        bedlevel = []
+        geometry = []
+        for face in ds.Mesh2d_face_nodes.values[mask]:
+            coords = []
+            node_heights = []
+            for node in face:
+                if not np.isnan(node):
+                    node_heights.append(Mesh2d_node_z[int(node)])
+                    coords.append(
+                        [
+                            Mesh2d_node_x[int(node)], 
+                            Mesh2d_node_y[int(node)]
+                        ]
+                    )
+            bedlevel.append(np.average(node_heights))
+            geometry.append(Polygon(coords))
+        ds.close()
+
+        self.rectangles = gpd.GeoDataFrame({'bedlevel': bedlevel}, geometry=geometry, crs=self.crs_rd)
 
     def generate_geodfs(self):
+        """Reads the netcdf file, and create geodataframes of the data tha tis expected to be used.
+
+        Raises:
+            Exception: _description_
+        """
         ds = xr.open_dataset(self.location)
         network = [(ds.network_node_x.values[i], ds.network_node_y.values[i]) for i in range(len(ds.network_node_x.values))]
         if 'mesh1d_node_x' not in ds.variables.keys():
             raise Exception("Mesh coordinates are not in network.nc, try importing and exporting your model in the D-HYDRO GUI.")
-        mesh1d = [(ds.mesh1d_node_x.values[i], ds.mesh1d_node_y.values[i]) for i in range(len(ds.mesh1d_node_x.values))]
-        mesh2d = [(ds.Mesh2d_face_x.values[i], ds.Mesh2d_face_y.values[i]) for i in range(len(ds.Mesh2d_face_x.values))]
+        mesh1d = np.column_stack([ds.mesh1d_node_x.values, ds.mesh1d_node_y.values])
+        mesh2d = np.column_stack([ds.Mesh2d_face_x.values, ds.Mesh2d_face_y.values])       
 
         # find the link ids, these have different names, so look for name that contains link and id
         for key in list(ds.keys()):
@@ -57,29 +112,67 @@ class NetcdfNetwork():
         self.network_node_id = ds.network_node_id.values  
 
         df = pd.DataFrame()
-        df['coors'] = mesh1d
+        df['coors'] = [tuple(row) for row in mesh1d]
         df['geometry'] = df['coors'].apply(Point)
         self.mesh1d_rd = gpd.GeoDataFrame(df['geometry'], crs = self.crs_rd) 
         self.mesh1d_map = self.mesh1d_rd.to_crs(self.crs_map)
-
-        df = pd.DataFrame()
-        df['coors'] = mesh2d
-        df['geometry'] = df['coors'].apply(Point)
-        self.mesh2d_rd = gpd.GeoDataFrame(df['geometry'], crs = self.crs_rd) 
-        self.mesh2d_map = self.mesh2d_rd.to_crs(self.crs_map)
-
-        mesh1d = np.array(mesh1d)
-        mesh2d = np.array(mesh2d)
 
         links_geo = list(np.stack((mesh1d[links[:, 0].astype(int)], mesh2d[links[:, 1].astype(int)]), axis=1)) # van link (index - index) naar linestring (point - point)
         line_strings = [LineString(line) for line in links_geo]
         self.links_rd = gpd.GeoDataFrame({'geometry':line_strings}, crs = self.crs_rd)
         self.links_map = self.links_rd.to_crs(self.crs_map)
+        ds.close()
+    
+    def get_bedlevel_rectangles(self, point:Point, max_distance:int, max_rectangles:int=1000) -> gpd.GeoDataFrame:
+        """Returns a geodataframe with rectangles that reperesent the 2d mesh. 
+
+        Args:
+            point (Point): Central point around which to draw rectangles
+            max_distance (int): maximum distance
+            max_rectangles (int): maximum number of rectangles to draw
+
+        Returns:
+            gpd.GeoDataFrame: GeoDataFrame with the rectangles and bed level as attribute
+        """
+        ds = xr.open_dataset(self.location)
+        distance_x = ds.Mesh2d_face_x - point.x
+        distance_y = ds.Mesh2d_face_y - point.y
+        distance = np.sqrt(np.square(distance_x) + np.square(distance_y)) 
+
+        max_distance_treshold = np.partition(distance, max_rectangles)[max_rectangles]
+        treshold = min(max_distance, max_distance_treshold)
+
+        mask =  distance < treshold
+        Mesh2d_node_x = ds.Mesh2d_node_x.values
+        Mesh2d_node_y = ds.Mesh2d_node_y.values
+        Mesh2d_node_z = ds.Mesh2d_node_z.values
+        bedlevel = []
+        geometry = []
+        for face in ds.Mesh2d_face_nodes.values[mask]:
+            coords = []
+            node_heights = []
+            for node in face:
+                if not np.isnan(node):
+                    node_heights.append(Mesh2d_node_z[int(node)])
+                    coords.append(
+                        [
+                            Mesh2d_node_x[int(node)], 
+                            Mesh2d_node_y[int(node)]
+                        ]
+                    )
+            bedlevel.append(np.average(node_heights))
+            geometry.append(Polygon(coords))
+        ds.close()
+        gdf = gpd.GeoDataFrame({'bedlevel': bedlevel}, geometry=geometry, crs=self.crs_rd)
+        return gdf
+
 
 class DambreakWidget(WidgetStyling):
     def __init__(self, model_folder):
         self.network_loc = os.path.join(model_folder, r'dflowfm\network.nc')
         self.model_path = model_folder
+        self.max_distance_around_breach = 2000
+        self.bedlevel_layer = None
         
         self.set_default_layout_and_styling()
         
@@ -98,7 +191,7 @@ class DambreakWidget(WidgetStyling):
         self.center = [51.970682, 4.64013599]
         self.zoom = 12
         self.marker = Marker(location=self.center, draggable=True)
-        self.current_step = 1
+        self.current_step = 0
         self.display_text = ""
         self.draw_control = ipl.DrawControl()
         self.draw_control.polyline =  {
@@ -124,21 +217,22 @@ class DambreakWidget(WidgetStyling):
         json_data = json.loads(input_gdf.to_json())
         geojson = ipl.GeoJSON(data=json_data, name = layer_name)
         return geojson
-    
-    def filter_gdf_based_on_location(self, location, dataframe, dist_max_x = 0.1, dist_max_y = 0.08):
-        dataframe = dataframe[(location[1] - dist_max_x < dataframe.geometry.x) & (dataframe.geometry.x < location[1] + dist_max_x)]
-        dataframe = dataframe.loc[(location[0] - dist_max_y < dataframe.geometry.y) & (dataframe.geometry.y < location[0] + dist_max_y)]
-        return dataframe
 
     def draw_map(self):
         clear_output()
-        if self.current_step == 1:
+        if self.current_step == 0:
+            instruction = "Step 0: Select the approximate location of your dambreach (0/4) "
+            self.m = Map(center=self.center, zoom=self.zoom) 
+            self.m.add_layer(self.marker)
+            display(self.m)
+        elif self.current_step == 1:
             self.completed_line_input = False
-            instruction = "Step 1: Select dambreach location (1/4) "
+            instruction = "Step 1: Draw dambreach location (1/4) "
             self.m = Map(center=self.center, zoom=self.zoom) 
             self.draw_control.on_draw(self.handle_draw)    
             self.m.add_control(self.draw_control)
             display(self.m)
+            self.m.add_layer(self.bedlevel_layer)
             self.add_keringen()
             self.add_links()
         elif self.current_step == 2:
@@ -146,6 +240,7 @@ class DambreakWidget(WidgetStyling):
             self.m = Map(center=self.center, zoom=self.zoom)
             display(self.m)
             self.add_network()
+            self.m.add_layer(self.bedlevel_layer)
             self.m.add_layer(self.marker)
             self.m.add_layer(self.breach_point_map)
         elif self.current_step == 3:
@@ -153,6 +248,7 @@ class DambreakWidget(WidgetStyling):
             self.m = Map(center=self.center, zoom=self.zoom)
             display(self.m)
             self.add_mesh()
+            self.m.add_layer(self.bedlevel_layer)
             self.m.add_layer(self.marker)
             self.m.add_layer(self.upstream)
             self.m.add_layer(self.breach_point_map)
@@ -167,6 +263,7 @@ class DambreakWidget(WidgetStyling):
             self.m.add_layer(self.dambreach_map)
             self.m.add_layer(self.breach_point_map)
             self.m.add_layer(self.breach_line_map)
+            
            
         html = ipy.HTML(value=f'<b style="color:black;font-size:18px;">{instruction}</b>')
         self.html_log = ipy.HTML(value='')
@@ -182,7 +279,15 @@ class DambreakWidget(WidgetStyling):
     def next_step(self, b):
         self.center = self.m.center 
         self.zoom = self.m.zoom
-        if self.current_step == 1:
+        if self.current_step == 0:
+            self.current_step = 1
+            self.focus_point_rd = Point(self.map_to_rd.transform(self.marker.location[0], self.marker.location[1]))
+            self.keringen = self.filter_gdf(self.keringen, self.focus_point_rd, self.max_distance_around_breach)
+            self.netcdf.links_rd = self.filter_gdf(self.netcdf.links_rd, self.focus_point_rd, self.max_distance_around_breach)
+            self.netcdf.generate_mesh2d(self.focus_point_rd, self.max_distance_around_breach)
+            self.create_bedlevel_layer()
+            self.draw_map() 
+        elif self.current_step == 1:
             if self.completed_line_input == True:
                 self.current_step = 2
                 self.draw_map()    
@@ -231,6 +336,11 @@ class DambreakWidget(WidgetStyling):
             breach_row = self.breach_point.to_crs(self.crs_map).iloc[0]
             self.center = breach_row.geometry.y, breach_row.geometry.x
             self.marker.location = breach_row.geometry.y, breach_row.geometry.x
+    
+    def filter_gdf(self, gdf, point, buffer_distance):
+        buffer = point.buffer(buffer_distance)
+        gdf = gdf[gdf.geometry.intersects(buffer)]
+        return gdf
 
     def snap_to_kering(self, line):
         line_gdf = gpd.GeoDataFrame(geometry = [LineString(line)], crs = self.crs_map).to_crs(self.crs_rd)
@@ -298,26 +408,25 @@ class DambreakWidget(WidgetStyling):
         self.m.add_layer(keringen_map)
     
     def add_links(self):
+        self.netcdf.links_map = self.netcdf.links_rd.to_crs(self.netcdf.crs_map)
         links_map = GeoData(geo_dataframe = self.netcdf.links_map,
                 style={'color': 'green', 'radius':10, 'fillColor': 'green', 'opacity':1, 'weight':3, 'dashArray':'2', 'fillOpacity':0.6},
                 name = 'LINKS')
         self.m.add_layer(links_map)
         
     def add_network(self):
-        lat, lon= self.breach_point.to_crs(self.crs_map).iloc[0].geometry.x, self.breach_point.to_crs(self.crs_map).iloc[0].geometry.y
-        mesh1d = self.filter_gdf_based_on_location([lon, lat], self.netcdf.mesh1d_map, dist_max_x = 0.5, dist_max_y = 0.5)
-        network_1d_points = GeoData(geo_dataframe = mesh1d,
+        mesh1d = self.filter_gdf(self.netcdf.mesh1d_rd, self.focus_point_rd, self.max_distance_around_breach)
+        network_1d_points = GeoData(geo_dataframe = mesh1d.to_crs(self.crs_map),
             point_style={'radius': 5, 'color': 'blue', 'fillOpacity': 1, 'fillColor': 'black', 'weight': 3},
             name = 'NETWORK')
         self.m.add_layer(network_1d_points)
     
     def add_mesh(self):
-        lat, lon= self.breach_point.to_crs(self.crs_map).iloc[0].geometry.x, self.breach_point.to_crs(self.crs_map).iloc[0].geometry.y
-        mesh = self.filter_gdf_based_on_location([lon, lat], self.netcdf.mesh2d_map)
-        mesh2d = GeoData(geo_dataframe = mesh,
+        mesh2d = self.filter_gdf(self.netcdf.mesh2d_rd, self.focus_point_rd, self.max_distance_around_breach)
+        mesh2d_points = GeoData(geo_dataframe = mesh2d.to_crs(self.crs_map),
             point_style={'radius': 5, 'color': 'green', 'fillOpacity': 1, 'fillColor': 'black', 'weight': 3},
             name = 'MESH')
-        self.m.add_layer(mesh2d)
+        self.m.add_layer(mesh2d_points)
     
     def snap_to_closest_point(self, point, geodf_map, geodf_rd):
         point = self.map_to_rd.transform(point[0], point[1])
@@ -325,6 +434,43 @@ class DambreakWidget(WidgetStyling):
         closest_point = geodf_map.iloc[index_closest]
         self.marker.location = (closest_point.geometry.y, closest_point.geometry.x)
         return index_closest
+
+    def create_bedlevel_layer(self):
+        def handle_click(feature=None,  **kwargs):
+            try:
+                geometry = feature.get('geometry')
+                polygon = Polygon(tuple(geometry.get("coordinates")[0]))
+                popup_location = [polygon.centroid.y, polygon.centroid.x]
+                bedlevel = round(feature.get('properties').get('bedlevel'),2)
+                message = HTML()
+                message.value = f"Bedlevel: {bedlevel}"
+                popup = Popup(
+                    location=popup_location,
+                    child=message, 
+                    close_button=False,
+                    auto_close=True,
+                    close_on_escape_key=False
+                )
+                self.m.add(popup)
+            except Exception as e:
+                print(f"Could not retrieve due to error: {e}")
+
+        if self.bedlevel_layer is None:
+            rectangles = self.netcdf.rectangles
+            rectangles = rectangles.to_crs(self.crs_map)
+            bedlevel =  dict(zip(rectangles.index, rectangles.bedlevel))
+            bedlevel = {str(key): bedlevel[key] for key in bedlevel.keys()}
+            data = json.loads(rectangles.to_json())
+            self.bedlevel_layer = ipl.Choropleth(
+                geo_data=data,
+                choro_data=bedlevel,
+                border_color='black',
+                colormap=linear.YlOrBr_08,
+                style={'fillOpacity': 0.5},
+                hover_style={'fillOpacity': 1}
+                )
+            self.bedlevel_layer.on_click(handle_click)
+
 
 class UseTemplateDambreak(WidgetStyling):
     def __init__(self, model_folder):
@@ -359,7 +505,6 @@ class UseTemplateDambreak(WidgetStyling):
         display(self.m)
         self.m.add_layer(self.marker)  
         self.add_dambreak_template()
-        # self.add_keringen() 
 
         button_next_step = ipy.Button(description="Confirm location", style = self.button_style, layout = self.button_layout)
         output = ipy.Output()
@@ -401,7 +546,6 @@ class UseTemplateDambreak(WidgetStyling):
                 point_style={'radius': 5, 'color': 'red', 'fillOpacity': 1, 'fillColor': 'white', 'weight': 3},
                 name = 'BREACH')
         self.m.add_layer(dambreaks_map)
-        
     
     def snap_to_closest_point(self):
         point = self.marker.location
