@@ -53,6 +53,9 @@ class NetcdfNetwork():
         treshold = min(max_distance, max_distance_treshold)
         mask =  distance < treshold
 
+        if mask.sum() == 0:
+            raise Exception("You selected a point that is not near the 2D grid of the model.")
+
         mesh2d = np.column_stack([ds.Mesh2d_face_x.values[mask], ds.Mesh2d_face_y.values[mask]]) 
         df = pd.DataFrame()
         df['coors'] = [tuple(row) for row in mesh2d]
@@ -69,14 +72,20 @@ class NetcdfNetwork():
             coords = []
             node_heights = []
             for node in face:
-                if not np.isnan(node):
-                    node_heights.append(Mesh2d_node_z[int(node)])
-                    coords.append(
-                        [
-                            Mesh2d_node_x[int(node)], 
-                            Mesh2d_node_y[int(node)]
-                        ]
-                    )
+                if np.isnan(node):
+                    continue
+                
+                print(node)
+                if node < 0:
+                    continue
+                node_index = node - 1
+                node_heights.append(Mesh2d_node_z[int(node_index)])
+                coords.append(
+                    [
+                        Mesh2d_node_x[int(node_index)], 
+                        Mesh2d_node_y[int(node_index)]
+                    ]
+                )
             bedlevel.append(np.average(node_heights))
             geometry.append(Polygon(coords))
         ds.close()
@@ -117,55 +126,13 @@ class NetcdfNetwork():
         self.mesh1d_rd = gpd.GeoDataFrame(df['geometry'], crs = self.crs_rd) 
         self.mesh1d_map = self.mesh1d_rd.to_crs(self.crs_map)
 
+        self.generate_mesh2d(Point([103895, 440297]), 1000)
+
         links_geo = list(np.stack((mesh1d[links[:, 0].astype(int)], mesh2d[links[:, 1].astype(int)]), axis=1)) # van link (index - index) naar linestring (point - point)
         line_strings = [LineString(line) for line in links_geo]
         self.links_rd = gpd.GeoDataFrame({'geometry':line_strings}, crs = self.crs_rd)
         self.links_map = self.links_rd.to_crs(self.crs_map)
         ds.close()
-    
-    def get_bedlevel_rectangles(self, point:Point, max_distance:int, max_rectangles:int=1000) -> gpd.GeoDataFrame:
-        """Returns a geodataframe with rectangles that reperesent the 2d mesh. 
-
-        Args:
-            point (Point): Central point around which to draw rectangles
-            max_distance (int): maximum distance
-            max_rectangles (int): maximum number of rectangles to draw
-
-        Returns:
-            gpd.GeoDataFrame: GeoDataFrame with the rectangles and bed level as attribute
-        """
-        ds = xr.open_dataset(self.location)
-        distance_x = ds.Mesh2d_face_x - point.x
-        distance_y = ds.Mesh2d_face_y - point.y
-        distance = np.sqrt(np.square(distance_x) + np.square(distance_y)) 
-
-        max_distance_treshold = np.partition(distance, max_rectangles)[max_rectangles]
-        treshold = min(max_distance, max_distance_treshold)
-
-        mask =  distance < treshold
-        Mesh2d_node_x = ds.Mesh2d_node_x.values
-        Mesh2d_node_y = ds.Mesh2d_node_y.values
-        Mesh2d_node_z = ds.Mesh2d_node_z.values
-        bedlevel = []
-        geometry = []
-        for face in ds.Mesh2d_face_nodes.values[mask]:
-            coords = []
-            node_heights = []
-            for node in face:
-                if not np.isnan(node):
-                    node_heights.append(Mesh2d_node_z[int(node)])
-                    coords.append(
-                        [
-                            Mesh2d_node_x[int(node)], 
-                            Mesh2d_node_y[int(node)]
-                        ]
-                    )
-            bedlevel.append(np.average(node_heights))
-            geometry.append(Polygon(coords))
-        ds.close()
-        gdf = gpd.GeoDataFrame({'bedlevel': bedlevel}, geometry=geometry, crs=self.crs_rd)
-        return gdf
-
 
 class DambreakWidget(WidgetStyling):
     def __init__(self, model_folder):
