@@ -9,6 +9,7 @@ from shapely.geometry import Point
 from notebooks.background_scripting.v1.boundaryconditions import BoundaryConditionsFile, BoundaryConditionBlock
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 class BoundaryModificationGroup(WidgetStyling):
     def __init__(self, title, parameter, parent_class):
@@ -27,6 +28,9 @@ class BoundaryModificationGroup(WidgetStyling):
         if self.unit not in ['waterlevelbnd', 'dischargebnd']:
             raise Exception(f"Boundary paramter found ({self.parameter}) not in supported parameters")
         
+        self.csv_path = None
+        self.csv_read_error = None
+
         self.set_inputs()
 
     def add_boundary(self, boundary:BoundaryConditionBlock):
@@ -35,6 +39,7 @@ class BoundaryModificationGroup(WidgetStyling):
     def set_inputs(self):
         if self.unit == 'dischargebnd':
             self.parameters = {
+                "csv": "",
                 "basic_discharge": 10000,
                 "peak_discharge": 15000,
                 "peak_offset": 0,
@@ -42,6 +47,7 @@ class BoundaryModificationGroup(WidgetStyling):
                 }
         elif self.unit == 'waterlevelbnd':
             self.parameters = {
+                "csv": "",
                 "basic_waterlevel": 0, 
                 "tidal_offset": 0,
                 "tidal_range": 0,
@@ -57,16 +63,52 @@ class BoundaryModificationGroup(WidgetStyling):
         return ''
 
     def update_values(self):
-        if self.unit == 'dischargebnd':
-            times, values = self.parent.generate_discharge_timeseries(**self.parameters)
-        if self.unit == 'waterlevelbnd':
-            times, values = self.parent.generate_waterlevel_timeseries(**self.parameters)
-        
-        for block in self.blocks_to_modify:
-            block.timeseries.set_timeseries(times, values)
+        times, values = None, None
+        parameters = self.parameters
+        if 'csv' in self.parameters.keys():
+            self.csv_path = parameters.pop('csv')
+        if len(self.csv_path) > 0:
+            times, values = self.read_csv()
+        elif self.unit == 'dischargebnd':
+            times, values = self.parent.generate_discharge_timeseries(**parameters)
+        elif self.unit == 'waterlevelbnd':
+            times, values = self.parent.generate_waterlevel_timeseries(**parameters)
+        if times != None and values != None:
+            for block in self.blocks_to_modify:
+                block.timeseries.set_timeseries(times, values)
         return times, values
 
-            
+    def read_csv(self):
+        if os.path.exists(self.csv_path) == False:
+            self.csv_read_error = f"The inputted path to csv file ({self.csv_path}) can not be found"
+            return None, None
+        
+        if self.csv_path.endswith('.csv') == False:
+            self.csv_read_error = f"The path to the csv file should end with .csv"
+            return None, None
+        
+        try:
+            csv_data = pd.read_csv(self.csv_path, delimiter=';', dtype=float)
+        except Exception as e:
+            self.csv_read_error = e
+            return None, None
+        
+        if any([x not in csv_data.columns for x in ['time', 'value']]):
+            self.csv_read_error = f"csv file should have a 'time' and a 'value' column. Columns found are: {list(csv_data.columns)}"
+            return None, None
+        
+        times = csv_data['time']
+        values = csv_data['value']
+
+        if min(times) > 0:
+            self.csv_read_error = f"Earliest timestep found in csv is hour={min(times)}, but times should start at hour=0"
+            return None, None
+        
+        times_in_seconds = times * 3600
+        if max(times_in_seconds) < self.parent.t_stop:
+            self.csv_read_error = f"Latest timestep found in csv is hour={max(times)}, but models ends at hour={self.parent.t_stop/3600}"
+            return None, None
+        return list(times), list(values)          
 
 class ModifyBoundaries(WidgetStyling):
     """
@@ -79,9 +121,9 @@ class ModifyBoundaries(WidgetStyling):
         files = os.listdir(os.path.join(self.model_folder, 'dflowfm'))
         self.bnd_file, self.bnd_backup_file = None, None
         for file in files:
-            if file.endswith('.bc.backup'):
+            if file.endswith('.bc.backup') and 'boundar' in file:
                 self.bnd_backup_file = os.path.join(self.model_folder, 'dflowfm', file)
-            if file.endswith('.bc'):
+            if file.endswith('.bc') and 'boundar' in file:
                 self.bnd_file = os.path.join(self.model_folder, 'dflowfm', file)   
         if self.bnd_file == None:
             raise Exception("Boundary conditions file could not be found in model directory")
@@ -140,7 +182,7 @@ class ModifyBoundaries(WidgetStyling):
                 self.modify_groups[group_name].add_boundary(block)
         
 
-    def generate_discharge_timeseries(self, basic_discharge:int, peak_discharge:int, peak_offset:int, peak_duration:int):
+    def generate_discharge_timeseries(self, basic_discharge:int, peak_discharge:int, peak_offset:int, peak_duration:int, **kwargs):
         peak_offset = peak_offset * 3600
         peak_duration = peak_duration * 3600
         if self.t_start % 300 != 0 or self.t_stop % 300 != 0:
@@ -157,7 +199,7 @@ class ModifyBoundaries(WidgetStyling):
             values.append(Q_total)
         return times, values
     
-    def generate_waterlevel_timeseries(self, basic_waterlevel:float, tidal_offset:float, tidal_range:float, peak_waterlevel_addition:float, peak_offset:float, peak_duration:float):
+    def generate_waterlevel_timeseries(self, basic_waterlevel:float, tidal_offset:float, tidal_range:float, peak_waterlevel_addition:float, peak_offset:float, peak_duration:float, **kwargs):
         tidal_offset = tidal_offset * 3600
         peak_offset = peak_offset * 3600
         peak_duration = peak_duration * 3600
@@ -198,15 +240,33 @@ class ModifyBoundaries(WidgetStyling):
         self.widgets = {}
         for group in self.modify_groups.keys():        
             self.widgets[group] = {} 
-            for key, value in self.modify_groups[group].parameters.items():
-                unit = self.modify_groups[group].get_unit(key)
-                self.widgets[group][key] = ipy.FloatText(
-                    value =  value,
-                    description= f"{key} ({unit})",
-                    disabled=False
-                    )
-                self.widgets[group][key].layout = self.item_layout
-                self.widgets[group][key].style = self.item_style
+
+            self.widgets[group]['csv'] = ipy.Text(
+                value = self.modify_groups[group].csv_path,
+                description=f'CSV file for boundary condition, leave this empty if you do not want to use a csv',
+                disabled=False,
+                style = self.item_style,
+                layout = self.item_layout
+                )
+        
+
+            if len(self.widgets[group]['csv'].value) <= 0:
+                for key, value in self.modify_groups[group].parameters.items():
+                    if key == 'csv':
+                        continue
+                    unit = self.modify_groups[group].get_unit(key)
+                    self.widgets[group][key] = ipy.FloatText(
+                        value =  value,
+                        description= f"{key} ({unit})",
+                        disabled=False
+                        )
+                    self.widgets[group][key].layout = self.item_layout
+                    self.widgets[group][key].style = self.item_style
+            else:
+                if self.modify_groups[group].csv_read_error != None:
+                    self.widgets[group]['error'] = ipy.HTML(value=f'<b style="color:red;font-size:16px;">{self.modify_groups[group].csv_read_error}</b>')
+
+                
             
             header_widget = ipy.HTML(f'<h3 style="margin:0px;padding:0px;text-align:center;">Settings for {group}</3>')
             header_widget.layout = self.item_layout
@@ -215,20 +275,23 @@ class ModifyBoundaries(WidgetStyling):
             self.widgets_to_display = [header_widget] + [widget for widget in self.widgets[group].values()]
             
             self.boxes.append(ipy.VBox(children=self.widgets_to_display, layout=self.box_layout, style = self.box_style))
+        display_button = True
+        if len(self.boxes) == 0:
+            self.boxes.append(ipy.HTML("No boundary conditions found that can be modified."))
+            display_button = False
         box = ipy.VBox(children=self.boxes, layout=self.box_layout, style = self.box_style)
         display(box)
         
         button = ipy.Button(description="Update settings", style = self.button_style, layout = self.button_layout)
         output = ipy.Output()
-        display(button, output)
+        
+        if display_button:
+            display(button, output)
 
         button.on_click(self.update_settings_widget)
-
-        # self.update_settings_widget(None)
         
 
     def update_settings_widget(self, _):
-        
         clear_output(wait=True)
         for group_name in self.widgets:
             for parameter_name in self.widgets[group_name].keys():
@@ -236,8 +299,9 @@ class ModifyBoundaries(WidgetStyling):
                 value = self.widgets[group_name][parameter_name].value
                 group.parameters[parameter_name] = value
             times, values = group.update_values()
-            self.plot_timeseries(times, values, group.title, group.unit, group.title)
-        self.bc.write(r"C:\Work\Projects\HL-P24050_ROI\05_Analysis\P1414\Code\notebooks\data\test.txt")
+            if times != None and values != None:
+                self.plot_timeseries(times, values, group.title, group.unit, group.title)
+        self.bc.write(self.bnd_file)
 
         self.display_widgets()
 
