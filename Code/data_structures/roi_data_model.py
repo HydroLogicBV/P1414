@@ -104,6 +104,7 @@ class ROIDataModel(BaseModel):
     duiker: Optional[DataFrame[DuikerSchema]]
     doorbraak: Optional[Any]
     gemaal: Optional[DataFrame[GemaalSchema]]
+    hydrologischerandvoorwaarde: Optional[Any]
     hydroobject_normgp: Optional[DataFrame[Hydroobject_normgpSchema]]
     keringen: Optional[Any]
     kunstwerkopening: Optional[DataFrame[KunstwerkopeningSchema]]

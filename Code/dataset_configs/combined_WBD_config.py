@@ -13,7 +13,7 @@ STOPTIME = 86400*7
 class Models:
     class FM:
         one_d_bool = True
-        two_d_bool = True
+        two_d_bool = False # Voor nu even aangepast
         start_time = STARTTIME
         stop_time = STOPTIME
 
@@ -123,66 +123,66 @@ class Models:
                 __forcings = [__fb1]
                 __boundaries = [__boundary1]
 
-                __starttime_str = str(STARTTIME)[0:4]+"-"+str(STARTTIME)[4:6]+"-"+str(STARTTIME)[6:8]
-                __n_hours = int(STOPTIME/3600)
-                __timeseries_noordzee = [[__i,0] for __i in range(__n_hours)]
-                __forcing_nodes = ["100240.000000_497850.000000", "85410.000000_471795.000000", "58820.000000_446520.000000", "49883.000000_431591.000000","49885.000000_431680.000000"]
+                # __starttime_str = str(STARTTIME)[0:4]+"-"+str(STARTTIME)[4:6]+"-"+str(STARTTIME)[6:8]
+                # __n_hours = int(STOPTIME/3600)
+                # __timeseries_noordzee = [[__i,0] for __i in range(__n_hours)]
+                # __forcing_nodes = ["100240.000000_497850.000000", "85410.000000_471795.000000", "58820.000000_446520.000000", "49883.000000_431591.000000","49885.000000_431680.000000"]
                 
-                for __i in range(len(__forcing_nodes)):
-                    __forcing=ForcingBase(
-                        name=__forcing_nodes[__i],
-                        function="timeseries",
-                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since {__starttime_str} 00:00:00"),
-                                        QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
-                        datablock=__timeseries_noordzee,
-                    )
+                # for __i in range(len(__forcing_nodes)):
+                #     __forcing=ForcingBase(
+                #         name=__forcing_nodes[__i],
+                #         function="timeseries",
+                #         quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since {__starttime_str} 00:00:00"),
+                #                         QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
+                #         datablock=__timeseries_noordzee,
+                #     )
 
-                    __boundary = Boundary(
-                        quantity="waterlevelbnd",
-                        nodeid=__forcing_nodes[__i],
-                        forcingfile=ForcingModel(forcing=__forcing),
-                    )
+                #     __boundary = Boundary(
+                #         quantity="waterlevelbnd",
+                #         nodeid=__forcing_nodes[__i],
+                #         forcingfile=ForcingModel(forcing=__forcing),
+                #     )
 
-                    __forcings.append(__forcing)
-                    __boundaries.append(__boundary)
+                #     __forcings.append(__forcing)
+                #     __boundaries.append(__boundary)
 
-                __timeseries_markermeer = [[__i,0] for __i in range(__n_hours)]
-                __forcing_nodes = ["127216.410000_487088.580000", "130578.000000_483044.000000", "137695.530000_482384.620000"]
+                # __timeseries_markermeer = [[__i,0] for __i in range(__n_hours)]
+                # __forcing_nodes = ["127216.410000_487088.580000", "130578.000000_483044.000000", "137695.530000_482384.620000"]
                 
-                for __i in range(len(__forcing_nodes)):
-                    __forcing=ForcingBase(
-                        name=__forcing_nodes[__i],
-                        function="timeseries",
-                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since {__starttime_str} 00:00:00"),
-                                        QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
-                        datablock=__timeseries_markermeer,
-                    )
-                    __boundary = Boundary(
-                        quantity="waterlevelbnd",
-                        nodeid=__forcing_nodes[__i],
-                        forcingfile=ForcingModel(forcing=__forcing),
-                    )
+                # for __i in range(len(__forcing_nodes)):
+                #     __forcing=ForcingBase(
+                #         name=__forcing_nodes[__i],
+                #         function="timeseries",
+                #         quantityunitpair=[QuantityUnitPair(quantity="time", unit=f"hours since {__starttime_str} 00:00:00"),
+                #                         QuantityUnitPair(quantity="waterlevelbnd", unit="m")],
+                #         datablock=__timeseries_markermeer,
+                #     )
+                #     __boundary = Boundary(
+                #         quantity="waterlevelbnd",
+                #         nodeid=__forcing_nodes[__i],
+                #         forcingfile=ForcingModel(forcing=__forcing),
+                #     )
 
-                    __forcings.append(__forcing)
-                    __boundaries.append(__boundary)
+                #     __forcings.append(__forcing)
+                #     __boundaries.append(__boundary)
 
-                __laterals = [
-                    Lateral(
-                        id="LateralSource_1D_1",
-                        name="LateralSource_1D_1",
-                        branchId="rijn_wl_DuitseRijn",
-                        chainage=30,
-                        discharge=16000,
-                    )
-                ]
+                # __laterals = [
+                #     Lateral(
+                #         id="LateralSource_1D_1",
+                #         name="LateralSource_1D_1",
+                #         branchId="rijn_wl_DuitseRijn",
+                #         chainage=30,
+                #         discharge=16000,
+                #     )
+                # ]
                 
                 # All boundary conditions must be passed as 1 boundary element with multiple forcings, otherwise the boundary conditions overwrite each other in the .bc file
-                __final_boundary = Boundary(
-                        quantity="waterlevelbnd",
-                        nodeid='127216.410000_487088.580000',
-                        forcingfile=ForcingModel(forcing=__forcings),
-                    )
-                extforcefilenew = ExtModel(boundary=__final_boundary, lateral=__laterals)
+                # __final_boundary = Boundary(
+                #         quantity="waterlevelbnd",
+                #         nodeid='127216.410000_487088.580000',
+                #         forcingfile=ForcingModel(forcing=__forcings),
+                #     )
+                extforcefilenew = ExtModel(boundary=__boundaries)
 
             class geometry:
                 usecaching = 1

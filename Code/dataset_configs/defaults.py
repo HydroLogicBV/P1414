@@ -4,8 +4,8 @@ import numpy as np
 ## Branches
 class Branches:
     bodembreedte = None
-    bodemhoogte_benedenstrooms = -90 # Was None, maar voor HHSK aangepast! 
-    bodemhoogte_bovenstrooms = -90 # Was None, maar voor HHSK aangepast! 
+    bodemhoogte_benedenstrooms = None # Was None, maar voor HHSK aangepast! 
+    bodemhoogte_bovenstrooms = None #  Was None, maar voor HHSK aangepast! 
     hoogte_insteek_linkerzijde = None
     hoogte_insteek_rechterzijde = None
     ruwheidhoog = 23
@@ -56,6 +56,8 @@ class FixedWeirs:
 class MeasuredProfiles:
     pass
 
+class Boundaries:
+    pass
 
 class Peil:
     boven_peil = np.nan

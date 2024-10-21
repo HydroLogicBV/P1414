@@ -76,6 +76,24 @@ def check_column_is_numerical(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
             gdf = gdf.astype(float)
     return gdf
 
+def check_value_is_numerical(value) -> float:
+    """
+    Helper function that tries to convert a value to int or float
+
+    Args:
+      value: the value to check
+
+    Returns:
+      value: the checked value
+    """
+
+    if (not isinstance(value, int)) | (not isinstance(value, float)):
+        try:
+            value = float(value)
+        except:
+            value = value.replace(',', '.') if isinstance(value,str) else value
+            value = float(value)
+    return value
 
 def check_is_not_na_number(input: Any, zero_allowed=False) -> bool:
     """
@@ -2112,6 +2130,13 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
         return _weir_gdf, opening_gdf, management_device_gdf
 
+    # def create_boundarycondition_data(boundaries_gdf: gpd.GeoDataFrame):
+    #     '''
+    #     Add the boundaries
+    #     '''
+    #     boundaries_gdf.rename(columns={'typerand': 'typerandvoorwaarde'}, inplace=True)
+
+    #     return boundaries_gdf
     def fill_branch_norm_parm_profiles_data(
         defaults, in_branches_gdf: gpd.GeoDataFrame, data_config, insteek_marge=0.25
     ) -> gpd.GeoDataFrame:
@@ -2223,7 +2248,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 elif (not check_is_not_na_number(branch["bodemhoogte benedenstrooms"])) and (
                     not check_is_not_na_number(branch["bodemhoogte bovenstrooms"])
                 ):
-                    diepte = branch["diepte"]
+                    diepte = check_value_is_numerical(value=branch["diepte"])
                     insteek_hoogte = np.nanmean(
                         out_branches_gdf.loc[
                             bool_ix, ["hoogte insteek linkerzijde", "hoogte insteek rechterzijde"]
@@ -2232,7 +2257,10 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
                     if diepte == -99:
                         diepte = np.nan
-
+                    if np.isnan(diepte):
+                        
+                        print(f'No depth or height information for branch with code: {branch["code"]}. Assumed 1 m depth')
+                        diepte = 1
                     #if np.isnan(out_branches_gdf["bodemhoogte benedenstrooms"] 
                     bodem_hoogte = insteek_hoogte - diepte
                     out_branches_gdf.loc[bool_ix, "bodemhoogte benedenstrooms"] = bodem_hoogte
@@ -2399,6 +2427,22 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         ddm.duiker = create_culvert_data(culvert_gdf=culvert_gdf)
         print('Created duiker data')
 
+    if hasattr(data_config, 'boundary_path') and (data_config.boundary_path is not None):
+        boundary_gdf = load_geo_file(data_config.boundary_path, layer="hydrologischerandvoorwaarde")
+
+        if hasattr(data_config, "boundary_selection"):
+            boundary_gdf = select_features(data_config.boundary_selection, boundary_gdf)
+
+        boundary_gdf, _ = map_columns(
+            code_pad=code_padding + "bound_",
+            defaults=defaults.Boundaries,
+            gdf=boundary_gdf,
+            index_mapping=data_config.boundary_index_mapping,
+        )
+
+        ddm.hydrologischerandvoorwaarde = boundary_gdf
+        print('Added boundary conditions')
+        
     if hasattr(data_config, "measured_profile_path") and (
         data_config.measured_profile_path is not None
     ):

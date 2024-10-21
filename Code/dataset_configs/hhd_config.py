@@ -63,42 +63,22 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\HHDelfland\Primair water\Primair water.shp"  # Corrected from V7
-    # branches_path = (
-    #     p_folder + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water.shp"
-    # )
+    
+    branches_path = p_folder + r"\HHDelfland\Primair water\Waterganglijnen.shp"  # Corrected from V7
+    
     # bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
-    # culvert_path = p_folder + r"\HDSR\Legger\Kokers_Lijnen\Kokers_Lijnen_edited.shp"
+   
     culvert_path = dict(
         [
-            (
-                "base",
-                p_folder
-                + r"\HHDelfland\Open duiker\Open duiker.shp",
-            ),
-            (
-                "concat_1",
-                p_folder + r"\HHDelfland\Sifon\Sifon.shp",
-            ),
-            (
-                "concat_2",
-                p_folder
-                + r"\HHDelfland\Stuwende duiker\Stuwende duiker.shp",
-            ),
-            (
-                "concat_3",
-                p_folder
-                + r"\HHDelfland\Vispassageduiker\Vispassageduiker.shp",
-            ),
-            (
-                "concat_4",
-                p_folder
-                + r"\HHDelfland\Inlaatduiker\Inlaatduiker.shp",
-            ),
+            ("base",     p_folder + r"\HHDelfland\Open duiker\Open duiker.shp", ),
+            ("concat_1", p_folder + r"\HHDelfland\Sifon\Sifon.shp",),
+            ("concat_2", p_folder + r"\HHDelfland\Stuwende duiker\Stuwende duiker.shp",),
+            ("concat_3", p_folder + r"\HHDelfland\Vispassageduiker\Vispassageduiker.shp",),
+            ("concat_4", p_folder + r"\HHDelfland\Inlaatduiker\Inlaatduiker.shp", ),
         ]
     )
-    norm_profile_path = p_folder + r"\HHDelfland\Temp_Normprofile\HHD_v3_ww.shp"
+    #norm_profile_path = p_folder + r"\HHDelfland\Temp_Normprofile\HHD_v3_ww.shp"
+    norm_profile_path = p_folder + r"\HHDelfland\Primair water\Waterganglijnen.shp"
     # norm_profile_path = dict(
     #     [
     #         ("base", p_folder + r"\Uitgesneden watergangen\HHD_v3.shp"),
@@ -112,13 +92,13 @@ class RawData:
     peil_gebieden_path = p_folder + r"\HHDelfland\PeilgebiedPraktijk\PeilgebiedPraktijk.shp"
     pump_path = p_folder + r"\HHDelfland\Gemaal\Gemaal.shp"
     sluice_path = p_folder + r"\HHDelfland\Sluis\Sluis.shp"
-    watervlak_path = (
-        p_folder
-        + r"\HHDelfland\Watervoerend deel\Watervoerend deel.shp"
-    )
+    watervlak_path = p_folder + r"\HHDelfland\Watervoerend deel\Watervoerend deel.shp"
     weir_path = p_folder + r"\HHDelfland\Stuw\Stuw.shp"
 
-    # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
+    
+    # Selection criteria
+    branch_selection = dict([("column", "Opnemen"), ("value", "Ja")])
+    np_selection = dict([("column", "Opnemen"), ("value", "Ja")])
 
     ## Branches
     # branch_index_mapping = dict(
@@ -186,46 +166,46 @@ class RawData:
     )
 
     # ## Normprofielen
-    np_index_mapping = dict(
-        [
-            ("bodembreedte", "bodembreed"),
-            ("bodemhoogte benedenstrooms", "bodemhoogt"),
-            ("bodemhoogte bovenstrooms", "bodemhoo_1"),
-            ("code", "code"),
-            ("diepte", "diepte"),
-            ("geometry", "geometry"),
-            ("globalid", "globalid"),
-            ("hoogte insteek linkerzijde", "hoogte ins"),
-            ("hoogte insteek rechterzijde", "hoogte i_1"),
-            ("taludhelling linkerzijde", "taludhelli"),
-            ("taludhelling rechterzijde", "taludhel_1"),
-            ("typeruwheid", "typeruwhei"),
-            ("ruwheidhoog", "ruwheidhoo"),
-            ("ruwheidlaag", "ruwheidlaa"),
-            ("water_width_index", None),
-        ]
-    )
-
-    # ## Normprofielen
     # np_index_mapping = dict(
     #     [
-    #         ("bodembreedte", None),
-    #         ("bodemhoogte benedenstrooms", None),
-    #         ("bodemhoogte bovenstrooms", None),
-    #         ("code", "CODE"),
-    #         ("diepte", "LEGDIEPNUM"),
+    #         ("bodembreedte", "bodembreed"),
+    #         ("bodemhoogte benedenstrooms", "bodemhoogt"),
+    #         ("bodemhoogte bovenstrooms", "bodemhoo_1"),
+    #         ("code", "code"),
+    #         ("diepte", "diepte"),
     #         ("geometry", "geometry"),
     #         ("globalid", "globalid"),
-    #         ("hoogte insteek linkerzijde", None),
-    #         ("hoogte insteek rechterzijde", None),
-    #         ("taludhelling linkerzijde", None),
-    #         ("taludhelling rechterzijde", None),
-    #         ("typeruwheid", None),
-    #         ("ruwheidhoog", None),
-    #         ("ruwheidlaag", None),
+    #         ("hoogte insteek linkerzijde", "hoogte ins"),
+    #         ("hoogte insteek rechterzijde", "hoogte i_1"),
+    #         ("taludhelling linkerzijde", "taludhelli"),
+    #         ("taludhelling rechterzijde", "taludhel_1"),
+    #         ("typeruwheid", "typeruwhei"),
+    #         ("ruwheidhoog", "ruwheidhoo"),
+    #         ("ruwheidlaag", "ruwheidlaa"),
     #         ("water_width_index", None),
     #     ]
     # )
+
+    # ## Normprofielen
+    np_index_mapping = dict(
+        [
+            ("bodembreedte", 'BREEDTE'),
+            ("bodemhoogte benedenstrooms", None),
+            ("bodemhoogte bovenstrooms", None),
+            ("code", "CODE"),
+            ("diepte", "WS_Diepte"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("hoogte insteek linkerzijde", None),
+            ("hoogte insteek rechterzijde", None),
+            ("taludhelling linkerzijde", None),
+            ("taludhelling rechterzijde", None),
+            ("typeruwheid", None),
+            ("ruwheidhoog", None),
+            ("ruwheidlaag", None),
+            ("water_width_index", None),
+        ]
+    )
 
     ## Peil gebied
     peil_index_mapping = dict(

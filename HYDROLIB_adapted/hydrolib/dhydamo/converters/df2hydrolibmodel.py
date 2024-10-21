@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from hydrolib.core.io.bc.models import Constant, ForcingModel, TimeSeries
+from hydrolib.core.io.bc.models import Constant, ForcingModel, TimeSeries, QuantityUnitPair
 from hydrolib.core.io.crosssection.models import (
     CircleCrsDef,
     CrossSection,
@@ -211,8 +211,8 @@ class Df2HydrolibModel:
                 bnd_bc = Constant(
                     name=bound["nodeid"],
                     function="constant",
-                    quantity=bound["quantity"],
-                    unit=bound["value_unit"],
+                    quantityunitpair = [QuantityUnitPair(quantity = bound["quantity"],
+                                                         unit = bound["value_unit"])],
                     datablock=[[bound["value"]]],
                 )
             else:

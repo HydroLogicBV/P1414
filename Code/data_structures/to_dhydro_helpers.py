@@ -12,6 +12,7 @@ from geo_tools.roughness_to_mesh import create_roughness_xyz
 from hydrolib.core.basemodel import DiskOnlyFileModel
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
 from hydrolib.core.io.dimr.models import DIMR, FMComponent
+from hydrolib.core.io.ext.models import ExtModel
 from hydrolib.core.io.friction.models import FrictBranch, FrictGlobal, FrictionModel
 from hydrolib.core.io.ini.models import INIBasedModel, INIGeneral, INIModel
 from hydrolib.core.io.inifield.models import IniFieldModel, InitialField, ParameterField
@@ -676,6 +677,12 @@ def to_dhydro(
 
         return hydamo
 
+    def add_boundary_condition(fm: FMModel, hydamo: HyDAMO):
+        
+        hydamo.external_forcings.convert.boundaries(hydamo.boundary_conditions, mesh1d=fm.geometry.netfile.network)
+
+        return(hydamo)
+
     def build_1D_model(
         features: List,
         fm: FMModel,
@@ -774,7 +781,17 @@ def to_dhydro(
         )
         hydamo.crosssections.set_default_definition(definition=default, shift=-2.5)
 
+        if ('hydrologischerandvoorwaarde') in features:
+                hydamo = add_boundary_condition(fm=fm, hydamo=hydamo)
+
         models = Df2HydrolibModel(hydamo)
+
+        extmodel = ExtModel()
+        extmodel.boundary = models.boundaries_ext
+        extmodel.lateral = models.laterals_ext
+
+        # Add external forcings
+        fm.external_forcing.extforcefilenew = extmodel
 
         # Assign to FM model
         fm.geometry.structurefile = [StructureModel(structure=models.structures)]
@@ -1070,6 +1087,35 @@ def to_dhydro(
             network._link1d2d.link1d2d_contact_type = network._link1d2d.link1d2d_contact_type[unique_idx]
         return fm
 
+    def merge_ext_files(ext_force_model, extforcefile: ExtModel) -> None:
+        '''
+        Merge existing ExtModel files if already exisiting
+        '''
+        #assert isinstance(fmmodel, FMModel)
+
+        if (not hasattr(ext_force_model, "extforcefilenew")) or (
+            ext_force_model.extforcefilenew is None
+        ):
+            ext_force_model.extforcefilenew = extforcefile
+        else:
+            if hasattr(extforcefile, "lateral"):
+                if (not hasattr(ext_force_model.extforcefilenew, "lateral")) or (
+                    ext_force_model.extforcefilenew.lateral is None
+                ):
+                    ext_force_model.extforcefilenew.lateral = extforcefile.lateral
+                else:
+                    for lateral in extforcefile.lateral:
+                        ext_force_model.extforcefilenew.lateral.append(lateral)
+            if hasattr(extforcefile, "boundary"):
+                if (not hasattr(ext_force_model.extforcefilenew, "boundary")) or (
+                    ext_force_model.extforcefilenew.boundary is None
+                ):
+                    ext_force_model.extforcefilenew.boundary = extforcefile.boundary
+                else:
+                    for boundary in extforcefile.boundary:
+                        ext_force_model.extforcefilenew.boundary.append(boundary)
+        return ext_force_model
+
     def set_hydrolib_core_options(fmmodel: FMModel, options):
         """ """
 
@@ -1086,11 +1132,14 @@ def to_dhydro(
                 # if an option is found, try to set it
                 # options should be int, float, list, or str type
                 if isinstance(value, (int, float, list, str, INIBasedModel, INIGeneral, INIModel)):
-                    try:
-                        setattr(obj_loc, attribute, value)
-                    except Exception as e:
-                        print("failed to set {}".format(attribute))
-                        print(e)
+                    if isinstance(value, (ExtModel)):
+                        obj_loc = merge_ext_files(obj_loc, value)
+                    else:
+                        try:
+                            setattr(obj_loc, attribute, value)
+                        except Exception as e:
+                            print("failed to set {}".format(attribute))
+                            print(e)
                 # if not, a subclass was encounterd and we need to traverse deeper
                 else:
                     set_options(obj_loc=getattr(obj_loc, attribute), options=value)
@@ -1183,6 +1232,11 @@ def to_dhydro(
                     max_dist_to_struct=model_config.FM.one_d.max_dist_to_struct,
                     extent=extent,
                 )
+
+            if ('hydrologischerandvoorwaarde') in self.features:
+                self.hydamo.boundary_conditions.set_data(self.ddm.hydrologischerandvoorwaarde)
+                self.hydamo.boundary_conditions.snap_to_branch(self.hydamo.branches, snap_method='overal', maxdist=10)
+
 
             # add 1D model
             print("\nCompletig 1D model\n")
