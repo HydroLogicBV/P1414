@@ -68,17 +68,16 @@ class NetcdfNetwork():
         Mesh2d_node_z = ds.Mesh2d_node_z.values
         bedlevel = []
         geometry = []
+        offset = np.min(ds.Mesh2d_face_nodes.values[ds.Mesh2d_face_nodes.values > -1])
         for face in ds.Mesh2d_face_nodes.values[mask]:
             coords = []
             node_heights = []
             for node in face:
                 if np.isnan(node):
                     continue
-                
-                print(node)
                 if node < 0:
                     continue
-                node_index = node - 1
+                node_index = node - offset
                 node_heights.append(Mesh2d_node_z[int(node_index)])
                 coords.append(
                     [
@@ -455,7 +454,6 @@ class ModifyDambreak(WidgetStyling):
                 self.dambreak_settings_widget['breach_line'],
                 self.keringen)
         else:
-            print(use_widget_dambreak)
             self.use_template_dambreak(dambreak_template)
         
         self.set_default_layout_and_styling()
