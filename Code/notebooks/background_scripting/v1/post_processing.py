@@ -2,7 +2,7 @@ from notebooks.background_scripting.v1.widget_styling import WidgetStyling
 import os
 import ipywidgets as ipy
 from IPython.display import display, clear_output
-
+from notebooks.background_scripting.v1.boundaryconditions import BoundaryConditionsFile
 from flowmeshreader import load_meta_data, load_map_data, mesh_to_tiff, load_mesh
 from plotting import raster_plot_with_context
 
@@ -52,6 +52,7 @@ class PlotSettingsBreach(WidgetStyling):
     def __init__(self, model_folder):
         output_folder = read_output_folder(model_folder)
         self.settings = {}
+        self.settings['model_folder'] = model_folder
         his_files = [x for x in os.listdir(output_folder) if x.endswith('his.nc')]
         if len(his_files) != 1:
             raise Exception(f"Found {len(his_files)} his files in {output_folder}, should be 1. Are you sure the model has finished computing? If so, check if you can find the output in the model folder, which should be {model_folder}")
@@ -59,12 +60,10 @@ class PlotSettingsBreach(WidgetStyling):
         self.settings['output_file_path'] = os.path.join(output_folder,  "post_processing")
 
         plot_variables = self.load_plot_variables()
-        self.settings['variables'] = plot_variables
+        self.settings['variables'] = ['Check breach growth'] + plot_variables
+        self.settings['plot_variables'] = [self.settings['variables'][0]]
+        
 
-        default_variables = [var for var in plot_variables if var.endswith('discharge')]
-        self.settings['plot_variables'] = default_variables
-
-        self.settings_to_print = ['his_path', 'output_file_path', 'plot_variables']
 
         # list of widgets
         self.set_default_layout_and_styling()
@@ -123,9 +122,6 @@ class PlotSettingsBreach(WidgetStyling):
         self.update_settings_dict()
         clear_output(wait=True)
         self.display_widgets()
-        display("Plot settings are:")
-        print_settings_dict = {k: v for k, v in self.settings.items() if k in self.settings_to_print}
-        print(json.dumps(print_settings_dict, sort_keys=True, indent=4))
         BreachPlotter(self.settings)
 
 class PlotSettingsMap(WidgetStyling):
@@ -133,8 +129,9 @@ class PlotSettingsMap(WidgetStyling):
     Class that contains all the widgetes and settings for plotting model results on the 2D map.
     """
     def __init__(self, model_folder):
-        output_folder = read_output_folder(model_folder)
         self.settings = {}
+        self.settings['model_folder'] = model_folder
+        output_folder = read_output_folder(model_folder)
         map_files = [x for x in os.listdir(output_folder) if x.endswith('map.nc')]
         if len(map_files) != 1:
             raise Exception(f"Found {len(map_files)} map files in {output_folder}, should be 1. Are you sure the model has finished computing? If so, check if you can find the output in the model folder, which should be {model_folder}")
@@ -285,15 +282,21 @@ class PlotSettingsMap(WidgetStyling):
             print_settings_dict['timestep'] = "not applicable" 
         print(json.dumps(print_settings_dict, sort_keys=True, indent=4))
         MapPlotter(self.settings)
-      
+    
 
+    
 class BreachPlotter():
     """
     Class that is responsible for generating the plot of the dikebreach
     """
     def __init__(self, plot_settings):
         self.settings = plot_settings
-        self.plot_output()   
+        if 'Check breach growth' in self.settings['plot_variables']:
+            self.settings['plot_variables'] = [x for x in self.settings['plot_variables'] if x != 'Check breach growth']
+            self.plot_breach_growth_check()
+        if len(self.settings['plot_variables']) > 0:
+            self.plot_output()   
+
 
     def plot_output(self):
         """
@@ -325,6 +328,98 @@ class BreachPlotter():
             os.makedirs(self.settings['output_file_path'])
         plt.savefig(os.path.join(self.settings['output_file_path'], 'breach.png'))
         nc_file.close()
+    
+    def get_dambreak(self):
+        structure_file = os.path.join(self.settings['model_folder'], 'dflowfm', 'structures.ini')
+        if not os.path.exists(structure_file):
+            raise Exception(f"Can not find structure file, expected it at {structure_file}")
+        a = BoundaryConditionsFile(structure_file, additional_block_headers=['[structure]'])
+        for block in a.blocks:
+            if block.get_property('type') == 'dambreak':
+                return block
+        raise Exception(f"Can not find structure of type dambreak in {structure_file}")
+
+    def get_dambreak_parameters(self):
+        dambreak = self.get_dambreak()
+        self.f1 =  float(dambreak.get_property('f1'))
+        self.f2 = float(dambreak.get_property('f2'))
+        self.z_initial = float(dambreak.get_property('crestLevelIni'))
+        self.z_min = float(dambreak.get_property('crestLevelMin'))
+        self.w_initial = float(dambreak.get_property('breachWidthIni'))
+        self.u_crit = float(dambreak.get_property('uCrit'))
+        self.t_phase_1 = float(dambreak.get_property('timeToBreachToMaximumDepth'))
+        self.t_breach = float(dambreak.get_property('t0'))
+
+    
+    def calculate_breach_growth(self, time, h_up, h_down, u):
+        self.get_dambreak_parameters()
+        delta_t = time[1] - time[0]
+        z = np.full(shape=time.shape, fill_value = -999, dtype=np.float64)
+        w = np.full(shape=time.shape, fill_value = -999, dtype=np.float64)
+        g = 9.81
+
+        w[0] = self.w_initial
+        z[0] = self.z_initial
+
+        for t in range(1, len(time)):
+            if time[t] < self.t_breach:
+                w[t] = w[t-1]
+                z[t] = z[t-1]
+            elif time[t] >= self.t_breach and time[t] <= self.t_breach + self.t_phase_1 :
+                z[t] = self.z_initial - ((time[t] - self.t_breach)/self.t_phase_1) * (self.z_initial - self.z_min)
+                w[t] = w[t-1]
+            
+            elif time[t] > self.t_phase_1 + self.t_breach:
+                z[t] = self.z_min
+                if u[t] < self.u_crit:
+                    b_over_t = 0
+                else:
+                    b_over_t = (self.f1*self.f2/np.log(10))      *      (((g * (h_up[t] - max(h_down[t], self.z_min))) ** (3/2))/(self.u_crit**2))       *      (1 / (1  +  ((self.f2 * g * (time[t] - time[t-1])) / (3600 * self.u_crit))) )
+                w[t] = w[t-1] + delta_t / 3600 * b_over_t
+        return w, z
+
+    def plot_breach_growth_check(self):
+        with nc.Dataset(self.settings['his_path'], 'r') as ds:
+            time = ds.variables['time'][:]
+            h_up = ds.variables['dambreak_s1up'][:]
+            h_down = ds.variables['dambreak_s1dn'][:]
+            u = ds.variables['dambreak_normal_velocity'][:]
+            width = ds.variables['dambreak_crest_width'][:]
+            crest = ds.variables['dambreak_crest_level'][:]
+            q = ds.variables['dambreak_discharge'][:]
+
+
+        w, z = self.calculate_breach_growth(time, h_up, h_down, u)
+
+        fig, axes = plt.subplots(nrows=4, figsize=(10,15))
+        time_plot = time / 3600
+
+        axes[0].plot(time_plot, w, label = "Control", ls = '--', color = 'blue')
+        axes[0].plot(time_plot, width, label = "D-HYDRO", color = 'red')
+        axes[0].set_ylabel("Breach width (m)")
+
+
+        axes[1].plot(time_plot, z, label = "Control", ls = '--', color = 'blue')
+        axes[1].plot(time_plot, crest, label = "D-HYDRO", color = 'red')
+        axes[1].set_ylabel("Breach level (m + NAP)")
+
+        axes[2].plot(time_plot, h_up, label = "Waterlevel upstream of dambreak" , color = 'orange')
+        axes[2].plot(time_plot[1:], h_down[1:], label = "Waterlevel downstream of dambreak", color = 'purple')
+        axes[2].set_ylabel("Water level (m + NAP)")
+
+        axes[3].plot(time_plot, q, color = 'orange')
+        axes[3].set_ylabel("Discharge (m^3/s)", color= 'orange')
+
+        secax = axes[3].twinx()
+        secax.plot(time_plot, u, color = 'purple')
+        secax.set_ylabel('Flow speed (m/s)', color='purple')
+
+        for ax in axes:
+            ax.set_xlabel("Time (hours)")
+            ax.legend()
+            ax.set_xlim([min(time_plot), max(time_plot)])
+
+
 
 class MapPlotter():
     """
