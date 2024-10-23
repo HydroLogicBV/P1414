@@ -154,7 +154,7 @@ class DambreakWidget(WidgetStyling):
         self.netcdf = NetcdfNetwork(self.network_loc, self.crs_rd, self.crs_map, self.rd_to_map, self.map_to_rd)
         self.keringen = gpd.read_file(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data\keringen.shp'), crs = self.crs_rd)
 
-        self.center = [51.970682, 4.64013599]
+        self.center = [51.90915, 4.74685]
         self.zoom = 12
         self.marker = Marker(location=self.center, draggable=True)
         self.current_step = 0
@@ -537,6 +537,24 @@ class ModifyDambreak(WidgetStyling):
             structures_textfile = structures_textfile[:to_remove_start[i]] + structures_textfile[to_remove_end[i] + to_remove_start[i]:]
 
         return structures_textfile
+
+    def should_line_be_flipped(self, coords_line:np.array, point:Point):
+        """Checks on which side the point lies, returns True if the line has to be flipped, False if not. Needed for D-HYDRO otherwise flow trough dambreak is negative.
+
+        Args:
+            coords_line (np.array): _description_
+            point (list): _description_
+        """
+        A = coords_line[0]
+        B = coords_line[-1]
+        P = (point.x, point.y)
+
+        AB = (B[0] - A[0], B[1] - A[1]) 
+        AP = (P[0] - A[0], P[1] - A[1])  
+        cross_product = AB[0] * AP[1] - AB[1] * AP[0]
+        if cross_product < 0:
+            return True
+        return False
     
     def add_dambreaks_from_widget(self, db_gdf, fw_gdf, max_dist = 100, z_default = 0):
         fw_point_list = []
@@ -568,6 +586,16 @@ class ModifyDambreak(WidgetStyling):
 
         _, ix_point_in_kering = fw_kdtree.query(mid_point, distance_upper_bound=max_dist)
         point_in_kering = fw_point_list[ix_point_in_kering]
+
+        # D-HYDRO needs the hinterland to be at a certain side of the dike breach. Here, check if the downstream point is on correct side, and flip if it is not.
+        flip_line = False
+        try:
+            flip_line = self.should_line_be_flipped(coords, self.dambreak_settings_widget['downstream'].iloc[0].geometry) 
+        except:
+            print("Flip line function failed")
+            pass
+        if flip_line:
+            coords = np.flip(coords, axis=0)
 
         self.dambreak_settings['id'] = 'comb_0.0'
         self.dambreak_settings['name'] = 'd3d9f584-086e-4d19-ae01-e75bdca23d21'

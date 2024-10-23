@@ -79,6 +79,7 @@ class BoundaryModificationGroup(WidgetStyling):
         return times, values
 
     def read_csv(self):
+        self.csv_read_error = None
         if os.path.exists(self.csv_path) == False:
             self.csv_read_error = f"The inputted path to csv file ({self.csv_path}) can not be found"
             return None, None
@@ -216,6 +217,7 @@ class ModifyBoundaries(WidgetStyling):
                 wl_peak = peak_waterlevel_addition * (1 + np.cos(np.pi + 2 * np.pi * ((t - peak_offset) / peak_duration))) * 1/2
             wl = wl_tide + wl_peak
             values.append(wl)
+        
         return times, values
 
     def plot_timeseries(self, times:list, values:list, title:str, quantity: str, location:str):
@@ -243,13 +245,12 @@ class ModifyBoundaries(WidgetStyling):
 
             self.widgets[group]['csv'] = ipy.Text(
                 value = self.modify_groups[group].csv_path,
-                description=f'CSV file for boundary condition, leave this empty if you do not want to use a csv',
+                description=f'CSV file for boundary condition',
                 disabled=False,
                 style = self.item_style,
                 layout = self.item_layout
                 )
         
-
             if len(self.widgets[group]['csv'].value) <= 0:
                 for key, value in self.modify_groups[group].parameters.items():
                     if key == 'csv':
@@ -265,8 +266,6 @@ class ModifyBoundaries(WidgetStyling):
             else:
                 if self.modify_groups[group].csv_read_error != None:
                     self.widgets[group]['error'] = ipy.HTML(value=f'<b style="color:red;font-size:16px;">{self.modify_groups[group].csv_read_error}</b>')
-
-                
             
             header_widget = ipy.HTML(f'<h3 style="margin:0px;padding:0px;text-align:center;">Settings for {group}</3>')
             header_widget.layout = self.item_layout
@@ -306,36 +305,3 @@ class ModifyBoundaries(WidgetStyling):
         self.display_widgets()
 
 
-
-
-        # for setting in self.read_functions.keys():
-        #     self.settings[setting] = self.widgets[setting].value
-        #     self.write_functions[setting](self.line_indices[setting], self.settings[setting])
-        #     print_settings[setting] = self.read_functions[setting](self.line_indices[setting])
-        
-        # for setting in self.modify_rhine_discharge.widgets.keys():
-        #     self.modify_rhine_discharge.settings[setting] = self.modify_rhine_discharge.widgets[setting].value
-        #     print_settings[setting] = self.modify_rhine_discharge.settings[setting]
-            
-        # self.modify_rhine_discharge.update()
-        
-        # clear_output(wait=True)
-        # self.display_widgets()
-        # display("Boundary conditions are:")
-        # print_settings_dict = print_settings
-        # print(json.dumps(print_settings_dict, indent=4))
-
-
-
-# modify_boundaries = ModifyBoundaries(r"C:\Work\Projects\HL-P24050_ROI\05_Analysis\SAS_workdir\run_model\Model_runs\Noordzee_Markermeer_ARK")
-
-# modify_boundaries.assign_groups_to_boundaries()
-
-# times, values = modify_boundaries.generate_discharge_timeseries(basic_discharge=1000, peak_discharge=2000, peak_offset=1*60*60, peak_duration=6*60*60)
-# modify_boundaries.plot_timeseries(times, values, "test", "Discharge (m3/s)", "Lobith")
-
-# times, values = modify_boundaries.generate_waterlevel_timeseries(basic_waterlevel=1, tidal_offset=0, tidal_range=2, peak_waterlevel_addition=0.1, peak_offset=1*60*60, peak_duration=6*60*60)
-# modify_boundaries.plot_timeseries(times, values, "test", "Waterlevel (m + NAP)", "Noordzee")
-
-# plt.show()
-# # modify_boundaries.bc.write(r"C:\Work\Projects\HL-P24050_ROI\05_Analysis\P1414\Code\notebooks\data\test.txt")
