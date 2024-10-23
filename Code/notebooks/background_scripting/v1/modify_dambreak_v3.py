@@ -156,7 +156,7 @@ class DambreakWidget(WidgetStyling):
 
         self.center = [51.90915, 4.74685]
         self.zoom = 12
-        self.marker = Marker(location=self.center, draggable=True)
+        self.marker = Marker(location=self.center, draggable=True, name="marker")
         self.current_step = 0
         self.display_text = ""
         self.draw_control = ipl.DrawControl()
@@ -172,6 +172,8 @@ class DambreakWidget(WidgetStyling):
         
         url_legend = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data\legend.png')
         image = Image(url_legend, width = 300)
+
+        self.bed_level_viewer = ipy.HTML("")
 
         self.image_widget = ipy.Image(
             value= image.data,
@@ -189,16 +191,16 @@ class DambreakWidget(WidgetStyling):
         if self.current_step == 0:
             instruction = "Step 0: Select the approximate location of your dambreach (0/4) "
             self.m = Map(center=self.center, zoom=self.zoom) 
-            self.m.add_layer(self.marker)
+            self.m.add(self.marker)
             display(self.m)
         elif self.current_step == 1:
             self.completed_line_input = False
             instruction = "Step 1: Draw dambreach location (1/4) "
             self.m = Map(center=self.center, zoom=self.zoom) 
             self.draw_control.on_draw(self.handle_draw)    
-            self.m.add_control(self.draw_control)
+            self.m.add(self.draw_control)
             display(self.m)
-            self.m.add_layer(self.bedlevel_layer)
+            self.m.add(self.bedlevel_layer)
             self.add_keringen()
             self.add_links()
         elif self.current_step == 2:
@@ -206,31 +208,35 @@ class DambreakWidget(WidgetStyling):
             self.m = Map(center=self.center, zoom=self.zoom)
             display(self.m)
             self.add_network()
-            self.m.add_layer(self.bedlevel_layer)
-            self.m.add_layer(self.marker)
-            self.m.add_layer(self.breach_point_map)
+            self.m.add(self.bedlevel_layer)
+            self.m.add(self.marker)
+            self.m.add(self.breach_point_map)
         elif self.current_step == 3:
             instruction = "Step 3: Select downstream 2D grid node (3/4)" 
             self.m = Map(center=self.center, zoom=self.zoom)
             display(self.m)
             self.add_mesh()
-            self.m.add_layer(self.bedlevel_layer)
-            self.m.add_layer(self.marker)
-            self.m.add_layer(self.upstream)
-            self.m.add_layer(self.breach_point_map)
+            self.m.add(self.bedlevel_layer)
+            self.m.add(self.marker)
+            self.m.add(self.upstream)
+            self.m.add(self.breach_point_map)
         elif self.current_step == 4:
             instruction = "Done! Inspect your results (4/4) "
             self.m = Map(center=self.center, zoom=self.zoom)
             display(self.m)
             self.add_mesh()
             self.add_network()
-            self.m.add_layer(self.upstream)
-            self.m.add_layer(self.downstream)
-            self.m.add_layer(self.dambreach_map)
-            self.m.add_layer(self.breach_point_map)
-            self.m.add_layer(self.breach_line_map)
+            self.m.add(self.upstream)
+            self.m.add(self.downstream)
+            self.m.add(self.dambreach_map)
+            self.m.add(self.breach_point_map)
+            self.m.add(self.breach_line_map)
             
-           
+        
+        if self.layer_exists('bedlevel'):
+            self.bed_level_viewer.value = "<i>Select a grid cell to view the height...</i>"
+            display(self.bed_level_viewer)
+
         html = ipy.HTML(value=f'<b style="color:black;font-size:18px;">{instruction}</b>')
         self.html_log = ipy.HTML(value='')
         display(html)  
@@ -294,10 +300,10 @@ class DambreakWidget(WidgetStyling):
         geo_json['properties']['style']['weight'] = 4
         geo_json['geometry']['coordinates'] = geo_json['geometry']['coordinates'][0:2]
         new_line = ipl.GeoJSON(data=geo_json, name = 'new_line')
-        self.m.add_layer(new_line)
+        self.m.add(new_line)
         out = self.snap_to_kering(geo_json['geometry']['coordinates'])
         if out is not None:
-            self.m.add_layer(self.breach_point_map)
+            self.m.add(self.breach_point_map)
             self.completed_line_input = True
             breach_row = self.breach_point.to_crs(self.crs_map).iloc[0]
             self.center = breach_row.geometry.y, breach_row.geometry.x
@@ -371,28 +377,28 @@ class DambreakWidget(WidgetStyling):
         keringen_map = GeoData(geo_dataframe = self.keringen.to_crs(self.crs_map),
                 style={'color': 'red', 'radius':10, 'fillColor': 'green', 'opacity':1, 'weight':3, 'dashArray':'2', 'fillOpacity':0.6},
                 name = 'KERINGEN')
-        self.m.add_layer(keringen_map)
+        self.m.add(keringen_map)
     
     def add_links(self):
         self.netcdf.links_map = self.netcdf.links_rd.to_crs(self.netcdf.crs_map)
         links_map = GeoData(geo_dataframe = self.netcdf.links_map,
                 style={'color': 'green', 'radius':10, 'fillColor': 'green', 'opacity':1, 'weight':3, 'dashArray':'2', 'fillOpacity':0.6},
                 name = 'LINKS')
-        self.m.add_layer(links_map)
+        self.m.add(links_map)
         
     def add_network(self):
         mesh1d = self.filter_gdf(self.netcdf.mesh1d_rd, self.focus_point_rd, self.max_distance_around_breach)
         network_1d_points = GeoData(geo_dataframe = mesh1d.to_crs(self.crs_map),
             point_style={'radius': 5, 'color': 'blue', 'fillOpacity': 1, 'fillColor': 'black', 'weight': 3},
             name = 'NETWORK')
-        self.m.add_layer(network_1d_points)
+        self.m.add(network_1d_points)
     
     def add_mesh(self):
         mesh2d = self.filter_gdf(self.netcdf.mesh2d_rd, self.focus_point_rd, self.max_distance_around_breach)
         mesh2d_points = GeoData(geo_dataframe = mesh2d.to_crs(self.crs_map),
             point_style={'radius': 5, 'color': 'green', 'fillOpacity': 1, 'fillColor': 'black', 'weight': 3},
             name = 'MESH')
-        self.m.add_layer(mesh2d_points)
+        self.m.add(mesh2d_points)
     
     def snap_to_closest_point(self, point, geodf_map, geodf_rd):
         point = self.map_to_rd.transform(point[0], point[1])
@@ -404,22 +410,10 @@ class DambreakWidget(WidgetStyling):
     def create_bedlevel_layer(self):
         def handle_click(feature=None,  **kwargs):
             try:
-                geometry = feature.get('geometry')
-                polygon = Polygon(tuple(geometry.get("coordinates")[0]))
-                popup_location = [polygon.centroid.y, polygon.centroid.x]
                 bedlevel = round(feature.get('properties').get('bedlevel'),2)
-                message = HTML()
-                message.value = f"Bedlevel: {bedlevel}"
-                popup = Popup(
-                    location=popup_location,
-                    child=message, 
-                    close_button=False,
-                    auto_close=True,
-                    close_on_escape_key=False
-                )
-                self.m.add(popup)
+                self.bed_level_viewer.value = f"Bedlevel: {bedlevel} m + NAP"
             except Exception as e:
-                print(f"Could not retrieve due to error: {e}")
+                self.bed_level_viewer.value = f"Could not retrieve due to error: {e}"
 
         if self.bedlevel_layer is None:
             rectangles = self.netcdf.rectangles
@@ -433,9 +427,16 @@ class DambreakWidget(WidgetStyling):
                 border_color='black',
                 colormap=linear.YlOrBr_08,
                 style={'fillOpacity': 0.5},
-                hover_style={'fillOpacity': 1}
+                hover_style={'fillOpacity': 1},
+                name="bedlevel"
                 )
             self.bedlevel_layer.on_click(handle_click)
+        
+    def layer_exists(self, layer_to_check):
+        for layer in self.m.layers:
+            if layer.name is layer_to_check:
+                return True
+        return False
 
 class ModifyDambreak(WidgetStyling):
     def __init__(self, model_path, dambreak_settings, keringen, use_widget_dambreak, dambreak_template):
