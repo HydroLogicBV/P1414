@@ -356,6 +356,7 @@ class BreachPlotter():
         delta_t = time[1] - time[0]
         z = np.full(shape=time.shape, fill_value = -999, dtype=np.float64)
         w = np.full(shape=time.shape, fill_value = -999, dtype=np.float64)
+        u = np.abs(u)
         g = 9.81
 
         w[0] = self.w_initial
@@ -394,13 +395,13 @@ class BreachPlotter():
         fig, axes = plt.subplots(nrows=4, figsize=(10,15))
         time_plot = time / 3600
 
+        axes[0].plot(time_plot, width, label = "D-HYDRO", color = 'red')        
         axes[0].plot(time_plot, w, label = "Control", ls = '--', color = 'blue')
-        axes[0].plot(time_plot, width, label = "D-HYDRO", color = 'red')
         axes[0].set_ylabel("Breach width (m)")
 
 
-        axes[1].plot(time_plot, z, label = "Control", ls = '--', color = 'blue')
         axes[1].plot(time_plot, crest, label = "D-HYDRO", color = 'red')
+        axes[1].plot(time_plot, z, label = "Control", ls = '--', color = 'blue')
         axes[1].set_ylabel("Breach level (m + NAP)")
 
         axes[2].plot(time_plot, h_up, label = "Waterlevel upstream of dambreak" , color = 'orange')
@@ -416,7 +417,8 @@ class BreachPlotter():
 
         for ax in axes:
             ax.set_xlabel("Time (hours)")
-            ax.legend()
+            if not ax.get_legend_handles_labels() == ([], []):
+                ax.legend()
             ax.set_xlim([min(time_plot), max(time_plot)])
 
 
