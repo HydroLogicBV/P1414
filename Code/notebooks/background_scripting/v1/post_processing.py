@@ -393,12 +393,12 @@ class BreachPlotter():
         time_plot = time / 3600
 
         axes[0].plot(time_plot, width, label = "D-HYDRO", color = 'red')        
-        axes[0].plot(time_plot, w, label = "Control", ls = '--', color = 'blue')
+        axes[0].plot(time_plot, w, label = "Controle", ls = '--', color = 'blue')
         axes[0].set_ylabel("Breach width (m)")
 
 
         axes[1].plot(time_plot, crest, label = "D-HYDRO", color = 'red')
-        axes[1].plot(time_plot, z, label = "Control", ls = '--', color = 'blue')
+        axes[1].plot(time_plot, z, label = "Controle", ls = '--', color = 'blue')
         axes[1].set_ylabel("Breach level (m + NAP)")
 
         axes[2].plot(time_plot, h_up, label = "Waterlevel upstream of dambreak" , color = 'orange')

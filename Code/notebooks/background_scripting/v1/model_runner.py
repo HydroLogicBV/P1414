@@ -93,7 +93,7 @@ class ModelRunner(WidgetStyling):
                     if "0 nr of dambreak links" in line:
                         p.kill()
                         raise Exception("No dambreak in model, exiting simulation")
-                    new_logging += f"<p>{line}</p>"
+                    new_logging += f"<p><i>{line}</i></p>"
                     self.read_model_progress()
                 logging.value = new_logging
                 self.progess_bar.value = self.percentage
