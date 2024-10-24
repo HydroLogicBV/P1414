@@ -9,15 +9,12 @@ class ModelSettings(WidgetStyling):
     Class that contains all the settings that need to be used to create the model.
     Also contians the functions that communicate with the widgets from the jupyter notebook. 
     """
-    def __init__(self, git_dir):
-        # initiate default values for settings
+    def __init__(self, git_dir:str):
         self.settings = {}
-
 
         self.script_dir = os.path.dirname(os.path.realpath(__file__))
         self.cache_dir = os.path.join(os.path.dirname(os.path.dirname(self.script_dir)), 'data')
         self.cache_file = os.path.join(self.cache_dir, 'cache.txt')
-
         
         self.settings['folder'] = self.read_previous_model_database()
         if self.settings['folder'] is None:
@@ -72,7 +69,7 @@ class ModelSettings(WidgetStyling):
         except:
             return None
 
-    def write_model_database(self, model_database):
+    def write_model_database(self, model_database:str):
         try:
             if os.path.exists(self.cache_dir):
                 with open(self.cache_file, 'w') as f:
@@ -80,7 +77,7 @@ class ModelSettings(WidgetStyling):
         except:
             pass
 
-    def select_models(self, folder):
+    def select_models(self, folder:str):
         """
         Function that checks for each folder if the folder contains a model (contains a .xml file) or not
         """
@@ -92,7 +89,7 @@ class ModelSettings(WidgetStyling):
                     break
         return valid_folders
 
-    def update_settings_dict(self, b):
+    def update_settings_dict(self, _):
         """
         Function to update settings based on the widget values after the update button is pressed.
         """

@@ -3,9 +3,10 @@ import os
 import numpy as np
 from flowmeshreader import load_meta_data, load_map_data, mesh_to_tiff, load_mesh, load_data
 import os
+from typing import Tuple
 
 class DhydroToTif():
-    def __init__(self, model_dir, file_locations, resolution=None, silent:bool=False):
+    def __init__(self, model_dir:str, file_locations:dict, resolution:float=None, silent:bool=False):
         self.silent = silent
         self.model_dir = model_dir
         self.file_locations = file_locations
@@ -65,18 +66,18 @@ class DhydroToTif():
         times = load_data(self.map_file, 'time')
         return times, times[1]-times[0]
 
-    def get_start_index(self, t_breach:int):
+    def get_start_index(self, t_breach:int) -> Tuple[int, float]:
         start_index = max(np.where(self.times > t_breach)[0][0] - 1, 0)
         return start_index, self.times[start_index]
     
-    def create_export_dir(self, export_dir):
+    def create_export_dir(self, export_dir:str):
         if not os.path.exists(export_dir):
             if os.path.exists(os.path.dirname(export_dir)):
                 os.mkdir(export_dir)
             else:
                 raise Exception(f"This directory does not exist: {os.path.dirname(export_dir)}")
     
-    def create_waterdepth_animation(self, t_breach:int, netcdf_variable="Mesh2d_waterdepth", output_dir:str=None):
+    def create_waterdepth_animation(self, t_breach:int, netcdf_variable:str="Mesh2d_waterdepth", output_dir:str=None):
         map_data = load_map_data(self.map_file, netcdf_variable)
         start_index, start_time= self.get_start_index(t_breach)
         if output_dir == None:
@@ -95,7 +96,7 @@ class DhydroToTif():
         if not self.silent:
             print(f"Finished generating tiff files\n")
     
-    def create_maximum_waterdepth_tiff(self, netcdf_variable='Mesh2d_waterdepth', output_file:str=None):
+    def create_maximum_waterdepth_tiff(self, netcdf_variable:str='Mesh2d_waterdepth', output_file:str=None):
         map_data = load_map_data(self.map_file, netcdf_variable)
         map_data = np.max(map_data, axis=0)
         if output_file == None:
@@ -107,7 +108,7 @@ class DhydroToTif():
         if not self.silent:
             print(f"Finished generating tiff file\n")
     
-    def create_maximum_velocity_tiff(self, netcdf_variable='Mesh2d_ucmag', output_file:str=None):
+    def create_maximum_velocity_tiff(self, netcdf_variable:str='Mesh2d_ucmag', output_file:str=None):
         map_data = load_map_data(self.map_file, netcdf_variable)
         map_data = np.max(map_data, axis=0)
         if output_file is None:
@@ -119,7 +120,7 @@ class DhydroToTif():
         if not self.silent:
             print(f"Finished generating tiff file\n")
     
-    def create_bathymetry_tiff(self, netcdf_variable='Mesh2d_flowelem_bl', output_file:str=None):
+    def create_bathymetry_tiff(self, netcdf_variable:str='Mesh2d_flowelem_bl', output_file:str=None):
         map_data = load_data(self.map_file, netcdf_variable)
         if output_file is None:
             output_file = os.path.join(self.ldo_export_dir, 'bathymetry.tiff')
@@ -130,7 +131,7 @@ class DhydroToTif():
         if not self.silent:
             print(f"Finished generating tiff file\n")
 
-    def mesh_to_tiff_wrapper(self, data, output_file_path):
+    def mesh_to_tiff_wrapper(self, data:np.ndarray, output_file_path:str):
         return mesh_to_tiff(
             data=data,
             input_file_path=self.map_file,

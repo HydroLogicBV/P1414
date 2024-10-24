@@ -31,7 +31,7 @@ class WidgetStyling():
             'text_color' : 'white'
         }
 
-        self.button_layout =ipy.Layout(
+        self.button_layout = ipy.Layout(
             width = '99%',
             height = '35px'
         )

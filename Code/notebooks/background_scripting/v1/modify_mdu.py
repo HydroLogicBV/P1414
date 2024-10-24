@@ -184,9 +184,9 @@ class ModifyMDU(WidgetStyling):
         value = f"= {new_value}"
         self.mdu_lines[index] = f"{key}{value}\n"
     
-    def read_parameter_mdu(self, parameter):
+    def read_parameter_mdu(self, parameter:str) -> str:
         search_string = f"{parameter} " # add spaces to prevent accidentaly having wrong value
-        index, line = self.search_string_in_file(search_string, self.mdu_lines)
+        _, line = self.search_string_in_file(search_string, self.mdu_lines)
         value = line.split("=")[-1].strip(' ')
         if '\n' in value:
             value = value.replace('\n', '')
@@ -204,7 +204,7 @@ class ModifyMDU(WidgetStyling):
         if self.warning is not None:
             display(self.warning)
     
-    def update_settings_widget(self, b):
+    def update_settings_widget(self, _):
         self.clear_warning()
         for setting in self.settings_to_modify:
             widget_value = self.widgets[setting].value 
@@ -225,7 +225,7 @@ class ModifyMDU(WidgetStyling):
                 print_settings_dict[key] = self.convert_to_sas(key, self.settings[key])
         print(json.dumps(print_settings_dict, indent=4))
 
-    def set_warning(self, message):
+    def set_warning(self, message:str):
         self.warning = ipy.HTML(value=f'<b style="color:red;font-size:18px;">{message}</b>')
 
     def clear_warning(self):

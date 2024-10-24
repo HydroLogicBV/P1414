@@ -11,10 +11,9 @@ import netCDF4 as nc
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
+from typing import Tuple
 
-
-def read_output_folder(model_folder):
+def read_output_folder(model_folder:str):
     files = os.listdir(os.path.join(model_folder, 'dflowfm'))
     mdu_file = [file for file in files if file.endswith('.mdu')][0]
     mdu_file = os.path.join(model_folder, 'dflowfm', mdu_file)
@@ -49,7 +48,7 @@ class PlotSettingsBreach(WidgetStyling):
     """
     Class that contains all the widgetes and settings for plotting the dike breach information.
     """
-    def __init__(self, model_folder):
+    def __init__(self, model_folder:str):
         output_folder = read_output_folder(model_folder)
         self.settings = {}
         self.settings['model_folder'] = model_folder
@@ -118,7 +117,7 @@ class PlotSettingsBreach(WidgetStyling):
         self.settings['output_file_path'] = self.output_folder_images.value
         self.settings['plot_variables'] = self.variables_to_plot.value
     
-    def plot_map(self, b):
+    def plot_map(self, _):
         self.update_settings_dict()
         clear_output(wait=True)
         self.display_widgets()
@@ -128,7 +127,7 @@ class PlotSettingsMap(WidgetStyling):
     """
     Class that contains all the widgetes and settings for plotting model results on the 2D map.
     """
-    def __init__(self, model_folder):
+    def __init__(self, model_folder:str):
         self.settings = {}
         self.settings['model_folder'] = model_folder
         output_folder = read_output_folder(model_folder)
@@ -157,7 +156,6 @@ class PlotSettingsMap(WidgetStyling):
 
         self.settings_to_print = ['output_file_path', 'mesh_resolution', 'timestep', 'plot_variable', 'aggregation_type', 'min_value_legend', 'max_value_legend', 'color_map']
 
-        # list of widgets
         self.set_default_layout_and_styling()
 
         self.output_folder_images =  ipy.Text(
@@ -232,7 +230,7 @@ class PlotSettingsMap(WidgetStyling):
         display(button_map, output)
         button_map.on_click(self.plot_map)
 
-    def find_minimum_resolution_from_mesh(self, nr_points:int = 500):
+    def find_minimum_resolution_from_mesh(self, nr_points:int=500):
         """
         Find the distance between cells in the mesh.
         Finding distance for all cells would take a short while, so only use the first x nr_points.
@@ -269,7 +267,7 @@ class PlotSettingsMap(WidgetStyling):
         self.settings['max_value_legend'] = self.max_value_legend.value
         self.settings['color_map'] = self.colormap_picker.value
     
-    def plot_map(self, b):
+    def plot_map(self, _):
         """
         Funciton activated on button press. Calls the map plotter. 
         """
@@ -296,7 +294,6 @@ class BreachPlotter():
             self.plot_breach_growth_check()
         if len(self.settings['plot_variables']) > 0:
             self.plot_output()   
-
 
     def plot_output(self):
         """
@@ -351,7 +348,7 @@ class BreachPlotter():
         self.t_breach = float(dambreak.get_property('t0'))
 
     
-    def calculate_breach_growth(self, time, h_up, h_down, u):
+    def calculate_breach_growth(self, time:np.ndarray, h_up:np.ndarray, h_down:np.ndarray, u:np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         self.get_dambreak_parameters()
         delta_t = time[1] - time[0]
         z = np.full(shape=time.shape, fill_value = -999, dtype=np.float64)
@@ -465,7 +462,6 @@ class MapPlotter():
         if os.path.exists(self.settings['output_file_path']) == False:
             os.makedirs(self.settings['output_file_path'])
 
-        # convert to raster and save as tiff
         _, _, grid_data = mesh_to_tiff(
             data = data,
             distance_tol = self.distance_tol,
@@ -474,6 +470,7 @@ class MapPlotter():
             resolution = self.settings['mesh_resolution'],
             interpolation=self.interpolation,
         )
+        
         fig, ax = raster_plot_with_context(
             raster_path = raster_path,
             epsg = 28992, 
@@ -482,5 +479,6 @@ class MapPlotter():
             vmin = self.settings['min_value_legend'],
             vmax = self.settings['max_value_legend']
             )
+        
         plt.savefig(os.path.join(self.settings['output_file_path'], f"{self.settings['plot_variable']}.png"))
         out.value = ""
