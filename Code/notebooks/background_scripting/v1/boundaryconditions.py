@@ -75,7 +75,7 @@ class BoundaryConditionBlock():
         get_match_nr = get_match_nr - 1
         matches = []
         for index, k in enumerate(self.property_keys):
-            if k == key.lower():
+            if k.lower() == key.lower():
                 matches.append(self.property_values[index])
         if get_match_nr + 1 > len(matches):
             return None
@@ -125,8 +125,9 @@ class BoundaryConditionBlock():
         return f"type = {self.type}, name = {self.get_property('name')}"
 
 class BoundaryConditionsFile():
-    def __init__(self, file:str):
+    def __init__(self, file:str, additional_block_headers:list=[]):
         self.block_headers = ["[general]", "[forcing]"]
+        self.block_headers += additional_block_headers
 
         self.blocks = []
 
@@ -168,7 +169,7 @@ class BoundaryConditionsFile():
                 
                 if block.timeseries is not None:
                     for t in range(len(block.timeseries.times)):
-                        f.write(f"{round(block.timeseries.times[t],1)}   {round(block.timeseries.values[t], 3)}\n")
+                        f.write(f"{round(block.timeseries.times[t],3)}   {round(block.timeseries.values[t], 3)}\n")
                     f.write('\n')
                 elif block.tail is not None:
                     for line in block.tail:
