@@ -92,7 +92,7 @@ class ModelRunner(WidgetStyling):
                 for line in self.full_logs[-nr_log_lines:]:
                     if "0 nr of dambreak links" in line:
                         p.kill()
-                        raise Exception("Dambreak is invalid, retry setting a dambreak")
+                        raise Exception("No dambreak in model, exiting simulation")
                     new_logging += f"<p>{line}</p>"
                     self.read_model_progress()
                 logging.value = new_logging

@@ -16,7 +16,7 @@ class BoundaryModificationGroup(WidgetStyling):
         self.parent = parent_class
         self.blocks_to_modify = []
         self.title = title
-        self.unit = parameter
+        self.quantity = parameter
         self.parameter_to_unit = {
             "discharge": "m3/s",
             "waterlevel": "m + NAP",
@@ -25,7 +25,7 @@ class BoundaryModificationGroup(WidgetStyling):
             "duration": "hours"
         }
 
-        if self.unit not in ['waterlevelbnd', 'dischargebnd']:
+        if self.quantity not in ['waterlevelbnd', 'dischargebnd']:
             raise Exception(f"Boundary paramter found ({self.parameter}) not in supported parameters")
         
         self.csv_path = None
@@ -37,7 +37,7 @@ class BoundaryModificationGroup(WidgetStyling):
         self.blocks_to_modify.append(boundary)
 
     def set_inputs(self):
-        if self.unit == 'dischargebnd':
+        if self.quantity == 'dischargebnd':
             self.parameters = {
                 "csv": "",
                 "basic_discharge": 10000,
@@ -45,7 +45,7 @@ class BoundaryModificationGroup(WidgetStyling):
                 "peak_offset": 0,
                 "peak_duration": 12,
                 }
-        elif self.unit == 'waterlevelbnd':
+        elif self.quantity == 'waterlevelbnd':
             self.parameters = {
                 "csv": "",
                 "basic_waterlevel": 0, 
@@ -69,9 +69,9 @@ class BoundaryModificationGroup(WidgetStyling):
             self.csv_path = parameters.pop('csv')
         if len(self.csv_path) > 0:
             times, values = self.read_csv()
-        elif self.unit == 'dischargebnd':
+        elif self.quantity == 'dischargebnd':
             times, values = self.parent.generate_discharge_timeseries(**parameters)
-        elif self.unit == 'waterlevelbnd':
+        elif self.quantity == 'waterlevelbnd':
             times, values = self.parent.generate_waterlevel_timeseries(**parameters)
         if times != None and values != None:
             for block in self.blocks_to_modify:
@@ -220,7 +220,7 @@ class ModifyBoundaries(WidgetStyling):
         
         return times, values
 
-    def plot_timeseries(self, times:list, values:list, title:str, quantity: str, location:str):
+    def plot_timeseries(self, times:list, values:list, title:str, quantity: str, unit:str, location:str):
         """
         Generate a plot of the discharge timeseries, together with tstart, tstop and tbreach.
         """
@@ -231,10 +231,10 @@ class ModifyBoundaries(WidgetStyling):
         ax.set_ylim(ax.get_ylim())
         ax.set_title(title)
         ax.set_xlabel("T (hours)")
-        ax.set_ylabel(quantity)
+        ax.set_ylabel(f"{quantity} ({unit})")
         ax.plot([self.t_start/3600, self.t_start/3600], [-10000, 100000], color = 'orange', label = "Start of simulation")
         ax.plot([self.t_stop/3600, self.t_stop/3600], [-10000, 100000], color = 'orange', label = "End of simulation")
-        ax.plot([self.t_breach/3600, self.t_breach/3600], [-10000, 100000], color = 'red', label = "Timestep dikebreach")
+        ax.plot([self.t_breach/3600, self.t_breach/3600], [-10000, 100000], color = 'red', ls='--', label = "Timestep dikebreach")
         ax.legend()
     
     def display_widgets(self):
@@ -299,7 +299,7 @@ class ModifyBoundaries(WidgetStyling):
                 group.parameters[parameter_name] = value
             times, values = group.update_values()
             if times != None and values != None:
-                self.plot_timeseries(times, values, group.title, group.unit, group.title)
+                self.plot_timeseries(times, values, group.title, group.quantity, group.get_unit(group.quantity), group.title)
         self.bc.write(self.bnd_file)
 
         self.display_widgets()
