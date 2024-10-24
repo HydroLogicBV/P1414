@@ -2,7 +2,7 @@ from hydrolib.core.io.bc.models import (ForcingBase, ForcingModel, QHTable,
                                         QuantityUnitPair)
 from hydrolib.core.io.ext.models import Boundary, ExtModel, Lateral
 import os
-
+from pathlib import Path
 # Specify the default path to the GIS folder in the case it is not defined in the environment/main script
 default_GIS_path = r"D:\Work\Project\P1414_default"
 folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
@@ -13,7 +13,7 @@ STOPTIME = 86400*7
 class Models:
     class FM:
         one_d_bool = True
-        two_d_bool = False # Voor nu even aangepast
+        two_d_bool = True
         start_time = STARTTIME
         stop_time = STOPTIME
 
@@ -27,15 +27,15 @@ class Models:
             dx = 500
             dy = 500
             elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN4_WSS_filled.TIF"
-            extent_path = folder_path_GIS + r"\GIS\Randstad_shape\dijkringen_randstad_merged.shp"
+            extent_path = folder_path_GIS + r"\GIS\Randstad dijkringen\dijkringen_randstad_merged.shp"
             initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\wd_0_v4.tif"
             roughness_2d_raster_path = (
                 folder_path_GIS + r"\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )
             two_d_buffer = 0
-            clip_extent_path = folder_path_GIS+r"\GIS\peilen\boezem_v2.shp"       # waterways that must be clipped from 2D
-            clip_buffer = 0.5*dx                                                     # int, buffer around the polygons that must be clipped in [meters], 0.5*grid size works often to get a sharp clip
-            clip_selection = ['> 125 meter', '50 - 125 meter']                    # selection of the buffer layer that must be kept, based on the 'breedtekla' column in the shapefile
+            #clip_extent_path = folder_path_GIS+r"\GIS\peilen\boezem_v2.shp"       # waterways that must be clipped from 2D
+            #clip_buffer = 0.5*dx                                                     # int, buffer around the polygons that must be clipped in [meters], 0.5*grid size works often to get a sharp clip
+            #clip_selection = ['> 125 meter', '50 - 125 meter']                    # selection of the buffer layer that must be kept, based on the 'breedtekla' column in the shapefile
 
         class hydrolib_core_options:
             class external_forcing:
@@ -182,6 +182,7 @@ class Models:
                 #         nodeid='127216.410000_487088.580000',
                 #         forcingfile=ForcingModel(forcing=__forcings),
                 #     )
+
                 extforcefilenew = ExtModel(boundary=__boundaries)
 
             class geometry:

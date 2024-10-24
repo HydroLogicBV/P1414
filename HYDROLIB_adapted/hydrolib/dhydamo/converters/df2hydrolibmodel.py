@@ -215,6 +215,7 @@ class Df2HydrolibModel:
                                                          unit = bound["value_unit"])],
                     datablock=[[bound["value"]]],
                 )
+                self.boundaries_bc.append(bnd_bc)
             else:
                 bnd_bc = TimeSeries(
                     name=bound["nodeid"],
@@ -226,6 +227,7 @@ class Df2HydrolibModel:
                     ],
                     datablock=list(map(list, zip(bound["time"], bound["value"]))),
                 )
+                self.boundaries_bc.append(bnd_bc)
             self.forcingmodel.forcing.append(bnd_bc)
         for bound in self.hydamo.external_forcings.boundary_nodes.values():
             bnd_ext = Boundary(

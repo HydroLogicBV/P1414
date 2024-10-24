@@ -7,6 +7,9 @@ import os
 default_GIS_path = r"D:\Work\Project\P1414_default"
 folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 
+class Name:
+    name = 'Hoogheemraadschap De Stichtse Rijnlanden'
+    
 class Models:
     class FM:
         one_d_bool = True
@@ -84,7 +87,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     branches_path = p_folder + r"\HDSR\HydroObject\HydroObject.shp"  # Corrected from V7
-    bridges_path = p_folder + r"\HDSR\Bruggen\Bruggen.shp"
+    #bridges_path = p_folder + r"\HDSR\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Kokers_Lijnen\Kokers_Lijnen.shp"
     norm_profile_path = p_folder + r"\HDSR\HydroObject\HydroObject.shp"
     # norm_profile_path = dict(
@@ -133,18 +136,18 @@ class RawData:
     )
 
     ## Bridges
-    bridge_index_mapping = dict(
-        [
-            ("code", "CODE"),
-            ("geometry", "geometry"),
-            ("globalid", "globalid"),
-            ("intreeverlies", None),
-            ("typeruwheid", None),
-            ("ruwheid", None),
-            ("uittreeverlies", None),
-            ("lengte", "WS_DOORVAA"),
-        ]
-    )
+    # bridge_index_mapping = dict(
+    #     [
+    #         ("code", "CODE"),
+    #         ("geometry", "geometry"),
+    #         ("globalid", "globalid"),
+    #         ("intreeverlies", None),
+    #         ("typeruwheid", None),
+    #         ("ruwheid", None),
+    #         ("uittreeverlies", None),
+    #         ("lengte", "WS_DOORVAA"),
+    #     ]
+    # )
 
     ## Culverts
     culvert_index_mapping = dict(

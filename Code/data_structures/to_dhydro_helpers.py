@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Union
 from datetime import datetime, timedelta
 import pandas as pd
+from tqdm import tqdm
 import geopandas as gpd
 import numpy as np
 import rasterio
@@ -142,7 +143,7 @@ def to_dhydro(
             if np.array_equal(start, end):
                 code = branch.code
                 hydamo.branches_popped = hydamo.branches_popped.drop(code)
-
+                print(f'Dropped branch with code: {code} because it is circular')
             if branch.geometry.length < 1e-3:
                 hydamo.branches_popped = hydamo.branches_popped.drop(code)
 
@@ -167,40 +168,60 @@ def to_dhydro(
 
             # Group profile_points by line_id and create LineStrings
             profiel_punt_gdf = ddm.profielpunt
-            unique_lines = profiel_punt_gdf["profiellijnid"].unique()
+            
+
+            # Filter out profiles with only one point in advance
+            profiel_punt_gdf_filtered = profiel_punt_gdf.groupby('profiellijnid').filter(lambda x: len(x) > 1)
+            grouped = profiel_punt_gdf_filtered.groupby("profiellijnid")
             profiel_punt_lines = []
 
-            for ix, line in enumerate(unique_lines):
-                profiel_punten = copy(profiel_punt_gdf[profiel_punt_gdf["profiellijnid"] == line])
-                profiel_punten.sort_values(
-                    by="codevolgnummer", axis=0, ascending=True, inplace=True
-                )
+            for line, profiel_punten in tqdm(grouped, total=len(grouped), desc='Adding profiles with grouped'):
+                profiel_punten = profiel_punten.sort_values(by="codevolgnummer", ascending=True)
+                linestring = LineString(profiel_punten.geometry.values)
+                profiel_punt_lijn = {
+                    "code": line,
+                    "geometry": linestring,
+                    "globalid": profiel_punten.iloc[0]["globalid"],
+                    "profiellijnid": line,
+                    "codevolgnummer": 1,
+                }
+                profiel_punt_lines.append(profiel_punt_lijn)
 
-                # skip profiles with only one point. MIght be result of clipping
-                if profiel_punten.shape[0] > 1:
-                    linestring = LineString(profiel_punten.geometry.values)
+            # unique_lines = profiel_punt_gdf["profiellijnid"].unique()
+            # profiel_punt_lines = []
 
-                    profiel_punt_lijn = dict(
-                        [
-                            ("code", line),
-                            ("geometry", linestring),
-                            ("globalid", profiel_punten.iloc[0, :]["globalid"]),
-                            ("profiellijnid", line),
-                            ("codevolgnummer", 1),
-                        ]
-                    )
-                    profiel_punt_lines.append(profiel_punt_lijn)
+            # for ix, line in tqdm(enumerate(unique_lines), total=len(unique_lines),desc='Adding profiles to branches'):
+            #     profiel_punten = copy(profiel_punt_gdf[profiel_punt_gdf["profiellijnid"] == line])
+            #     profiel_punten.sort_values(
+            #         by="codevolgnummer", axis=0, ascending=True, inplace=True
+            #     )
+
+            #     # skip profiles with only one point. MIght be result of clipping
+            #     if profiel_punten.shape[0] > 1:
+            #         linestring = LineString(profiel_punten.geometry.values)
+
+            #         profiel_punt_lijn = dict(
+            #             [
+            #                 ("code", line),
+            #                 ("geometry", linestring),
+            #                 ("globalid", profiel_punten.iloc[0, :]["globalid"]),
+            #                 ("profiellijnid", line),
+            #                 ("codevolgnummer", 1),
+            #             ]
+            #         )
+            #         profiel_punt_lines.append(profiel_punt_lijn)
 
             profiel_punt_lines_gdf = gpd.GeoDataFrame(
                 data=profiel_punt_lines, geometry="geometry", crs=profiel_punt_gdf.crs
             )
 
             hydamo.profile.set_data(profiel_punt_lines_gdf)
-
+            print('Added profile data')
             # Snap profiles to branch
             # hydamo.profile_roughness.read_gpkg_layer(gpkg_path, layer_name="ruwheidsprofiel")
             hydamo.profile_roughness.set_data(ddm.ruwheidsprofiel)
             hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
+            print('Snapped profiles to branches')
             hydamo.profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
             # hydamo.profile_line.read_gpkg_layer(gpkg_path, layer_name="profiellijn")
             # hydamo.profile_group.read_gpkg_layer(gpkg_path, layer_name="profielgroep")
@@ -935,7 +956,7 @@ def to_dhydro(
                 #             z_new[ix] = z
                 ahn = src.read(1)
                 z = []
-                for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
+                for ix, (x, y) in tqdm(enumerate(zip(xnodes, ynodes)), total=len(xnodes),desc='Adding height to mesh point'):
                     p = sPoint(x, y)
                     bp = p.buffer((dx + dy) // 2, cap_style=3)
 
@@ -1112,8 +1133,16 @@ def to_dhydro(
                 ):
                     ext_force_model.extforcefilenew.boundary = extforcefile.boundary
                 else:
+                    new_forcingmodel = ext_force_model.extforcefilenew.boundary[0].forcingfile.forcing
+
                     for boundary in extforcefile.boundary:
+                        new_forcingmodel.append(boundary.forcingfile.forcing[0])
                         ext_force_model.extforcefilenew.boundary.append(boundary)
+
+                    # Add the updated forcing model to all boundaries    
+                    for n, bound in enumerate(ext_force_model.extforcefilenew.boundary):
+                        ext_force_model.extforcefilenew.boundary[n].forcingfile.forcing = new_forcingmodel
+                        
         return ext_force_model
 
     def set_hydrolib_core_options(fmmodel: FMModel, options):
@@ -1318,27 +1347,24 @@ def to_dhydro(
                     condition1 = (clip_extent['typewater'] == 'meer, plas')
                     condition2 = (clip_extent['typewater'] == 'waterloop') & (clip_extent['breedtekla'].isin(model_config.FM.two_d.clip_selection))
                     clip_extent = clip_extent[condition1 | condition2]
-            else:
-                clip_extent = None
-            
-            # Ensure that only unique column names exist
-            if 'index_left' in clip_extent.columns:
-                clip_extent = clip_extent.rename(columns={'index_left': 'clip_index_left'})
-            if 'index_right' in clip_extent.columns:
-                clip_extent = clip_extent.rename(columns={'index_right': 'clip_index_right'})
 
-            # Get the clip buffer, because it is not defined everywhere, to prevent errors set the buffer to 100m if not defined.
-            if hasattr(model_config.FM.two_d, "clip_buffer"):
-                clip_buffer = model_config.FM.two_d.clip_buffer
-            else:
-                clip_buffer = 100
-                print('** Assumed default clip buffer of 100m because no buffer was given.')
-            
-            # Get a list of the branchid's that are clipped and now need 1D-2D lateral links
-            if hasattr(model_config.FM.two_d, "clip_extent_path") and (model_config.FM.two_d.clip_extent_path is not None):
+                # Ensure that only unique column names exist
+                if 'index_left' in clip_extent.columns:
+                    clip_extent = clip_extent.rename(columns={'index_left': 'clip_index_left'})
+                if 'index_right' in clip_extent.columns:
+                    clip_extent = clip_extent.rename(columns={'index_right': 'clip_index_right'})
+
+                # Get the clip buffer, because it is not defined everywhere, to prevent errors set the buffer to 100m if not defined.
+                if hasattr(model_config.FM.two_d, "clip_buffer"):
+                    clip_buffer = model_config.FM.two_d.clip_buffer
+                else:
+                    clip_buffer = 100
+                    print('** Assumed default clip buffer of 100m because no buffer was given.')
+                
+                # Get a list of the branchid's that are clipped and now need 1D-2D lateral links
                 all_branches_gdf = gpd.GeoDataFrame(self.hydamo.branches, geometry='geometry', crs=CRS)
                 clip_extent_buffer = clip_extent.copy()
-                               
+                            
                 clip_extent_buffer = clip_extent_buffer.set_geometry('geometry')
                 all_branches_gdf = all_branches_gdf.set_geometry('geometry')
                 clip_extent_buffer = clip_extent_buffer.to_crs(CRS)
@@ -1347,6 +1373,13 @@ def to_dhydro(
                 clipped_branches_gdf = gpd.sjoin(all_branches_gdf, clip_extent_buffer, how='inner', op='intersects')
                 lst_temp = clipped_branches_gdf.code_left.tolist()
                 lateral_branches = lst_temp 
+
+            # If no extent is giving, don't use it
+            else:
+                clip_extent = None
+                clip_buffer = 0
+                lateral_branches = None
+            
             
             # add 2D model
             print("\nBuilding 2D model grid\n")
@@ -1381,7 +1414,9 @@ def write_dimr(fm: FMModel, output_folder: str):
     output_path.mkdir(exist_ok=True, parents=True)
     fm_path = Path(output_folder) / FM_FOLDER
     fm.filepath = fm_path / "test.mdu"
-
+    # for bound_idx in range(0, len(fm.external_forcing.extforcefilenew.boundary)):
+    #     if fm.external_forcing.extforcefilenew.boundary[bound_idx].forcingfile.filepath is None:
+    #         fm.external_forcing.extforcefilenew.boundary[bound_idx].forcingfile.filepath = fm_path / 'boundaryconditions.bc'
     dimr = DIMR()
     dimr.component.append(
         FMComponent(

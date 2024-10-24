@@ -323,10 +323,10 @@ def map_columns(
                 elif (_gdf[key].dtype == "int64") or (_gdf[key].dtype == "float64"):
                     if hasattr(defaults, _key):
                         _gdf[key] = _gdf[key].replace(
-                            to_replace=[0, -999, np.nan],
+                            to_replace=[-999, np.nan, 0],
                             value=getattr(defaults, _key),
                         )
-                    # print number of 0, -998 and nan if no default value is present
+                    # print number of 0, -999 and nan if no default value is present
                     else:
                         n_zero = _gdf[key][_gdf[key] == 0].count()
                         n_nnn = _gdf[key][_gdf[key] == -999].count()
@@ -2313,10 +2313,12 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
     # ddm = DHydamoDataModel()
     # Make the GIS folder path global in environment to access it in all configs
     os.environ['GIS_folder_path'] = GIS_folder
-    print('Set the GIS_folder as environment variable')
+    #print('Set the GIS_folder as environment variable')
     
     defaults = importlib.import_module("dataset_configs." + defaults)
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
+    name_config = getattr(importlib.import_module("dataset_configs."+ config), "Name")
+    print(f' ----- Working on config: {name_config.name} -----')
 
     code_padding = config[:4] + r"_"  # add prefix of length 4 to all objects with codes
     if code_padding == "rijn":
@@ -2497,16 +2499,20 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         
         if hasattr(data_config, "pump_selection"):
             pump_gdf = select_features(data_config.pump_selection, pump_gdf)
+        
+        if len(pump_gdf) != 0:
+            pump_gdf, _ = map_columns(
+                        code_pad=code_padding + "pu_",
+                        defaults=defaults.Pumps,
+                        gdf=pump_gdf,
+                        index_mapping=data_config.pump_index_mapping,
+                    )
 
-        pump_gdf, _ = map_columns(
-                    code_pad=code_padding + "pu_",
-                    defaults=defaults.Pumps,
-                    gdf=pump_gdf,
-                    index_mapping=data_config.pump_index_mapping,
-                )
+            ddm.gemaal, ddm.pomp, ddm.sturing = create_pump_data(pump_gdf=pump_gdf)
+            print('Created pump data')
 
-        ddm.gemaal, ddm.pomp, ddm.sturing = create_pump_data(pump_gdf=pump_gdf)
-        print('Created pump data')
+        else:
+            print('None of the pumps are selected for this database')
 
     if hasattr(data_config, "river_profile_path") and (data_config.river_profile_path is not None):
         if hasattr(data_config, "river_roughness_path") and (
@@ -2534,21 +2540,25 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
         if hasattr(data_config, "sluice_selection"):
             sluice_gdf = select_features(data_config.sluice_selection,sluice_gdf)
-            
-        sluice_gdf, _ = map_columns(
-            code_pad=code_padding + "sl_",
-            defaults=defaults.Weirs,
-            gdf=sluice_gdf,
-            index_mapping=data_config.sluice_index_mapping,
-        )       
 
-        stuw, kunstwerkopening, regelmiddel = create_weir_data(
-            branches_gdf=ddm.waterloop, weir_gdf=sluice_gdf
-        )
-        ddm = merge_to_ddm(ddm=ddm, feature="stuw", feature_gdf=stuw)
-        ddm = merge_to_ddm(ddm=ddm, feature="kunstwerkopening", feature_gdf=kunstwerkopening)
-        ddm = merge_to_ddm(ddm=ddm, feature="regelmiddel", feature_gdf=regelmiddel)
-        print('Created sluice data')
+        if len(sluice_gdf) != 0:
+            sluice_gdf, _ = map_columns(
+                code_pad=code_padding + "sl_",
+                defaults=defaults.Weirs,
+                gdf=sluice_gdf,
+                index_mapping=data_config.sluice_index_mapping,
+            )       
+
+            stuw, kunstwerkopening, regelmiddel = create_weir_data(
+                branches_gdf=ddm.waterloop, weir_gdf=sluice_gdf
+            )
+            ddm = merge_to_ddm(ddm=ddm, feature="stuw", feature_gdf=stuw)
+            ddm = merge_to_ddm(ddm=ddm, feature="kunstwerkopening", feature_gdf=kunstwerkopening)
+            ddm = merge_to_ddm(ddm=ddm, feature="regelmiddel", feature_gdf=regelmiddel)
+            print('Created sluice data')
+        
+        else:
+            print('None of the sluices are selected for this database')
 
     if hasattr(data_config, "weir_path") and (data_config.weir_path is not None):
         ## Weirs
@@ -2557,21 +2567,25 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         if hasattr(data_config, "weir_selection"):
             weir_gdf = select_features(data_config.weir_selection, weir_gdf)
         
-        weir_gdf, _ = map_columns(
-            code_pad=code_padding + "we_",
-            defaults=defaults.Weirs,
-            gdf=weir_gdf,
-            index_mapping=data_config.weir_index_mapping,
-        )
+        if len(weir_gdf) != 0:
+            weir_gdf, _ = map_columns(
+                code_pad=code_padding + "we_",
+                defaults=defaults.Weirs,
+                gdf=weir_gdf,
+                index_mapping=data_config.weir_index_mapping,
+            )
 
-        
-        stuw, kunstwerkopening, regelmiddel = create_weir_data(
-            branches_gdf=ddm.waterloop, weir_gdf=weir_gdf
-        )
-        ddm = merge_to_ddm(ddm=ddm, feature="stuw", feature_gdf=stuw)
-        ddm = merge_to_ddm(ddm=ddm, feature="kunstwerkopening", feature_gdf=kunstwerkopening)
-        ddm = merge_to_ddm(ddm=ddm, feature="regelmiddel", feature_gdf=regelmiddel)
-        print('Created weir data')
+            
+            stuw, kunstwerkopening, regelmiddel = create_weir_data(
+                branches_gdf=ddm.waterloop, weir_gdf=weir_gdf
+            )
+            ddm = merge_to_ddm(ddm=ddm, feature="stuw", feature_gdf=stuw)
+            ddm = merge_to_ddm(ddm=ddm, feature="kunstwerkopening", feature_gdf=kunstwerkopening)
+            ddm = merge_to_ddm(ddm=ddm, feature="regelmiddel", feature_gdf=regelmiddel)
+            print('Created weir data')
+
+        else:
+            print('None of the weirs are selected for this database')
 
     return ddm
 

@@ -164,7 +164,7 @@ class ExtendedGeoDataFrame(gpd.GeoDataFrame):
             self._check_columns(gdf)
 
         # Copy content
-        for col, values in gdf.iteritems():
+        for col, values in gdf.items():
             self[col] = values.values
 
         if index_col is None:
@@ -655,7 +655,7 @@ class ExtendedDataFrame(pd.DataFrame):
             self.delete_all()
 
         # Copy content
-        for col, values in df.iteritems():
+        for col, values in df.items():
             self[col] = values.values
 
         if index_col is None:

@@ -4,6 +4,9 @@ import os
 default_GIS_path = r"D:\Work\Project\P1414_default"
 folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 
+class Name:
+    name = 'Hoogheemraadschap Schieland & Krimpenerwaard'
+
 class Models:
     class FM:
         one_d_bool = True
@@ -65,7 +68,7 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model3.shp"  # From V7
+    branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V5.shp"  # From V7
     culvert_path = p_folder + r"\HHSK\Duiker\Duiker_model2.shp"
     norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model3.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Peilvakken\Praktijkpeilgebieden.shp"

@@ -4,6 +4,9 @@ import os
 default_GIS_path = r"D:\Work\Project\P1414_default"
 folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 
+class Name:
+    name = 'Onderdoorgangen'
+
 class Models:
     class FM:
         one_d_bool = True
@@ -59,8 +62,8 @@ class RawData:
     np_index_mapping = dict(
         [
             ("bodembreedte", ["width", "Width"]),
-            ("bodemhoogte benedenstrooms", ['z_min', 'z_height']),
-            ("bodemhoogte bovenstrooms", ['z_min', 'z_height']),
+            ("bodemhoogte benedenstrooms", ['z_min', 'z-height']),
+            ("bodemhoogte bovenstrooms", ['z_min', 'z-height']),
             ("code", ["lokaalid", "id"]),
             ("diepte", "height"),
             ("geometry", "geometry"),

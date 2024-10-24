@@ -4,6 +4,9 @@ import os
 default_GIS_path = r"D:\Work\Project\P1414_default"
 folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 
+class Name:
+    name = 'Tunnel'
+    
 class Models:
     class FM:
         one_d_bool = True
@@ -29,9 +32,9 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
-    branches_path = p_folder + r"\Wegen\tunnel.shp"
-    culvert_path = p_folder + r"\Wegen\tunnel.shp"
-    norm_profile_path = p_folder + r"\Wegen\tunnel.shp"
+    branches_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel.shp"
+    culvert_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel.shp"
+    norm_profile_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel.shp"
 
     class Peil:
         default_peil = -9.75

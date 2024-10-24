@@ -4,6 +4,9 @@ import os
 default_GIS_path = r"D:\Work\Project\P1414_default"
 folder_path_GIS = os.environ.get('GIS_folder_path', default_GIS_path)
 
+class Name:
+    name = 'Waterschap Amstel, Gooi en Vecht'
+
 class Models:
     class FM:
         one_d_bool = True
