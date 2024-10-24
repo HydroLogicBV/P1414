@@ -372,7 +372,7 @@ class BreachPlotter():
                 if u[t] < self.u_crit:
                     b_over_t = 0
                 else:
-                    b_over_t = (self.f1*self.f2/np.log(10))      *      (((g * (h_up[t] - max(h_down[t], self.z_min))) ** (3/2))/(self.u_crit**2))       *      (1 / (1  +  ((self.f2 * g * (time[t] - time[t-1])) / (3600 * self.u_crit))) )
+                    b_over_t = (self.f1*self.f2/np.log(10))      *      (((g * (h_up[t] - max(h_down[t], self.z_min))) ** (3/2))/(self.u_crit**2))       *      (1 / (1  +  ((self.f2 * g * (time[t] - (self.t_phase_1 + self.t_breach))) / (3600 * self.u_crit))) )
                 w[t] = w[t-1] + delta_t / 3600 * b_over_t
         return w, z
 
@@ -470,7 +470,7 @@ class MapPlotter():
             resolution = self.settings['mesh_resolution'],
             interpolation=self.interpolation,
         )
-        
+
         fig, ax = raster_plot_with_context(
             raster_path = raster_path,
             epsg = 28992, 
