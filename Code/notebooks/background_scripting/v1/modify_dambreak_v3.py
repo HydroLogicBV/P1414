@@ -181,7 +181,7 @@ class DambreakWidget(WidgetStyling):
             width=300,
             )
 
-    def gdf_to_geojson(self, input_gdf, layer_name):
+    def gdf_to_geojson(self, input_gdf:gpd.GeoDataFrame, layer_name:str) -> ipl.GeoJSON:
         json_data = json.loads(input_gdf.to_json())
         geojson = ipl.GeoJSON(data=json_data, name = layer_name)
         return geojson
@@ -231,6 +231,8 @@ class DambreakWidget(WidgetStyling):
             self.m.add(self.dambreach_map)
             self.m.add(self.breach_point_map)
             self.m.add(self.breach_line_map)
+            self.add_keringen()
+            self.add_links()
             
         
         if self.layer_exists('bedlevel'):
@@ -248,7 +250,7 @@ class DambreakWidget(WidgetStyling):
             button_next_step.on_click(self.next_step)
         display(self.image_widget)
 
-    def next_step(self, b):
+    def next_step(self, _):
         self.center = self.m.center 
         self.zoom = self.m.zoom
         if self.current_step == 0:
@@ -290,7 +292,7 @@ class DambreakWidget(WidgetStyling):
         elif self.current_step == 4:
             self.draw_map()
 
-    def handle_draw(self, target, action, geo_json):
+    def handle_draw(self, target, action, geo_json:dict):
         self.completed_line_input = False
         self.html_log.value = ""
         self.draw_control.clear()
@@ -309,7 +311,7 @@ class DambreakWidget(WidgetStyling):
             self.center = breach_row.geometry.y, breach_row.geometry.x
             self.marker.location = breach_row.geometry.y, breach_row.geometry.x
     
-    def filter_gdf(self, gdf, point, buffer_distance):
+    def filter_gdf(self, gdf:gpd.GeoDataFrame, point:Point, buffer_distance:int) -> gpd.GeoDataFrame:
         buffer = point.buffer(buffer_distance)
         gdf = gdf[gdf.geometry.intersects(buffer)]
         return gdf
@@ -342,20 +344,19 @@ class DambreakWidget(WidgetStyling):
                 name = 'BREACH')
         return 0
 
-    def find_intersection(self, lines, line_dambreak):
+    def find_intersection(self, lines:gpd.GeoDataFrame, line_dambreak:LineString) -> Point:
         center = Point(np.average(line_dambreak.coords.xy[0]), np.average(line_dambreak.coords.xy[1]))
         lines['distance_to_center'] = lines.distance(center)
-        lines_ordered_by_distance = lines.sort_values(by = 'distance_to_center')
+        lines_ordered_by_distance = lines.sort_values(by='distance_to_center')
         found_intersection = False
         for index, row in lines_ordered_by_distance.iterrows():
             if row.geometry.intersects(line_dambreak):
                 int_pt = row.geometry.intersection(line_dambreak)
                 found_intersection = True
                 break
-        if found_intersection == False:
-            return None
-        else:
+        if found_intersection:
             return int_pt
+        return None
 
     def calculate_breach(self):
         line_1 = LineString([[self.upstream_point.geometry.x, self.upstream_point.geometry.y], [self.breach_point.geometry.x, self.breach_point.geometry.y]])
@@ -365,7 +366,7 @@ class DambreakWidget(WidgetStyling):
                     style={'color': 'black', 'radius':10, 'fillColor': 'black', 'opacity':1, 'weight':2, 'dashArray':'2', 'fillOpacity':1},
                     name = 'DAMBREACH_LINES')       
 
-    def remove_layer_from_map(self, name):
+    def remove_layer_from_map(self, name:str):
         to_remove = []
         for index, layer in enumerate(self.m.layers):
             if layer.name == name:
@@ -400,7 +401,7 @@ class DambreakWidget(WidgetStyling):
             name = 'MESH')
         self.m.add(mesh2d_points)
     
-    def snap_to_closest_point(self, point, geodf_map, geodf_rd):
+    def snap_to_closest_point(self, point:list, geodf_map:gpd.GeoDataFrame, geodf_rd:gpd.GeoDataFrame):
         point = self.map_to_rd.transform(point[0], point[1])
         index_closest = geodf_rd.distance(Point(point[0], point[1])).argmin()
         closest_point = geodf_map.iloc[index_closest]
@@ -432,9 +433,9 @@ class DambreakWidget(WidgetStyling):
                 )
             self.bedlevel_layer.on_click(handle_click)
         
-    def layer_exists(self, layer_to_check):
+    def layer_exists(self, layer_to_check:str) -> bool:
         for layer in self.m.layers:
-            if layer.name is layer_to_check:
+            if layer.name == layer_to_check:
                 return True
         return False
 
@@ -484,12 +485,12 @@ class ModifyDambreak(WidgetStyling):
         
         self.widgets_to_display = [widget for widget in self.widgets.values()]
     
-    def convert_to_sas(self, key, value):
+    def convert_to_sas(self, key:str, value):
         if key in self.settings_in_hours:
             return value / 60 / 60
         return value
 
-    def convert_to_mdu(self, key, value):
+    def convert_to_mdu(self, key:str, value):
         if key in self.settings_in_hours:
             return value * 60 * 60
         return value
@@ -539,12 +540,15 @@ class ModifyDambreak(WidgetStyling):
 
         return structures_textfile
 
-    def should_line_be_flipped(self, coords_line:np.array, point:Point):
+    def should_line_be_flipped(self, coords_line:np.array, point:Point) -> bool:
         """Checks on which side the point lies, returns True if the line has to be flipped, False if not. Needed for D-HYDRO otherwise flow trough dambreak is negative.
 
         Args:
-            coords_line (np.array): _description_
-            point (list): _description_
+            coords_line (np.array): coordinates of line (2d array)
+            point (Point): point on 2D grid
+
+        Returns:
+            bool: Boolean to indicat if the line should be flipped.
         """
         A = coords_line[0]
         B = coords_line[-1]
@@ -553,11 +557,11 @@ class ModifyDambreak(WidgetStyling):
         AB = (B[0] - A[0], B[1] - A[1]) 
         AP = (P[0] - A[0], P[1] - A[1])  
         cross_product = AB[0] * AP[1] - AB[1] * AP[0]
-        if cross_product < 0:
+        if cross_product > 0:
             return True
         return False
     
-    def add_dambreaks_from_widget(self, db_gdf, fw_gdf, max_dist = 100, z_default = 0):
+    def add_dambreaks_from_widget(self, db_gdf:gpd.GeoDataFrame, fw_gdf:gpd.GeoDataFrame, max_dist:int=100, z_default:int=0):
         fw_point_list = []
         for ix, branch in fw_gdf.iterrows():
             coords = branch.geometry.coords[:]
@@ -621,7 +625,7 @@ class ModifyDambreak(WidgetStyling):
         self.dambreak_settings['waterLevelUpstreamLocationX'] = self.dambreak_settings_widget['upstream'].iloc[0].geometry.x
         self.dambreak_settings['waterLevelUpstreamLocationY'] = self.dambreak_settings_widget['upstream'].iloc[0].geometry.y
     
-    def use_template_dambreak(self, dambreak_template):
+    def use_template_dambreak(self, dambreak_template:dict):
         self.dambreak_settings['id'] = 'comb_0.0'
         self.dambreak_settings['name'] = 'd3d9f584-086e-4d19-ae01-e75bdca23d21'
         self.dambreak_settings['type'] = 'dambreak'
@@ -640,7 +644,7 @@ class ModifyDambreak(WidgetStyling):
         for setting in dambreak_template:
             self.dambreak_settings[setting] = dambreak_template[setting]
 
-    def write_to_structures(self, write_output = True, backup_original = True):       
+    def write_to_structures(self, write_output:bool=True, backup_original:bool=True):       
         if write_output:
             if backup_original and self.wrote_backup == False:
                 self.wrote_backup = True
@@ -669,7 +673,7 @@ class ModifyDambreak(WidgetStyling):
         display(button, output)
         button.on_click(self.update_settings_widget)
 
-    def update_settings_widget(self, b):
+    def update_settings_widget(self, _):
         for setting in self.settings_to_modify:
             self.dambreak_settings[setting] = self.convert_to_mdu(setting, self.widgets[setting].value)
         

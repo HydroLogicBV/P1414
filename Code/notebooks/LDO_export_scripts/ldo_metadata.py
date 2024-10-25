@@ -15,19 +15,19 @@ from datetime import datetime, timedelta
 
 class MetadataGenerator():
 
-    def __init__(self, model_dir:str, file_locations:dict) -> None:
+    def __init__(self, model_dir:str, file_locations:dict, existing_df:pd.DataFrame=None) -> None:
         # Initialize input and output directory
         self.model_dir = model_dir
         if os.path.exists(self.model_dir) == False:
             raise Exception("The specified model dir does not exist")
         
-        required_locations = ['fm_dir', 'output_dirname', 'mdu_file', 'map_file', 'his_file', 'structures_file', 'dia_file']
+        required_locations = ['fm_dir', 'output_dir', 'mdu_file', 'map_file', 'his_file', 'structures_file', 'dia_file']
         for key in required_locations:
             if key not in file_locations.keys():
                 raise Exception(f"Missing {key} in file_locations input, keys found are: {file_locations}")
         self.file_locations = file_locations
 
-        self.model_output_dir = os.path.join(model_dir, file_locations['fm_dir'], file_locations['output_dirname'])
+        self.model_output_dir = os.path.join(model_dir, file_locations['fm_dir'], file_locations['output_dir'])
         if os.path.exists(self.model_output_dir) == False:
             raise Exception(f"The output directory {self.model_output_dir} could not be found, are you sure your input is correct and that you ran the model?")
     
@@ -39,15 +39,19 @@ class MetadataGenerator():
         # Initialize dictionary for metadata storage
         self.dict_meta = {}
         # Intialize dataframe for metadata storage
-        self.df_ = pd.DataFrame()
+        if existing_df is None:
+            self.df_ = pd.DataFrame()
+        else:
+            self.df_ = existing_df
         self.configure_logging()
 
     def execute(self):
         case = os.path.basename(self.model_dir)
 
         # Step 1: initialize dataframe
-        if not self.intialize_dataframe():
-            raise Exception('Error when initializing the dataframe')
+        if self.df_.empty:
+            if not self.intialize_dataframe():
+                raise Exception('Error when initializing the dataframe')
 
         # Step 2: Add a new row/scenario to the dataframe
         self.df_.loc[len(self.df_)] = np.nan
@@ -80,9 +84,9 @@ class MetadataGenerator():
         self.get_information_model(case)
 
         # Generate output file
-        df_out = pd.DataFrame([[col[0] for col in self.df_.columns], 
+        self.df_out = pd.DataFrame([[col[0] for col in self.df_.columns], 
                                [col[1] for col in self.df_.columns]] + self.df_.values.tolist(), columns=self.df_.columns)
-        return df_out
+        return self.df_out
 
     def intialize_dataframe(self):
         
@@ -205,20 +209,22 @@ class MetadataGenerator():
         self.df_ = pd.DataFrame(columns=cols, dtype='object')
         return True
 
-    def write(self, write_as_excel:bool=False):
+    def write(self, write_as_excel:bool=False, output_file:str=None):
         if write_as_excel:
-            path = os.path.join(self.write_output_dir, 'LDO_metadata.csv')
-            self.df_.to_csv(sep=";")
-        else:
-            path = os.path.join(self.write_output_dir, 'LDO_metadata.xlsx')
+            if output_file == None:
+                output_file = os.path.join(self.write_output_dir, 'LDO_metadata.xlsx')
             try:
                 import openpyxl
             except ModuleNotFoundError:
                 print("The 'openpyxl' module is not installed. Install it using 'conda install openpyxl'. If you do not want to install it, you can also set the write_as_excel parameter to False.")
-                            
-            self.df_.to_excel(path)
+            self.df_out.to_excel(output_file, index=False)
+        else:                 
+            if output_file == None:
+                output_file = os.path.join(self.write_output_dir, 'LDO_metadata.csv')
+            self.df_out.to_csv(sep=";", path_or_buf=output_file, index=False)
 
-        self.logger.info(f"Succesfully wrote the LDO metadata to: {path}")
+
+        self.logger.info(f"Succesfully wrote the LDO metadata to: {output_file}")
     
     # --- Get information regarding subsection --- 
 
@@ -517,7 +523,7 @@ class MetadataGenerator():
         #   logger: logger for the current module
         logging.basicConfig(
             level=logging.INFO,  
-            format='%(asctime)s - %(levelname)s - %(message)s', 
+            # format='%(asctime)s - %(levelname)s - %(message)s', 
             handlers=[
                 logging.StreamHandler() 
             ]

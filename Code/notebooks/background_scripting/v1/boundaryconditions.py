@@ -57,7 +57,7 @@ class BoundaryConditionBlock():
         if self.type.lower() == "[forcing]":
             self.location = self.get_location()
     
-    def get_location(self):
+    def get_location(self) -> Point:
         id = self.get_property('name')
         parts = id.split('_')
         if len(parts) != 2:
@@ -70,7 +70,7 @@ class BoundaryConditionBlock():
         except:
             return None
 
-    def get_property(self, key:str, get_match_nr:int=1):
+    def get_property(self, key:str, get_match_nr:int=1) -> str:
         # watch out, it always returns the first match of the property if get_last is not specified.
         get_match_nr = get_match_nr - 1
         matches = []
@@ -138,7 +138,7 @@ class BoundaryConditionsFile():
         if block.valid == True:
             self.blocks.append(block)
 
-    def read_file(self, file):
+    def read_file(self, file:str):
         with open(file, 'r') as f:
             lines = []
             for line in f.readlines():

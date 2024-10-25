@@ -8,7 +8,7 @@ class ModelRunner(WidgetStyling):
     """
     Class that contains the widgets and functions for running a model
     """
-    def __init__(self, path):
+    def __init__(self, path:str):
         self.model_folder = path
         self.run_dimr_path = os.path.join(self.model_folder, 'run.bat')
 
@@ -44,7 +44,7 @@ class ModelRunner(WidgetStyling):
             self.initializing = False
             self.running = True
 
-    def update_model_percentage(self, line):
+    def update_model_percentage(self, line:str) -> bool:
         """
         Get current completion percentage of model
         """
@@ -61,10 +61,10 @@ class ModelRunner(WidgetStyling):
         except:
             return False
             
-    def run_model(self, b):
+    def run_model(self, _):
         """
         Run the model, and keep track of the logs
-        b is not used, it is just required to make this function start from a button click
+        _ is not used, it is just required to make this function start from a button click
         """
         nr_log_lines = 4
         self.full_logs = []
@@ -92,8 +92,8 @@ class ModelRunner(WidgetStyling):
                 for line in self.full_logs[-nr_log_lines:]:
                     if "0 nr of dambreak links" in line:
                         p.kill()
-                        raise Exception("Dambreak is invalid, retry setting a dambreak")
-                    new_logging += f"<p>{line}</p>"
+                        raise Exception("No dambreak in model, exiting simulation")
+                    new_logging += f"<p><i>{line}</i></p>"
                     self.read_model_progress()
                 logging.value = new_logging
                 self.progess_bar.value = self.percentage
