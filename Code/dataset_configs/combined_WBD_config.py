@@ -33,9 +33,9 @@ class Models:
                 folder_path_GIS + r"\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )
             two_d_buffer = 0
-            #clip_extent_path = folder_path_GIS+r"\GIS\peilen\boezem_v2.shp"       # waterways that must be clipped from 2D
-            #clip_buffer = 0.5*dx                                                     # int, buffer around the polygons that must be clipped in [meters], 0.5*grid size works often to get a sharp clip
-            #clip_selection = ['> 125 meter', '50 - 125 meter']                    # selection of the buffer layer that must be kept, based on the 'breedtekla' column in the shapefile
+            clip_extent_path = folder_path_GIS+r"\GIS\peilen\boezem_v2.shp"       # waterways that must be clipped from 2D
+            clip_buffer = 0.5*dx                                                     # int, buffer around the polygons that must be clipped in [meters], 0.5*grid size works often to get a sharp clip
+            clip_selection = ['> 125 meter', '50 - 125 meter']                    # selection of the buffer layer that must be kept, based on the 'breedtekla' column in the shapefile
 
         class hydrolib_core_options:
             class external_forcing:
@@ -210,22 +210,22 @@ class Models:
                 dtmax = 60
 
 
-class Dambreak:
-    ## PATHS
-    dambreak_path = folder_path_GIS + r"\GIS\Dijkdoorbraken\Dijkdoorbraken_v0_lijn.shp"
-    dambreak_index_mapping = dict(
-        [
-            ("algorithm", None),
-            ("breachwidthini", "ini_breedt"),
-            ("code", "id"),
-            ("crestlevelini", "ini_diepte"),
-            ("crestlevelmin", "min_hoogte"),
-            ("f1", None),
-            ("f2", None),
-            ("geometry", "geometry"),
-            ("globalid", "globalid"),
-            ("t0", "t0"),
-            ("timetobreachtomaximumdepth", None),
-            ("ucrit", None),
-        ]
-    )
+# class Dambreak:
+#     ## PATHS
+#     dambreak_path = folder_path_GIS + r"\GIS\Dijkdoorbraken\Dijkdoorbraken_v0_lijn.shp"
+#     dambreak_index_mapping = dict(
+#         [
+#             ("algorithm", None),
+#             ("breachwidthini", "ini_breedt"),
+#             ("code", "id"),
+#             ("crestlevelini", "ini_diepte"),
+#             ("crestlevelmin", "min_hoogte"),
+#             ("f1", None),
+#             ("f2", None),
+#             ("geometry", "geometry"),
+#             ("globalid", "globalid"),
+#             ("t0", "t0"),
+#             ("timetobreachtomaximumdepth", None),
+#             ("ucrit", None),
+#         ]
+#     )

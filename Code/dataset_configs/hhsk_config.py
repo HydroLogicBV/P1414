@@ -70,7 +70,7 @@ class RawData:
     p_folder = folder_path_GIS + r"\GIS"
     branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V5.shp"  # From V7
     culvert_path = p_folder + r"\HHSK\Duiker\Duiker_model2.shp"
-    norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model3.shp"
+    norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V5.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Peilvakken\Praktijkpeilgebieden.shp"
     #Peil = -0.1 # Dummy peil om te zorgen dat ik de kunstwerken kan testen
     pump_path = p_folder + r"\HHSK\Gemaal\Gemaal.shp"

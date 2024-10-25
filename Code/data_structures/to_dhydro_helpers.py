@@ -1335,7 +1335,9 @@ def to_dhydro(
 
 
             # Get the geometries that must be clipped
-            CRS = 'EPSG:28992'        
+            CRS = 'EPSG:28992'   
+
+            # Stuk uit code Pepijn ter test:
             if hasattr(model_config.FM.two_d, "clip_extent_path") and (model_config.FM.two_d.clip_extent_path is not None):
                 clip_extent_gdf = gpd.read_file(model_config.FM.two_d.clip_extent_path, crs=CRS)
                 clip_extent = clip_extent_gdf[clip_extent_gdf['geometry'].apply(lambda geom: isinstance(geom, Polygon))]    # Only select the ones with a polygon, because that can only be clipped
@@ -1347,24 +1349,27 @@ def to_dhydro(
                     condition1 = (clip_extent['typewater'] == 'meer, plas')
                     condition2 = (clip_extent['typewater'] == 'waterloop') & (clip_extent['breedtekla'].isin(model_config.FM.two_d.clip_selection))
                     clip_extent = clip_extent[condition1 | condition2]
+            else:
+                clip_extent = None
+            
+            # Ensure that only unique column names exist
+            if 'index_left' in clip_extent.columns:
+                clip_extent = clip_extent.rename(columns={'index_left': 'clip_index_left'})
+            if 'index_right' in clip_extent.columns:
+                clip_extent = clip_extent.rename(columns={'index_right': 'clip_index_right'})
 
-                # Ensure that only unique column names exist
-                if 'index_left' in clip_extent.columns:
-                    clip_extent = clip_extent.rename(columns={'index_left': 'clip_index_left'})
-                if 'index_right' in clip_extent.columns:
-                    clip_extent = clip_extent.rename(columns={'index_right': 'clip_index_right'})
-
-                # Get the clip buffer, because it is not defined everywhere, to prevent errors set the buffer to 100m if not defined.
-                if hasattr(model_config.FM.two_d, "clip_buffer"):
-                    clip_buffer = model_config.FM.two_d.clip_buffer
-                else:
-                    clip_buffer = 100
-                    print('** Assumed default clip buffer of 100m because no buffer was given.')
-                
-                # Get a list of the branchid's that are clipped and now need 1D-2D lateral links
+            # Get the clip buffer, because it is not defined everywhere, to prevent errors set the buffer to 100m if not defined.
+            if hasattr(model_config.FM.two_d, "clip_buffer"):
+                clip_buffer = model_config.FM.two_d.clip_buffer
+            else:
+                clip_buffer = 100
+                print('** Assumed default clip buffer of 100m because no buffer was given.')
+            
+            # Get a list of the branchid's that are clipped and now need 1D-2D lateral links
+            if hasattr(model_config.FM.two_d, "clip_extent_path") and (model_config.FM.two_d.clip_extent_path is not None):
                 all_branches_gdf = gpd.GeoDataFrame(self.hydamo.branches, geometry='geometry', crs=CRS)
                 clip_extent_buffer = clip_extent.copy()
-                            
+                               
                 clip_extent_buffer = clip_extent_buffer.set_geometry('geometry')
                 all_branches_gdf = all_branches_gdf.set_geometry('geometry')
                 clip_extent_buffer = clip_extent_buffer.to_crs(CRS)
@@ -1374,11 +1379,51 @@ def to_dhydro(
                 lst_temp = clipped_branches_gdf.code_left.tolist()
                 lateral_branches = lst_temp 
 
-            # If no extent is giving, don't use it
-            else:
-                clip_extent = None
-                clip_buffer = 0
-                lateral_branches = None
+            ## EINDE STUK PEPIJN 
+            #      
+            # if hasattr(model_config.FM.two_d, "clip_extent_path") and (model_config.FM.two_d.clip_extent_path is not None):
+            #     clip_extent_gdf = gpd.read_file(model_config.FM.two_d.clip_extent_path, crs=CRS)
+            #     clip_extent = clip_extent_gdf[clip_extent_gdf['geometry'].apply(lambda geom: isinstance(geom, Polygon))]    # Only select the ones with a polygon, because that can only be clipped
+                
+            #     # Apply selection criteria:
+            #     #   1. all shapes that have 'meer, plas' in their 'typewater' column must be clipped (must remain in clip_extent)
+            #     #   2. all shapes that meet the clip_selection criteria for the 'breedtekla' column must be clipped
+            #     if hasattr(model_config.FM.two_d, "clip_selection") and (model_config.FM.two_d.clip_selection is not None):
+            #         condition1 = (clip_extent['typewater'] == 'meer, plas')
+            #         condition2 = (clip_extent['typewater'] == 'waterloop') & (clip_extent['breedtekla'].isin(model_config.FM.two_d.clip_selection))
+            #         clip_extent = clip_extent[condition1 | condition2]
+
+            #     # Ensure that only unique column names exist
+            #     if 'index_left' in clip_extent.columns:
+            #         clip_extent = clip_extent.rename(columns={'index_left': 'clip_index_left'})
+            #     if 'index_right' in clip_extent.columns:
+            #         clip_extent = clip_extent.rename(columns={'index_right': 'clip_index_right'})
+
+            #     # Get the clip buffer, because it is not defined everywhere, to prevent errors set the buffer to 100m if not defined.
+            #     if hasattr(model_config.FM.two_d, "clip_buffer"):
+            #         clip_buffer = model_config.FM.two_d.clip_buffer
+            #     else:
+            #         clip_buffer = 100
+            #         print('** Assumed default clip buffer of 100m because no buffer was given.')
+                
+            #     # Get a list of the branchid's that are clipped and now need 1D-2D lateral links
+            #     all_branches_gdf = gpd.GeoDataFrame(self.hydamo.branches, geometry='geometry', crs=CRS)
+            #     clip_extent_buffer = clip_extent.copy()
+                            
+            #     clip_extent_buffer = clip_extent_buffer.set_geometry('geometry')
+            #     all_branches_gdf = all_branches_gdf.set_geometry('geometry')
+            #     clip_extent_buffer = clip_extent_buffer.to_crs(CRS)
+            #     all_branches_gdf = all_branches_gdf.to_crs(CRS)
+
+            #     clipped_branches_gdf = gpd.sjoin(all_branches_gdf, clip_extent_buffer, how='inner', op='intersects')
+            #     lst_temp = clipped_branches_gdf.code_left.tolist()
+            #     lateral_branches = lst_temp 
+
+            # # If no extent is giving, don't use it
+            # else:
+            #     clip_extent = None
+            #     clip_buffer = 0
+            #     lateral_branches = []
             
             
             # add 2D model
