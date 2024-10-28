@@ -16,6 +16,7 @@ from shapely.ops import linemerge, nearest_points
 
 from scipy.spatial import KDTree
 from tqdm import tqdm
+from rtree import index
 
 from data_structures.hydamo_globals import (
     BRANCH_FRICTION_FUNCTION,
@@ -314,6 +315,16 @@ def map_columns(
                     codes = [str(uuid.uuid4())[:8] for _ in range(np.sum(nones))]
                     _gdf.loc[nones, key] = codes
 
+                    _gdf[key] = _gdf[key].apply(lambda x: x.replace(' ', '_') if isinstance(x, str) else x)
+                    _gdf[key] = _gdf[key].where(
+                        ~_gdf[key].duplicated(keep='first'),
+                        _gdf[key].fillna('').astype(str) + '_2'
+                    )
+                    #_gdf[key] = _gdf[key].apply(lambda x: x if _gdf[key].tolist().count(x) == 1 else x + '_2' if _gdf[key].tolist().count(x + '_2') == 0 else x + '_3')
+
+                    #if _gdf['code'].dtype == 'string' or _gdf['code'].dtype == 'str':
+                    #    _gdf['code'] = _gdf['code'].str.replace(' ', '_')
+
                 elif _gdf[key].dtype == "geometry":
                     continue
 
@@ -606,8 +617,20 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                         out_branches.loc[ix, "geometry"] = LineString(point_list)
                     else:
                         out_branches = out_branches.drop(index=ix)
+   
+                # remove geometries that are double. Use WKT format to speed up
+                starttime2 = time()
+                out_branches['geometry_wkt'] = out_branches['geometry'].apply(lambda geom: geom.wkt)
+                duplicate_rows = out_branches[out_branches.duplicated(subset='geometry_wkt', keep=False)]
+                out_branches_no_dups = out_branches.drop_duplicates(subset='geometry_wkt', keep='first').drop(columns='geometry_wkt')
+                endtime2 = time()
+                if len(duplicate_rows) > 0:
+                    print(f"There are {len(duplicate_rows)} duplicate rows, in {round(endtime2-starttime2,1)} sec:")
+                    print(duplicate_rows)
+                    print('Only kept 1 entry for each duplicate geometry')
+                    duplicate_rows = []   # reset for the next objects
 
-                return out_branches
+                return out_branches_no_dups
 
             def create_nodes_at_junctions(branches_gdf):
                 # First ensure that line-segments dont extend past connection points
@@ -619,6 +642,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 buffered_branches = copy(branches_gdf)
                 buffered_branches.geometry = buffered_branches.geometry.buffer(0.1)
                 gdf = gpd.GeoDataFrame(union_result, columns=["geometry"], geometry="geometry", crs=28992)
+
+                # Select only the branches that are larger than 10 cm. 
+                gdf = gdf[gdf['geometry'].length >= 0.1]
 
                 # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
                 intersected_gdf = gdf.sjoin(buffered_branches, how="left", predicate="within")
@@ -633,7 +659,24 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             # For now: geometry_accuracy=2 (1 cm accurate)
             geometry_accuracy = 2
 
-            # Create nodes at the junctions of lines and snap nodes
+            branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf, snap_dist=snap_distance)
+            branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+            branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_junctions, snap_dist=snap_distance)
+            branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_nearest, geometry_accuracy=geometry_accuracy)
+            #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_nearest.shp")
+            #branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_junctions.shp")
+            #branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_snapped.shp")
+
+            while count != 0:
+                branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_snapped, snap_dist=snap_distance)
+                branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+                branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_junctions, snap_dist=snap_distance)
+                branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_nearest, geometry_accuracy=geometry_accuracy)
+                #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_nearestV2.shp")
+                #branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_junctionsV2.shp")
+                #branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_snappedV2.shp")
+            
+            """# Create nodes at the junctions of lines and snap nodes
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf, snap_dist=snap_distance)
             branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
             branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_junctions, geometry_accuracy=geometry_accuracy)
@@ -642,7 +685,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_snapped, snap_dist=snap_distance)
                 branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
                 branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_junctions, geometry_accuracy=geometry_accuracy)
-
+            """
             return branches_gdf_snapped
 
         def snap_nearest_branches(in_branches: gpd.GeoDataFrame, snap_dist):
@@ -674,6 +717,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
                     # Drop the intersection with its own branch
                     match.drop(index=ix, inplace=True)
+                    match.drop_duplicates(keep='first', inplace=True)   # added because 2 same entries were present
                     
                     # If no matches have been found, continue
                     if not match.any(): continue

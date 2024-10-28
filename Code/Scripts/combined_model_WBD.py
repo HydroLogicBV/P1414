@@ -19,8 +19,10 @@ folder_path_output = r"P:\HL-P24050\05_Analysis\02_Model"
 #folder_path_output = r"C:\Work\Projects\P24050_ROI_voor_ROR\Testmodellen"
 os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_24oktober_zonder_waterschappen.gpkg"
+#gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_24oktober_zonder_waterschappen.gpkg"
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\randvoorwaarden_test.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_26oktober_zonder_HHSK.gpkg"
+
 gpkgs_list = [
     # folder_path_GIS + r"\GIS\HYDAMO\HHSK.gpkg",
     # folder_path_GIS + r"\GIS\HYDAMO\HDSR.gpkg",
@@ -37,16 +39,17 @@ gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\Combined_21oktober_tunnel_onderdoorgang.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\Combined_21oktober_totrand.gpkg",
 ]
-output_folder = folder_path_output + r"\Models\Combined\V30_WBD_500"
-output_folder = folder_path_output + r"\Combined_V1.1_500m_zonder_waterschappen"#Testmodel_randvoorwaarden"
+#output_folder = folder_path_output + r"\Models\Combined\V30_WBD_500"
+#output_folder = folder_path_output + r"\Combined_V1.1_500m_zonder_waterschappen"    #Testmodel_randvoorwaarden"
+output_folder = folder_path_output + r"\Combined_V2.1_500m_zonder_HHSK_no_clip"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
     #r"hhsk_config",
-    #r"hdsr_config",
-    #r"hhd_config",
-    #r"hhr_config",
-    #r"wagv_config",
+    r"hdsr_config",
+    r"hhd_config",
+    r"hhr_config",
+    r"wagv_config",
     r"ark_nzk_config",
     r"rijntakken_config",
     r"rijnmaasmonding_open_config",
@@ -58,6 +61,7 @@ config_list = [
     #r"underpass_config"
 ]
 snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 200, 100, 50, 0, 0 ,0]
+snap_dist_list = [0, 10, 10, 50, 10, 10, 100, 200, 100, 50, 0, 0 ,0]
 
 defaults = r"defaults"
 

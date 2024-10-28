@@ -857,7 +857,7 @@ def to_dhydro(
         mesh.mesh2d_add_rectilinear(network=network, polygon=polygon, dx=dx, dy=dy)
         print("created 2D mesh")
 
-        # Clip main branches from the 2D meshand give them lateral links
+        # Clip main branches from the 2D mesh and give them lateral links
         # Clip polygons from the 2D mesh
         clipped = 0
         if clip_extent is not None:
@@ -872,11 +872,11 @@ def to_dhydro(
                     divideby = 5
                 else:
                     divideby = 25
-                for i, poly in clip_extent.iterrows():
+                for i, poly in tqdm(enumerate(clip_extent.iterrows()),total=len(clip_extent),desc="clip progress", unit=" rows"):
                     if n_finish % divideby == 0: # Give some feedback on where the construction is
                         current_time = datetime.now()
-                        print(f'Clip progress: {round(n_finish/n_it*100,1)}% at {current_time.strftime("%H:%M")}')
-                    clip_polygons = poly.geometry.buffer(clip_buffer)
+                        #print(f'Clip progress: {round(n_finish/n_it*100,1)}% at {current_time.strftime("%H:%M")}')
+                    clip_polygons = poly[1].geometry.buffer(clip_buffer)
 
                     if clip_polygons.type == 'MultiPolygon':
                         merged_polygon = unary_union(clip_polygons)
@@ -1349,15 +1349,17 @@ def to_dhydro(
                     condition1 = (clip_extent['typewater'] == 'meer, plas')
                     condition2 = (clip_extent['typewater'] == 'waterloop') & (clip_extent['breedtekla'].isin(model_config.FM.two_d.clip_selection))
                     clip_extent = clip_extent[condition1 | condition2]
+
+                # Ensure that only unique column names exist
+                if 'index_left' in clip_extent.columns:
+                    clip_extent = clip_extent.rename(columns={'index_left': 'clip_index_left'})
+                if 'index_right' in clip_extent.columns:
+                    clip_extent = clip_extent.rename(columns={'index_right': 'clip_index_right'})
             else:
                 clip_extent = None
+                clip_buffer = 0
+                lateral_branches = []
             
-            # Ensure that only unique column names exist
-            if 'index_left' in clip_extent.columns:
-                clip_extent = clip_extent.rename(columns={'index_left': 'clip_index_left'})
-            if 'index_right' in clip_extent.columns:
-                clip_extent = clip_extent.rename(columns={'index_right': 'clip_index_right'})
-
             # Get the clip buffer, because it is not defined everywhere, to prevent errors set the buffer to 100m if not defined.
             if hasattr(model_config.FM.two_d, "clip_buffer"):
                 clip_buffer = model_config.FM.two_d.clip_buffer

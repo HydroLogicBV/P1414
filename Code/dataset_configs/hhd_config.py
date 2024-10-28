@@ -67,7 +67,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     
-    branches_path = p_folder + r"\HHDelfland\Primair water\Waterganglijnen.shp"  # Corrected from V7
+    branches_path = p_folder + r"\HHDelfland\Primair water\WaterganglijnenV2.shp"  # Manually edited watergang OBJECTID 19185 at around 77923.620 444003.300, 77931.750
     
     # bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
    
@@ -81,7 +81,7 @@ class RawData:
         ]
     )
     #norm_profile_path = p_folder + r"\HHDelfland\Temp_Normprofile\HHD_v3_ww.shp"
-    norm_profile_path = p_folder + r"\HHDelfland\Primair water\Waterganglijnen.shp"
+    norm_profile_path = p_folder + r"\HHDelfland\Primair water\WaterganglijnenV2.shp"         # Manually edited watergang OBJECTID 19185 at around 77923.620 444003.300, 77931.750
     # norm_profile_path = dict(
     #     [
     #         ("base", p_folder + r"\Uitgesneden watergangen\HHD_v3.shp"),
