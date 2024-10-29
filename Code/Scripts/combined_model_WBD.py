@@ -21,7 +21,7 @@ os.environ['GIS_folder_path'] = folder_path_GIS
 
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_24oktober_zonder_waterschappen.gpkg"
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\randvoorwaarden_test.gpkg"
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_26oktober_zonder_HHSK.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HDSR_28_oktober.gpkg"
 
 gpkgs_list = [
     # folder_path_GIS + r"\GIS\HYDAMO\HHSK.gpkg",
@@ -41,28 +41,28 @@ gpkgs_list = [
 ]
 #output_folder = folder_path_output + r"\Models\Combined\V30_WBD_500"
 #output_folder = folder_path_output + r"\Combined_V1.1_500m_zonder_waterschappen"    #Testmodel_randvoorwaarden"
-output_folder = folder_path_output + r"\Combined_V2.1_500m_zonder_HHSK_no_clip"
+output_folder = folder_path_output + r"\Combined_V2.2_500m_HDSR_no_clip"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
-    #r"hhsk_config",
+    # r"hhsk_config",
     r"hdsr_config",
-    r"hhd_config",
-    r"hhr_config",
-    r"wagv_config",
-    r"ark_nzk_config",
-    r"rijntakken_config",
-    r"rijnmaasmonding_open_config",
-    r"noordzee_config",
-    r"markermeer_config",
-    r"ontbrekende_stuwen_config",
-    r"randvoorwaarden_config", 
+    # r"hhd_config",
+    # r"hhr_config",
+    # r"wagv_config",
+    # r"ark_nzk_config",
+    # r"rijntakken_config",
+    # r"rijnmaasmonding_open_config",
+    # r"noordzee_config",
+    # r"markermeer_config",
+    # #r"ontbrekende_stuwen_config",
+    # r"randvoorwaarden_config", 
     #r"tunnel_config",
     #r"underpass_config"
 ]
 snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 200, 100, 50, 0, 0 ,0]
-snap_dist_list = [0, 10, 10, 50, 10, 10, 100, 200, 100, 50, 0, 0 ,0]
-
+#snap_dist_list = [0, 10, 10, 50, 10, 10, 100, 200, 100, 50, 0, 0 ,0]
+snap_dist_list = [0,10,10,100,200,100,0]
 defaults = r"defaults"
 
 build_database = False
@@ -83,9 +83,9 @@ if build_database:
             pass
 
     dhd.clip_structures_by_branches()
-    dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
-    dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)
-    dhd.fixed_weirs_from_raw_data(config="noordzeekeringen_config", defaults=defaults)
+    #dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
+    #dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)
+    #dhd.fixed_weirs_from_raw_data(config="noordzeekeringen_config", defaults=defaults)
     #dhd.dambreaks_from_config(config="dambreak_v0_config", defaults=defaults)
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
 

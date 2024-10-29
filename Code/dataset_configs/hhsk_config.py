@@ -137,17 +137,17 @@ class RawData:
     ## Normprofielen
     np_index_mapping = dict(
         [
-            ("bodembreedte", "BREEDTE"),
+            ("bodembreedte", "BODEMBREED"),
             ("bodemhoogte benedenstrooms", "BODEMHGTE"),       # bodemhoogte alleen aanwezig voor coupures
             ("bodemhoogte bovenstrooms", "BODEMHGTE"),
             ("code", "CODE"),
-            ("diepte", None), # Was: ["DIEPTE", "MAXIMALEWA"]), -> Aandachtspunt! 
+            ("diepte", "DIEPTE"), # Was: ["DIEPTE", "MAXIMALEWA"]), -> Aandachtspunt! 
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogte insteek linkerzijde", None),
             ("hoogte insteek rechterzijde", None),
-            ("taludhelling linkerzijde", None), # Was: "TALUDLINKS"),
-            ("taludhelling rechterzijde", None), #Was: "TALUDRECHT"),
+            ("taludhelling linkerzijde", "TALUDLINKS"), # Was: "TALUDLINKS"),
+            ("taludhelling rechterzijde", "TALUDRECHT"), #Was: "TALUDRECHT"),
             ("typeruwheid", None),
             ("ruwheidhoog", None),
             ("ruwheidlaag", None),

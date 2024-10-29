@@ -1128,9 +1128,11 @@ def to_dhydro(
                     for lateral in extforcefile.lateral:
                         ext_force_model.extforcefilenew.lateral.append(lateral)
             if hasattr(extforcefile, "boundary"):
-                if (not hasattr(ext_force_model.extforcefilenew, "boundary")) or (
-                    ext_force_model.extforcefilenew.boundary is None
-                ):
+                if (not hasattr(ext_force_model.extforcefilenew, "boundary")) or \
+                    (ext_force_model.extforcefilenew.boundary is None) or \
+                    (isinstance(ext_force_model.extforcefilenew.boundary, list) and not \
+                    ext_force_model.extforcefilenew.boundary): # Check for an empty list
+
                     ext_force_model.extforcefilenew.boundary = extforcefile.boundary
                 else:
                     new_forcingmodel = ext_force_model.extforcefilenew.boundary[0].forcingfile.forcing
