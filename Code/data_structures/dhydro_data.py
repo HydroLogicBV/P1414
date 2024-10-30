@@ -2,6 +2,7 @@ import importlib
 
 import geopandas as gpd
 import pandas as pd
+import os
 from geo_tools.clip_tools import _clip_structures_by_branches
 from geo_tools.merge_networks import merge_networks
 
@@ -130,6 +131,19 @@ class DHydroData:
         # self.gpkg_path = output_gpkg
         self.ddm.to_gpkg(output_gpkg=output_gpkg)
 
+    def relocate_comments_in_roughness_file(self, textfile: str):
+        # Rename the old textfile such that the new textfile can have the old name
+        textfile_old = textfile[:-4] + r'_oud.ini'
+        os.rename(textfile, textfile_old)        
+        with open(textfile_old, 'r') as f:
+            lines = f.readlines()
+        
+        better_lines = [sub.replace('# numLevels lines containing space separated lists', '\n# numLevels lines containing space separated lists') for sub in lines]
+        
+        with open(textfile, 'w') as f:
+            for line in better_lines:
+                f.write(line)
+    
     def to_dhydro(self, config: str, output_folder: str, defaults: str = "defaults", write=True):
         """
         Class method that converts a DHydamoDataModel to a D-HYDRO Model and saves unless write=False
@@ -151,6 +165,14 @@ class DHydroData:
 
         if write:
             self.write_dimr(output_folder=output_folder)
+
+        # Relocate the comments in the roughness files if those files exist
+        if write:
+            roughness_files_to_check = [output_folder + r'\dflowfm\roughness_FloodPlain1.ini',
+                                        output_folder + r'\dflowfm\roughness_Main.ini']
+            for rfile in roughness_files_to_check:
+                if os.path.exists(rfile):
+                    self.relocate_comments_in_roughness_file(rfile)
 
     def write_dimr(self, output_folder: str):
         return write_dimr(fm=self.fm, output_folder=output_folder)

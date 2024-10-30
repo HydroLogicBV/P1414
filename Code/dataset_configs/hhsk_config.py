@@ -68,9 +68,9 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V5.shp"  # From V7
+    branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V5_no_coupures.shp"  # From V7, removed coupures via QGIS
     culvert_path = p_folder + r"\HHSK\Duiker\Duiker_model2.shp"
-    norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V5.shp"
+    norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V5_no_coupures.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Peilvakken\Praktijkpeilgebieden.shp"
     #Peil = -0.1 # Dummy peil om te zorgen dat ik de kunstwerken kan testen
     pump_path = p_folder + r"\HHSK\Gemaal\Gemaal.shp"
@@ -78,7 +78,7 @@ class RawData:
     weir_path = dict(
         [
             ("base", p_folder + r"\HHSK\Stuw\Stuw.shp"),
-            ("concat_1", p_folder + r"\HHSK\Stuw\Coupures_primaire_waterkeringen_V2.shp"),
+            #("concat_1", p_folder + r"\HHSK\Stuw\Coupures_primaire_waterkeringen_V2.shp"),
         ]
     )
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"

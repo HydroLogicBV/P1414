@@ -14,11 +14,12 @@ def non_zero_min_idx(sdm_array):
         for i in non_zeros:
             if sdm_array[i] < sdm_array[min_idx]:
                 min_idx = i
-
+        sdm_array_final = sdm_array[min_idx]
     except:
         min_idx = None
+        sdm_array_final = 0
 
-    return min_idx, sdm_array[min_idx]
+    return min_idx, sdm_array_final
 
 
 def check_more_branches(sdm_array, base_idx, min_idx):

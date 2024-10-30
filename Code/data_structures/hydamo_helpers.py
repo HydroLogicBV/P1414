@@ -601,6 +601,15 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             """
 
             def snap_nodes(in_branches: gpd.GeoDataFrame, geometry_accuracy: float):
+                def normalize_line_direction(geom):
+                    if geom.geom_type == 'LineString':
+                        coords = list(geom.coords)
+                        # Sort to ensure consistent direction: if reversed is smaller, use reversed
+                        if coords[0] > coords[-1]:  
+                            coords = coords[::-1]
+                        return LineString(coords)
+                    return geom  # Handle cases where geometry might not be LineString
+                
                 in_branches["t_id"] = [str(uuid.uuid4()) for _ in range(in_branches.shape[0])]
                 in_branches.set_index("t_id", inplace=True)
                 out_branches = copy(in_branches)
@@ -620,9 +629,10 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
    
                 # remove geometries that are double. Use WKT format to speed up
                 starttime2 = time()
-                out_branches['geometry_wkt'] = out_branches['geometry'].apply(lambda geom: geom.wkt)
-                duplicate_rows = out_branches[out_branches.duplicated(subset='geometry_wkt', keep=False)]
-                out_branches_no_dups = out_branches.drop_duplicates(subset='geometry_wkt', keep='first').drop(columns='geometry_wkt')
+                out_branches['normalized_geometry_wkt'] = out_branches['geometry'].apply(lambda geom: normalize_line_direction(geom).wkt)
+                #out_branches['geometry_wkt'] = out_branches['geometry'].apply(lambda geom: geom.wkt)
+                duplicate_rows = out_branches[out_branches.duplicated(subset='normalized_geometry_wkt', keep=False)]
+                out_branches_no_dups = out_branches.drop_duplicates(subset='normalized_geometry_wkt', keep='first').drop(columns='normalized_geometry_wkt')
                 endtime2 = time()
                 if len(duplicate_rows) > 0:
                     print(f"There are {len(duplicate_rows)} duplicate rows, in {round(endtime2-starttime2,1)} sec:")
@@ -660,21 +670,23 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             geometry_accuracy = 2
 
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf, snap_dist=snap_distance)
+            #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest0.shp")
             branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_junctions, snap_dist=snap_distance)
             branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_nearest, geometry_accuracy=geometry_accuracy)
-            #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_nearest.shp")
-            #branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_junctions.shp")
-            #branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_snapped.shp")
+            #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest.shp")
+            #branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctions.shp")
+            #branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snapped.shp")
 
             while count != 0:
                 branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_snapped, snap_dist=snap_distance)
+                #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest0V2.shp")
                 branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
                 branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_junctions, snap_dist=snap_distance)
                 branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_nearest, geometry_accuracy=geometry_accuracy)
-                #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_nearestV2.shp")
-                #branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_junctionsV2.shp")
-                #branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\branches_gdf_snappedV2.shp")
+                #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearestV2.shp")
+                #branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctionsV2.shp")
+                #branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snappedV2.shp")
             
             """# Create nodes at the junctions of lines and snap nodes
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf, snap_dist=snap_distance)
@@ -2376,8 +2388,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         if hasattr(data_config, "branch_selection"):
             branches_gdf = select_features(data_config.branch_selection, branches_gdf)
 
-        # Validate the branches topography and connections
-        branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8)
+        # Validate the branches topography and connections, NOT for underpasses and tunnels
+        if name_config.name != 'Tunnel' and name_config.name != 'Onderdoorgangen':
+            branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8)
 
         branches_gdf, index_mapping = map_columns(
             code_pad=code_padding + "wl_",
