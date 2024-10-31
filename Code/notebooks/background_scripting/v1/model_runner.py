@@ -99,7 +99,7 @@ class ModelRunner(WidgetStyling):
                 logging.value = new_logging
                 self.progess_bar.value = self.percentage
                 if self.initializing:
-                    initializing_out.value = "<p><b>Currently busy Initializing model, this can take a while withouth new output messages.</b></p>"
+                    initializing_out.value = "<p><b>Currently busy Initializing model, this can take a while without new output messages.</b></p>"
                 else:
                     initializing_out.value = ""
         self.done = True
