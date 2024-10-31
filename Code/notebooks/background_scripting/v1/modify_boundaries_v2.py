@@ -236,8 +236,8 @@ class BoundaryModificationGroup(WidgetStyling):
         if self.quantity == 'dischargebnd':
             self.parameters = {
                 "csv": "",
-                "basic_discharge": 10000,
-                "peak_discharge": 15000,
+                "basic_discharge": 1000,
+                "peak_discharge": 2000,
                 "peak_offset": 0,
                 "peak_duration": 12,
                 }

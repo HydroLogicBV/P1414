@@ -93,12 +93,13 @@ class ModelRunner(WidgetStyling):
                     if "0 nr of dambreak links" in line:
                         p.kill()
                         raise Exception("No dambreak in model, exiting simulation")
-                    new_logging += f"<p><i>{line}</i></p>"
+                    if "** WARNING:" not in line:
+                        new_logging += f"<p><i>{line}</i></p>"
                     self.read_model_progress()
                 logging.value = new_logging
                 self.progess_bar.value = self.percentage
                 if self.initializing:
-                    initializing_out.value = "<p><b>Initializing model...</b></p>"
+                    initializing_out.value = "<p><b>Currently busy Initializing model, this can take a while withouth new output messages.</b></p>"
                 else:
                     initializing_out.value = ""
         self.done = True
