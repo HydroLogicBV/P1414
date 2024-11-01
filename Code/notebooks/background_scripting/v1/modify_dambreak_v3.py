@@ -440,12 +440,12 @@ class ModifyDambreak(WidgetStyling):
         
         self.set_default_layout_and_styling()
 
-        self.settings_to_modify = ['crestLevelIni', 't0',
+        self.settings_to_modify = ['crestLevelIni', 't0', 'timeToBreachToMaximumDepth',
                                   'crestLevelMin', 'breachWidthIni', 'f1', 'f2', 'uCrit']
         self.settings_to_modify_names = {
             'crestLevelIni': "Initial crest level of dambreach (crestLevelIni)",
             't0': "Time of dikebreach relative to start of simulation (t0 in hours)", 
-            'timeToBreachToMaximumDepth' : "Time to breach maximum depth (timeToBreachToMaximumDepth)",
+            'timeToBreachToMaximumDepth' : "Time to breach maximum depth (timeToBreachToMaximumDepth in seconds)",
             'crestLevelMin': "Minimum crest level (crestLevelMin)", 
             'breachWidthIni': "Initial breach width (breachWidthIni)", 
             'f1': "f1 paramter in Verheij–van der Knaap (2002) formula", 
