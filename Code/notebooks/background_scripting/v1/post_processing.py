@@ -377,7 +377,7 @@ class BreachPlotter():
         
         timesteps_before_breach = time < self.t_breach
         w[timesteps_before_breach] = 0
-        z[timesteps_before_breach] = 10
+        z[timesteps_before_breach] = np.nan
 
         return w, z
 
