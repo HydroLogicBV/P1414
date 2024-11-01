@@ -189,13 +189,13 @@ class DambreakWidget(WidgetStyling):
     def draw_map(self):
         clear_output()
         if self.current_step == 0:
-            instruction = "Step 0: Select the approximate location of your dambreach (0/4) "
+            instruction = "Step 0: Select the approximate location of your dambreach (1/4) "
             self.m = Map(center=self.center, zoom=self.zoom) 
             self.m.add(self.marker)
             display(self.m)
         elif self.current_step == 1:
             self.completed_line_input = False
-            instruction = "Step 1: Draw dambreach location (1/4) "
+            instruction = "Step 1: Draw dambreach location (2/4) "
             self.m = Map(center=self.center, zoom=self.zoom) 
             self.draw_control.on_draw(self.handle_draw)    
             self.m.add(self.draw_control)
@@ -204,29 +204,19 @@ class DambreakWidget(WidgetStyling):
             self.add_keringen()
             self.add_links()
         elif self.current_step == 2:
-            instruction = "Step 2: Select upstream 1D computational node (2/4) "
-            self.m = Map(center=self.center, zoom=self.zoom)
-            display(self.m)
-            self.add_network()
-            self.m.add(self.bedlevel_layer)
-            self.m.add(self.marker)
-            self.m.add(self.breach_point_map)
-        elif self.current_step == 3:
-            instruction = "Step 3: Select downstream 2D grid node (3/4)" 
+            instruction = "Step 2: Select downstream 2D grid node (3/4)" 
             self.m = Map(center=self.center, zoom=self.zoom)
             display(self.m)
             self.add_mesh()
             self.m.add(self.bedlevel_layer)
             self.m.add(self.marker)
-            self.m.add(self.upstream)
             self.m.add(self.breach_point_map)
-        elif self.current_step == 4:
+        elif self.current_step == 3:
             instruction = "Done! Inspect your results (4/4) "
             self.m = Map(center=self.center, zoom=self.zoom)
             display(self.m)
             self.add_mesh()
             self.add_network()
-            self.m.add(self.upstream)
             self.m.add(self.downstream)
             self.m.add(self.dambreach_map)
             self.m.add(self.breach_point_map)
@@ -243,7 +233,7 @@ class DambreakWidget(WidgetStyling):
         self.html_log = ipy.HTML(value='')
         display(html)  
         display(self.html_log)
-        if self.current_step < 4:
+        if self.current_step < 3:
             button_next_step = ipy.Button(description="Next step", style = self.button_style, layout = self.button_layout)
             output = ipy.Output()
             display(button_next_step, output)
@@ -263,20 +253,12 @@ class DambreakWidget(WidgetStyling):
             self.draw_map() 
         elif self.current_step == 1:
             if self.completed_line_input == True:
-                self.current_step = 2
+                self.current_step = 2 
                 self.draw_map()    
             else:
                 self.html_log.value = '<b style="color:red;font-size:14px;">You do not have a valid dambreak yet, so you can not continue</b>'
         elif self.current_step == 2:
             self.current_step = 3
-            self.index_closest_1d = self.snap_to_closest_point(self.marker.location, self.netcdf.mesh1d_map, self.netcdf.mesh1d_rd)
-            self.upstream_point = self.netcdf.mesh1d_rd.iloc[self.index_closest_1d:self.index_closest_1d+1]
-            self.upstream = GeoData(geo_dataframe = self.upstream_point.to_crs(self.crs_map),
-                        point_style={'radius': 5, 'color': 'blue', 'fillOpacity': 1, 'fillColor': 'white', 'weight': 3},
-                    name = 'UPSTREAM')
-            self.draw_map() 
-        elif self.current_step == 3:
-            self.current_step = 4
             self.index_closest_2d = self.snap_to_closest_point(self.marker.location, self.netcdf.mesh2d_map, self.netcdf.mesh2d_rd)
             self.downstream_point = self.netcdf.mesh2d_rd.iloc[self.index_closest_2d:self.index_closest_2d+1]
             self.downstream = GeoData(geo_dataframe = self.downstream_point.to_crs(self.crs_map),
@@ -286,10 +268,9 @@ class DambreakWidget(WidgetStyling):
             self.draw_map() 
             self.settings = {}
             self.settings['downstream'] = self.downstream_point
-            self.settings['upstream'] = self.upstream_point
             self.settings['breach'] = self.breach_point
             self.settings['breach_line'] = self.breach_line_rd
-        elif self.current_step == 4:
+        elif self.current_step == 3:
             self.draw_map()
 
     def handle_draw(self, target, action, geo_json:dict):
@@ -359,9 +340,8 @@ class DambreakWidget(WidgetStyling):
         return None
 
     def calculate_breach(self):
-        line_1 = LineString([[self.upstream_point.geometry.x, self.upstream_point.geometry.y], [self.breach_point.geometry.x, self.breach_point.geometry.y]])
-        line_2 = LineString([[self.breach_point.geometry.x, self.breach_point.geometry.y], [self.downstream_point.geometry.x, self.downstream_point.geometry.y]])
-        dambreach = gpd.GeoDataFrame(geometry = [line_1, line_2], crs = self.crs_rd)
+        line = LineString([[self.breach_point.geometry.x, self.breach_point.geometry.y], [self.downstream_point.geometry.x, self.downstream_point.geometry.y]])
+        dambreach = gpd.GeoDataFrame(geometry = [line], crs = self.crs_rd)
         self.dambreach_map = GeoData(geo_dataframe = dambreach.to_crs(self.crs_map),
                     style={'color': 'black', 'radius':10, 'fillColor': 'black', 'opacity':1, 'weight':2, 'dashArray':'2', 'fillOpacity':1},
                     name = 'DAMBREACH_LINES')       
@@ -622,8 +602,6 @@ class ModifyDambreak(WidgetStyling):
         self.dambreak_settings['breachWidthIni'] = 5
         self.dambreak_settings['waterLevelDownstreamLocationX'] = self.dambreak_settings_widget['downstream'].iloc[0].geometry.x
         self.dambreak_settings['waterLevelDownstreamLocationY'] = self.dambreak_settings_widget['downstream'].iloc[0].geometry.y
-        self.dambreak_settings['waterLevelUpstreamLocationX'] = self.dambreak_settings_widget['upstream'].iloc[0].geometry.x
-        self.dambreak_settings['waterLevelUpstreamLocationY'] = self.dambreak_settings_widget['upstream'].iloc[0].geometry.y
     
     def use_template_dambreak(self, dambreak_template:dict):
         self.dambreak_settings['id'] = 'comb_0.0'
