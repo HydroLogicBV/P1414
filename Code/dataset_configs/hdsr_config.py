@@ -86,10 +86,10 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    branches_path = p_folder + r"\HDSR\HydroObject\HydroObject.shp"  # Corrected from V7
+    branches_path = p_folder + r"\HDSR\HydroObject\HydroObject_v2.shp"  # Corrected from V7
     #bridges_path = p_folder + r"\HDSR\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Kokers_Lijnen\Kokers_Lijnen.shp"
-    norm_profile_path = p_folder + r"\HDSR\HydroObject\HydroObject.shp"
+    norm_profile_path = p_folder + r"\HDSR\HydroObject\HydroObject_v2.shp"
     # norm_profile_path = dict(
     #     [
     #         ("base", p_folder + r"\Uitgesneden watergangen\HDSR_v3.shp"),

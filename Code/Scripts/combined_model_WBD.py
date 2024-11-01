@@ -21,12 +21,13 @@ os.environ['GIS_folder_path'] = folder_path_GIS
 
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_24oktober_zonder_waterschappen.gpkg"
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\randvoorwaarden_test.gpkg"
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_30_oktober.gpkg"
-#gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HDSR_30_oktober.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_1_november.gpkg"
+#gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_1_november.gpkg"
 
 gpkgs_list = [
+    folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_1_november.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\HHSK_30_oktober_no_coupuresV2.gpkg",
-    folder_path_GIS + r"\GIS\HYDAMO\HDSR_30_oktober.gpkg",
+    folder_path_GIS + r"\GIS\HYDAMO\HDSR_31_oktober.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\HHD_30_oktober.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\HHR_30_oktober.gpkg",
     folder_path_GIS + r"\GIS\HYDAMO\WAGV_30_oktober.gpkg",
@@ -35,39 +36,39 @@ gpkgs_list = [
     # folder_path_GIS + r"\GIS\HYDAMO\RMM_HIJ_closed.gpkg",
     # folder_path_GIS + r"\GIS\HYDAMO\noordzee.gpkg",
     # folder_path_GIS + r"\GIS\HYDAMO\markermeer.gpkg",
-    folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_28_oktober.gpkg",
+    
     # folder_path_GIS + r"\GIS\HYDAMO\tunnels.gpkg",
     # folder_path_GIS + r"\GIS\HYDAMO\Ontbrekende_stuwen.gpkg",
-    folder_path_GIS + r"\GIS\HYDAMO\Tunnels_Onderdoorgangen_30_oktober.gpkg",           # Should not be validated!
+    folder_path_GIS + r"\GIS\HYDAMO\Tunnels_Onderdoorgangen_31_oktober.gpkg",           # Should not be validated!
     # folder_path_GIS + r"\GIS\HYDAMO\Combined_21oktober_totrand.gpkg",
 ]
 #output_folder = folder_path_output + r"\Models\Combined\V30_WBD_500"
 #output_folder = folder_path_output + r"\Combined_V2.2_500m_tunnel_no_clip_V2"
-output_folder = folder_path_output + r"\Combined_V2.3_500m_ALL_no_coupures"
+output_folder = folder_path_output + r"\Combined_V2.5_100m_ALL_no_coupures"
 
-config_dhydro = r"combined_WBD_config"
+config_dhydro = r"combined_WBD_config_100m"
 config_list = [
+    r"ark_nzk_config",
+    r"rijntakken_config",
+    r"rijnmaasmonding_open_config",
+    r"noordzee_config",
+    r"markermeer_config",
     # r"hhsk_config",
     # r"hdsr_config",
     # r"hhd_config",
     # r"hhr_config",
     # r"wagv_config",
-    # r"ark_nzk_config",
-    # r"rijntakken_config",
-    # r"rijnmaasmonding_open_config",
-    # r"noordzee_config",
-    # r"markermeer_config",
-    # r"ontbrekende_stuwen_config",
-    # r"randvoorwaarden_config", 
-    r"tunnel_config",
-    r"underpass_config"                         # Should not be validated! 
+    r"ontbrekende_stuwen_config",
+    r"randvoorwaarden_config", 
+    # r"tunnel_config",
+    # r"underpass_config"                         # Should not be validated! 
 ]
 snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 200, 100, 50, 0, 0 ,0]
-snap_dist_list = [0, 0, 10, 10, 50, 100, 0]
+snap_dist_list = [10, 10, 50, 100, 50, 0, 0]
 defaults = r"defaults"
 
 build_database = False
-load_gpkgs = True
+load_gpkgs = False
 build_model = True
 
 if build_database:

@@ -3,11 +3,11 @@
   <documentation>
     <fileVersion>1.3</fileVersion>
     <createdBy>hydrolib-core 0.3.0</createdBy>
-    <creationDate>2024-10-30T14:37:50.151911</creationDate>
+    <creationDate>2024-11-01T10:04:56.841815</creationDate>
   </documentation>
   <component name="DFM">
     <library>dflowfm</library>
-    <workingDir>P:\HL-P24050\05_Analysis\02_Model\Combined_V2.3_500m_ALL_no_coupures\dflowfm</workingDir>
-    <inputFile>P:\HL-P24050\05_Analysis\02_Model\Combined_V2.3_500m_ALL_no_coupures\dflowfm\test.mdu</inputFile>
+    <workingDir>P:\HL-P24050\05_Analysis\02_Model\Combined_V2.5_500m_ALL_no_coupures\dflowfm</workingDir>
+    <inputFile>P:\HL-P24050\05_Analysis\02_Model\Combined_V2.5_500m_ALL_no_coupures\dflowfm\test.mdu</inputFile>
   </component>
 </dimrConfig>

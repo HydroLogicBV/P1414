@@ -44,7 +44,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
-    branches_path = p_folder + r"\ARKNZK\netwerk_selectie_v3.shp"
+    branches_path = p_folder + r"\ARKNZK\netwerk_selectie_v4.shp"
     river_profile_path = p_folder + r"\ARKNZK\ZW_cross.csv"
     sluice_path = p_folder + r"\ARKNZK\RWS_sluizen_clipped.shp"
     weir_path = p_folder + r"\ARKNZK\netwerk_watergangen_boezemmodel_Weirs.shp"

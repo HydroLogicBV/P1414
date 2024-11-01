@@ -220,7 +220,7 @@ def to_dhydro(
             # Snap profiles to branch
             # hydamo.profile_roughness.read_gpkg_layer(gpkg_path, layer_name="ruwheidsprofiel")
             hydamo.profile_roughness.set_data(ddm.ruwheidsprofiel)
-            hydamo.profile.snap_to_branch(hydamo.branches, snap_method="intersecting")
+            hydamo.profile.snap_to_branch(hydamo.branches, snap_method='intersecting')# Was: snap_method="intersecting")
             print('Snapped profiles to branches')
             hydamo.profile.dropna(axis=0, inplace=True, subset=["branch_offset"])
             # hydamo.profile_line.read_gpkg_layer(gpkg_path, layer_name="profiellijn")
