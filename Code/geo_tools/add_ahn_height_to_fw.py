@@ -43,7 +43,7 @@ def add_height_to_linestrings(
     else:
 
         for name, row in gdf.iterrows():
-            print(name)
+            #print(name)
             line = row.geometry
             _line = np.asarray(line.coords)[:, 0:2]
             points = []

@@ -9,6 +9,7 @@ from time import time
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import networkx as nx
 from shapely import affinity
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
 from shapely.geometry.base import BaseGeometry
@@ -25,6 +26,9 @@ from data_structures.hydamo_globals import (
     WEIR_MAPPING,
 )
 from data_structures.roi_data_model import ROIDataModel as Datamodel
+from geo_tools.add_ahn_height_to_fw import add_height_to_linestrings
+from geo_tools.network_tools import combine_straight_branches
+from geo_tools.networkx_tools import gdf_to_nx
 
 warnings.filterwarnings(action="ignore", message="Mean of empty slice")
 
@@ -434,7 +438,7 @@ def merge_to_dm(dm, feature: str, feature_gdf: gpd.GeoDataFrame):
     return dm
 
 
-def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_folder: str) -> Datamodel:
+def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_folder: str, dhydro_config: str) -> Datamodel:
     """
     This function creates a full DHYDAMO DataModel, based on an empty DataModel and a defaults and config file. It creates the
     DataModel by adding elements in the following order.
@@ -806,7 +810,112 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         branches_gdf = skip_branches_con(in_branches=branches_gdf, max_distance=max_distance, min_connectivity=min_connectivity)
         print('Validated branches succesfully')
         return branches_gdf
+    
+    def scale_underpasses(
+            branches_gdf: gpd.GeoDataFrame, kering_gdf: gpd.GeoDataFrame, tunnel_gdf: gpd.GeoDataFrame, ahn_path: str, grid_size: int = 100  
+    ) -> gpd.GeoDataFrame:
+        "Scale the underpasses to the grid size such that underpasses always connect to 2 different 2D cells."
+        
+        def add_tunnel_dims(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+            rail_width = [10, 15, 20]
+            road_width = 3.5
+            gdf["aantalspor"] = gdf["aantalspor"].str.strip()
+            out_gdf = copy(gdf)
+            for name, row in gdf.iterrows():
+                if row["aantalspor"] == "enkel":
+                    out_gdf.loc[name, "width"] = rail_width[0]
+                    out_gdf.loc[name, "height"] = 4.7
 
+                elif row["aantalspor"] == "dubbel":
+                    out_gdf.loc[name, "width"] = rail_width[1]
+                    out_gdf.loc[name, "height"] = 4.7
+
+                elif row["aantalspor"] == "meervoudig":
+                    out_gdf.loc[name, "width"] = rail_width[2]
+                    out_gdf.loc[name, "height"] = 4.7
+
+                else:
+                    if not np.isnan(row["aantalrijs"]):
+                        out_gdf.loc[name, "width"] = row["aantalrijs"] * road_width
+
+                    else:
+                        if row["verharding"] == "> 7 meter":
+                            out_gdf.loc[name, "width"] = 7
+                        elif row["verharding"] == "4 - 7 meter":
+                            out_gdf.loc[name, "width"] = (4 + 7) / 2
+
+                    out_gdf.loc[name, "height"] = 4.2
+            return out_gdf
+
+        underpass_length = grid_size
+        blen = np.sqrt(2 * underpass_length**2) + 1
+        interp_range = 0.1
+        in_gdf = branches_gdf #copy(brug_gdf)
+        upass_gdf = branches_gdf
+        u_list = []
+        for name, upass in in_gdf.iterrows():
+            midpoint = upass.geometry.interpolate(0.5, normalized=True)
+            upass_line = upass.geometry
+            llen = upass_line.length
+            rescale_factor = blen / llen
+
+            p1 = upass_line.interpolate(0.5 - interp_range / 2, normalized=True)
+            p2 = upass_line.interpolate(0.5 + interp_range / 2, normalized=True)
+
+            if p2.x > p1.x:
+                dx_o = p2.x - p1.x
+                dy_o = p2.y - p1.y
+            else:
+                dx_o = p1.x - p2.x
+                dy_o = p1.y - p2.y
+
+            if dx_o != 0:
+                s = dy_o / dx_o
+                # given a line slope dy/dx (i.e. a/b), pythagoras a**2 + b**2 = c**2, and a desired length c
+                # we can determine that b_n = c_n/sqrt(1+(a/b)**2) and a_n = b_n * (a/b)
+                dx_1 = blen / np.sqrt(1 + s**2)
+                dy_1 = dx_1 * s
+
+            else:
+                dx_1 = 0
+                dy_1 = blen
+
+            # centroid = rotated_line.centroid
+            c_x, c_y = midpoint.x, midpoint.y
+
+            offset_l = offset_r = 0.5
+
+            list_of_points = [
+                Point(c_x - offset_l * dx_1, c_y - offset_l * dy_1),
+                Point(c_x + offset_r * dx_1, c_y + offset_r * dy_1),
+            ]
+
+            n_upass = copy(upass)
+            n_upass["geometry"] = LineString(list_of_points)
+            bool_crosses = upass_gdf["geometry"].crosses(n_upass["geometry"])
+            upass_gdf = upass_gdf.loc[~bool_crosses, :]
+            u_list.append(n_upass.to_dict())
+
+        u_gdf = gpd.GeoDataFrame(data=u_list, geometry="geometry", crs=in_gdf.crs)
+        
+        kering_gdf["geometry"] = kering_gdf["geometry"].buffer(2.5)
+        u_gdf = u_gdf.overlay(kering_gdf, how="difference").explode()
+
+        tunnel_gdf["geometry"] = tunnel_gdf["geometry"].buffer(5)
+        u_gdf = u_gdf.overlay(tunnel_gdf, how="difference").explode()
+
+        out_u_gdf = copy(u_gdf)
+        for name, upass in u_gdf.iterrows():
+            bool_cross = in_gdf["geometry"].crosses(upass["geometry"])
+            if np.sum(bool_cross.values[:]) == 0:
+                out_u_gdf.drop(index=name, inplace=True)
+
+        out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=11)
+        out_u_gdf = add_tunnel_dims(gdf=out_u_gdf)
+        out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=10)
+        out_u_gdf = out_u_gdf.reset_index(drop=True)
+        return out_u_gdf
+    
     def add_default_peil_to_branch(
         branches_gdf: gpd.GeoDataFrame, default_peil: float = None
     ) -> gpd.GeoDataFrame:
@@ -2373,6 +2482,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
     
     defaults = importlib.import_module("dataset_configs." + defaults)
     data_config = getattr(importlib.import_module("dataset_configs." + config), "RawData")
+    model_config = getattr(importlib.import_module("dataset_configs." + dhydro_config), "Models")
     name_config = getattr(importlib.import_module("dataset_configs."+ config), "Name")
     print(f' ----- Working on config: {name_config.name} -----')
 
@@ -2391,6 +2501,13 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         # Validate the branches topography and connections, NOT for underpasses and tunnels
         if name_config.name != 'Tunnel' and name_config.name != 'Onderdoorgangen':
             branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8)
+
+        if name_config.name == 'Onderdoorgangen' and hasattr(data_config, 'ahn_path') and hasattr(data_config, 'keringen_path') and hasattr(data_config, 'tunnel_path'):
+            keringen_gdf = gpd.read_file(data_config.keringen_path)
+            tunnel_gdf = gpd.read_file(data_config.tunnel_path)
+            grid_size = max(model_config.FM.two_d.dx, model_config.FM.two_d.dy)
+            branches_gdf = scale_underpasses(branches_gdf=branches_gdf, kering_gdf=keringen_gdf, tunnel_gdf=tunnel_gdf, ahn_path=data_config.ahn_path, grid_size=grid_size)
+            print(f'Scaled underpasses to a grid size of {grid_size}m')
 
         branches_gdf, index_mapping = map_columns(
             code_pad=code_padding + "wl_",
@@ -2657,3 +2774,5 @@ def select_features(data_config, gdf):
     gdf = gdf.loc[gdf[column].str.upper() == value, :]
 
     return gdf
+
+

@@ -2,7 +2,7 @@
 from netCDF4 import Dataset
 
 # Open the NetCDF file
-filepath = r"\\dc02\Project\HL-P24050\05_Analysis\02_Model\Combined_V2.2_500m_HHSK_no_clip\dflowfm\network.nc"
+filepath = r"\\dc02\Project\HL-P24050\05_Analysis\02_Model\HHSK_08nov\dflowfm\network.nc"
 dataset = Dataset(filepath, 'r')
 
 # Print the file structure

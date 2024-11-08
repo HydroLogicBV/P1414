@@ -35,12 +35,16 @@ class RawData:
     #branches_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
     branches_path = dict(
         [
-            ("base", p_folder + r"\Tunnels en onderdoorgangen\Underpasses_filtered_500m.shp"),
+            ("base", p_folder + r"\Tunnels en onderdoorgangen\Underpasses_unfiltered_500m_len.shp"),
             ("sjoin", p_folder + r"\WAGV\AGV_Onderdoorgangen_Extra\AGV_Onderdoorgangen_Extra.shp"),
         ]
     )
     #norm_profile_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
     norm_profile_path = branches_path
+
+    ahn_path = folder_path_GIS + r"\GIS\AHN\AHN4_WSS_filled.tif"
+    keringen_path = folder_path_GIS + r"\GIS\HYDAMO\Combined_keringen.gpkg"
+    tunnel_path = folder_path_GIS + r"\GIS\Keringen_met_hoogte\tunnel.shp"
 
     class Peil:
         default_peil = -9.75
