@@ -21,8 +21,7 @@ os.environ['GIS_folder_path'] = folder_path_GIS
 
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_24oktober_zonder_waterschappen.gpkg"
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\randvoorwaarden_test.gpkg"
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HHSK_8_november.gpkg"
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HHSK_test8nov.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_11november.gpkg"
 
 gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_1_november.gpkg",
@@ -46,22 +45,22 @@ gpkgs_list = [
 #output_folder = folder_path_output + r"\Combined_V2.2_500m_tunnel_no_clip_V2"
 
 #output_folder = folder_path_output + r"\HHSK_08nov_nocoupures"
-output_folder = folder_path_output + r"\HHSK_08_november_100m"
+output_folder = folder_path_output + r"\Buitenwater_11_november_500m"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
-    #r"ark_nzk_config",
-    #r"rijntakken_config",
-    #r"rijnmaasmonding_open_config",
-    #r"noordzee_config",
-    #r"markermeer_config",
-    r"hhsk_config",
+    r"ark_nzk_config",
+    r"rijntakken_config",
+    r"rijnmaasmonding_open_config",
+    r"noordzee_config",
+    r"markermeer_config",
+    #r"hhsk_config",
     # r"hdsr_config",
     # r"hhd_config",
     # r"hhr_config",
     # r"wagv_config",
-    #r"ontbrekende_stuwen_config",
-    #r"randvoorwaarden_config", 
+    r"ontbrekende_stuwen_config",
+    r"randvoorwaarden_config", 
     # r"tunnel_config",
     # r"underpass_config"                         # Should not be validated! 
 ]
@@ -116,7 +115,7 @@ if build_model:
     dhd.hydamo_from_gpkg(gpkg_file)
 
     # remove brug as it needs a cs
-    del dhd.ddm.brug
+    #del dhd.ddm.brug
     #dhd.features.remove("brug")
     #dhd.ddm.pomp["maximalecapaciteit"] = 0
 

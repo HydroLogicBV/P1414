@@ -31,7 +31,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     branches_path = p_folder + r"\Rijntakken\RTK_Branches.shp"
-    river_profile_path = p_folder + r"\Rijntakken\ZW_cross.csv"
+    river_profile_path = p_folder + r"\Rijntakken\ZW_cross_v2.csv"
     river_roughness_path = p_folder + r"\Rijntakken\roughness.csv"
     weir_path = p_folder + r"\Rijntakken\RTK_Weirs.shp"
 

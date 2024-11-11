@@ -457,13 +457,13 @@ def to_dhydro(
         branches = ddm.waterloop
         for name, prof in ddm.rivier_profielen_data.iterrows():
             if not branches["code"].str.contains(prof["branchid"]).any():
-                print("branch for profile not found")
+                print(f"Branch for profile {prof['name']} not found")
                 continue
 
             branch = branches.loc[branches["code"] == prof["branchid"], :]
 
             if prof["chainage"] > np.ceil(branch.geometry.length.values[:]):
-                print("profile too far on branch")
+                print(f"Profile {prof['name']} too far on branch {prof['branchid']}. Length: {branch.geometry.length.values[:]}, Chainage: {prof['chainage']}")
                 continue
 
             profile = ddm.rivier_profielen[ddm.rivier_profielen["name"] == prof["name"]]
@@ -535,14 +535,14 @@ def to_dhydro(
             section_slice = gdf.loc[gdf["section"] == section, :]
             for ix, (name, row) in enumerate(section_slice.iterrows()):
                 if not branches["code"].str.contains(row["branchid"]).any():
-                    print("branch for roughness not found")
+                    print(f"Branch for roughness {name} not found")
                     continue
 
                 branch = branches.loc[branches["code"] == row["branchid"], :]
                 if row["chainage"] is not None and not (isinstance(row["chainage"], float) and np.isnan(row["chainage"])):
                     chainage = np.amax([float(c) for c in row["chainage"].split(",")])
                     if chainage > np.ceil(branch.geometry.length.values[:]):
-                        print("roughness too far on branch")
+                        print(f"Profile {name} too far on branch {row['branchid']}. Length: {branch.geometry.length.values[:]}, Chainage: {chainage}")
                         continue
 
                 kwargs = copy(

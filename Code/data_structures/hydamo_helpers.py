@@ -1997,6 +1997,8 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             meta_data = slice.loc[slice["Data_type"] == "meta", :]
             geom_data = slice.loc[slice["Data_type"] == "geom", :]
 
+            if u_id == '101a':
+                None
             branch = str(meta_data["branch"].values[0])
             _branchid = code_padding + branch
             name = code_padding + u_id
