@@ -58,7 +58,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     
-    branches_path = p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp"
+    branches_path = p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped_V3.shp"
     #branches_path = dict(
     #    [
     #        ("base", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp")
@@ -73,7 +73,7 @@ class RawData:
     norm_profile_path = dict(
         [
             ("base", p_folder + r"\WAGV\hydrovak\hydrovak.shp"),
-            ("sjoin", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp"),
+            ("sjoin", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped_V3.shp"),
         ]
     )
     peil_gebieden_path = p_folder + r"\WAGV\vigerende_peilgebieden\peilgebieden.shp"

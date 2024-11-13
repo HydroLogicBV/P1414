@@ -3,6 +3,7 @@ import importlib
 import geopandas as gpd
 import pandas as pd
 import os
+import uuid
 from geo_tools.clip_tools import _clip_structures_by_branches
 from geo_tools.merge_networks import merge_networks
 
@@ -143,7 +144,7 @@ class DHydroData:
         with open(textfile, 'w') as f:
             for line in better_lines:
                 f.write(line)
-    
+
     def to_dhydro(self, config: str, output_folder: str, defaults: str = "defaults", write=True):
         """
         Class method that converts a DHydamoDataModel to a D-HYDRO Model and saves unless write=False

@@ -437,7 +437,6 @@ def merge_to_dm(dm, feature: str, feature_gdf: gpd.GeoDataFrame):
 
     return dm
 
-
 def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_folder: str, dhydro_config: str) -> Datamodel:
     """
     This function creates a full DHYDAMO DataModel, based on an empty DataModel and a defaults and config file. It creates the
@@ -458,6 +457,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
     Returns:
       ddm (Datamodel): a fully HYDAMO compliant DataModel
     """
+
 
     def validate_branches(
         branches_gdf: gpd.GeoDataFrame,
