@@ -1275,14 +1275,31 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             if ("hoogte insteek linkerzijde" in params) and (
                 "hoogte insteek rechterzijde" in params
             ):
-                prof_height = [
-                    params["hoogte insteek linkerzijde"],
-                    bheight,
-                    bheight,
-                    params["hoogte insteek rechterzijde"],
-                ]
+                if (params["hoogte insteek linkerzijde"] > bheight) and (
+                    params["hoogte insteek rechterzijde"] > bheight):
+                    prof_height = [
+                        params["hoogte insteek linkerzijde"],
+                        bheight,
+                        bheight,
+                        params["hoogte insteek rechterzijde"],
+                    ]
+                else:
+                    prof_height = [
+                        bheight+2,
+                        bheight,
+                        bheight,
+                        bheight+2,
+                    ]
+                    code = branch['code']
+                    print(f'Profile {profiel_nummer} on branch {code} inverted. Bedlevel: {bheight}, Insteekhoogte: {params["hoogte insteek linkerzijde"]} (normprofile). Insteekhoogte set to 2 m above bedlevel')
+
             else:
-                prof_height = [def_height, bheight, bheight, def_height]
+                if def_height > bheight: 
+                    prof_height = [def_height, bheight, bheight, def_height]
+                else:
+                    prof_height = [bheight+2, bheight, bheight, bheight+2]
+                    code = branch['code'] 
+                    print(f'Profile {profiel_nummer} on branch {code} inverted. Bedlevel: {bheight}, Insteekhoogte: {def_height} (default). Insteekhoogte set to 2 m above bedlevel')
 
             p_list = []
             for ix, point in enumerate(list_of_points):

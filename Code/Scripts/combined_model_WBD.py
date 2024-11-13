@@ -21,7 +21,7 @@ os.environ['GIS_folder_path'] = folder_path_GIS
 
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_24oktober_zonder_waterschappen.gpkg"
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\randvoorwaarden_test.gpkg"
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_11november.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HHSK_11november.gpkg"
 
 gpkgs_list = [
     folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_1_november.gpkg",
@@ -49,18 +49,18 @@ output_folder = folder_path_output + r"\Buitenwater_11_november_500m"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
-    r"ark_nzk_config",
-    r"rijntakken_config",
-    r"rijnmaasmonding_open_config",
-    r"noordzee_config",
-    r"markermeer_config",
-    #r"hhsk_config",
+    # r"ark_nzk_config",
+    # r"rijntakken_config",
+    # r"rijnmaasmonding_open_config",
+    # r"noordzee_config",
+    # r"markermeer_config",
+    #r"hhsk_config", 10
     # r"hdsr_config",
     # r"hhd_config",
     # r"hhr_config",
     # r"wagv_config",
     r"ontbrekende_stuwen_config",
-    r"randvoorwaarden_config", 
+    #r"randvoorwaarden_config", 
     # r"tunnel_config",
     # r"underpass_config"                         # Should not be validated! 
 ]
@@ -68,9 +68,9 @@ snap_dist_list = [0, 0, 10, 10, 50, 10, 10, 100, 200, 100, 50, 0, 0 ,0]
 #snap_dist_list = [10, 10, 50, 100, 50, 0, 0]
 defaults = r"defaults"
 
-build_database = False
+build_database = True
 load_gpkgs = False
-build_model = True
+build_model = False
 
 if build_database:
     dhd = DHydroData()
