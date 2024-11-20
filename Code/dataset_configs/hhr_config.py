@@ -177,7 +177,7 @@ class RawData:
         ]
     )
 
-    ## Weirs
+    ## Sluice
     sluice_index_mapping = dict(
         [
             ("afvoercoefficient_stuw", None),
@@ -186,9 +186,9 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogstedoorstroombreedte", "BREEDTE"),
-            ("hoogstedoorstroomhoogte", "KERENDEHOO"),
+            ("hoogstedoorstroomhoogte", ["KERENDEHOO", "HOOGTE"]), # HOOGTE van noodwaterkering toevoegen
             ("laagstedoorstroombreedte", "BREEDTE"),
-            ("laagstedoorstroomhoogte", "KERENDEHOO"),
+            ("laagstedoorstroomhoogte", ["KERENDEHOO", "HOOGTE"]), # Hoogte van Noodwaterkering toevoegen
             ("overlaatonderlaat", None),
             ("soortregelbaarheid", None),
             ("soortstuw", None),

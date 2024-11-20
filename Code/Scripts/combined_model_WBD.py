@@ -21,7 +21,11 @@ os.environ['GIS_folder_path'] = folder_path_GIS
 
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_24oktober_zonder_waterschappen.gpkg"
 #gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\randvoorwaarden_test.gpkg"
+<<<<<<< Updated upstream
 gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Test_WAGV_ARK_13novV2.gpkg"
+=======
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Test_onderdoorgangen_WAGV_3_19nov.gpkg"
+>>>>>>> Stashed changes
 
 gpkgs_list = [
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_11november.gpkg",             'snap_dist': 10},
@@ -56,7 +60,7 @@ output_folder = folder_path_output + r"\Test_clippen_20nov"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
-    {'config': r"ark_nzk_config",               'snap_dist': 10},
+    #{'config': r"ark_nzk_config",               'snap_dist': 10},
     #{'config': r"rijntakken_config",            'snap_dist': 10},
     #{'config': r"rijnmaasmonding_open_config",  'snap_dist': 100},
     #{'config': r"noordzee_config",              'snap_dist': 200},
@@ -65,11 +69,11 @@ config_list = [
     #{'config': r"hdsr_config",                  'snap_dist': 10},
     #{'config': r"hhd_config",                   'snap_dist': 10},
     #{'config': r"hhr_config",                   'snap_dist': 10},
-    {'config': r"wagv_config",                  'snap_dist': 10},
+    #{'config': r"wagv_config",                  'snap_dist': 10},
     #{'config': r"ontbrekende_stuwen_config",    'snap_dist': 10},
     #{'config': r"randvoorwaarden_config",       'snap_dist': 0},
     #{'config': r"tunnel_config",                'snap_dist': 0},
-    #{'config': r"underpass_config",             'snap_dist': 0},
+    {'config': r"underpass_config",             'snap_dist': 0},
 
     # r"rijntakken_config",
     # r"rijnmaasmonding_open_config",
@@ -105,7 +109,7 @@ if build_database:
         except AttributeError:
             pass
 
-    dhd.clip_structures_by_branches()
+    #dhd.clip_structures_by_branches()
     #dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
     #dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults)
     #dhd.fixed_weirs_from_raw_data(config="noordzeekeringen_config", defaults=defaults)

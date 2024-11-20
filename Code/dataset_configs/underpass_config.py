@@ -33,10 +33,11 @@ class RawData:
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
     #branches_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
+    #branches_path = p_folder + r"\WAGV\AGV_Onderdoorgangen_Extra\AGV_Onderdoorgangen_Extra.shp"
     branches_path = dict(
         [
             ("base", p_folder + r"\Tunnels en onderdoorgangen\Underpasses_unfiltered_500m_len.shp"),
-            ("sjoin", p_folder + r"\WAGV\AGV_Onderdoorgangen_Extra\AGV_Onderdoorgangen_Extra.shp"),
+            ("concat", p_folder + r"\WAGV\AGV_Onderdoorgangen_Extra\AGV_Onderdoorgangen_Extra.shp"),
         ]
     )
     #norm_profile_path = p_folder + r"\Wegen\Underpasses_filtered_500m.shp"
@@ -54,7 +55,7 @@ class RawData:
     ## Branches
     branch_index_mapping = dict(
         [
-            ("code", "lokaalid"),
+            ("code", ["lokaalid","id_agv"]),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("tunnel", True),
@@ -68,8 +69,8 @@ class RawData:
             ("bodembreedte", ["width", "Width"]),
             ("bodemhoogte benedenstrooms", ['z_min', 'z-height']),
             ("bodemhoogte bovenstrooms", ['z_min', 'z-height']),
-            ("code", ["lokaalid", "id"]),
-            ("diepte", "height"),
+            ("code", ["lokaalid", "id_agv"]),
+            ("diepte", ["height", "Height"]),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogte insteek linkerzijde", None),

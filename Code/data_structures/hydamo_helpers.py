@@ -168,12 +168,13 @@ def load_geo_file(
                     data=pd.concat([gdf, load_geo_file(file_path=value).to_crs(gdf.crs)]),
                     geometry="geometry",
                     crs=gdf.crs,
-                )
+                ).reset_index()
             elif "sjoin" in key:
                 gdf2 = load_geo_file(file_path=value).to_crs(gdf.crs)
                 gdf2.geometry = gdf2.geometry.buffer(5)
                 gdf = gdf.sjoin(gdf2, how="left", predicate="within", rsuffix="right")
                 gdf.columns = [column.replace("_right", "") for column in gdf.columns]
+                gdf.reset_index(inplace=True)
 
     elif isinstance(file_path, list):
         if len(file_path) <= 2:
@@ -301,6 +302,7 @@ def map_columns(
                             gdf[value]
                             .replace(to_replace=[None, "n.v.t.", -999, 0], value=np.nan)
                             .astype(str)
+                            .replace(to_replace='nan', value=np.nan)
                             .bfill(axis=1)
                             .iloc[:, 0]  # Select the non-nan values
                         )
