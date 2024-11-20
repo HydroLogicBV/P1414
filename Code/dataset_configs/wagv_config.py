@@ -58,7 +58,7 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     
-    branches_path = p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped_V3.shp"
+    branches_path = p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped_V4.shp"
     #branches_path = dict(
     #    [
     #        ("base", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp")
@@ -72,12 +72,12 @@ class RawData:
     measured_profile_path = (p_folder + r"\WAGV\metingprofielpunt_v13_clipped\metingprofielpunt_v13_clipped.shp")
     norm_profile_path = dict(
         [
-            ("base", p_folder + r"\WAGV\hydrovak\hydrovak.shp"),
-            ("sjoin", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped_V3.shp"),
+            ("base", p_folder + r"\WAGV\hydrovak\hydrovakV2.shp"),
+            ("sjoin", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped_V4.shp"),
         ]
     )
     peil_gebieden_path = p_folder + r"\WAGV\vigerende_peilgebieden\peilgebieden.shp"
-    pump_path = p_folder + r"\WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clipped.shp"
+    pump_path = p_folder + r"\WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clippedV2.shp"
     
     #pump_path = dict(
     #    [
@@ -87,7 +87,7 @@ class RawData:
     #    ]
     #)
 
-    sluice_path = p_folder + r"\WAGV\AGV-Update\sluizen\sluis.shp"                  
+    sluice_path = p_folder + r"\WAGV\AGV-Update\sluizen\sluisV2.shp"                  
     #weir_path = p_folder + r"\WAGV\Niet legger\stuw_v13_clipped_with_do.shp"        # Nog aanpassen?, nieuwe in \WAGV\AGV-Update\stuwen\stuw_v13_clipped.shp 
     weir_path = p_folder + r"\WAGV\AGV-Update\stuwen\stuw_v13_clipped.shp"
 

@@ -910,8 +910,8 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             if np.sum(bool_cross.values[:]) == 0:
                 out_u_gdf.drop(index=name, inplace=True)
 
-        out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=11)
-        out_u_gdf = add_tunnel_dims(gdf=out_u_gdf)
+        #out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=11)
+        #out_u_gdf = add_tunnel_dims(gdf=out_u_gdf)
         out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=10)
         out_u_gdf = out_u_gdf.reset_index(drop=True)
         return out_u_gdf

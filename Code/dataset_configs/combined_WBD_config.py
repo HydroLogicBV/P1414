@@ -33,10 +33,16 @@ class Models:
                 folder_path_GIS + r"\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )
             two_d_buffer = 0
-            clip_extent_path = None
+            clip_extent_path = dict(
+                [
+                     ("base", folder_path_GIS + r"\GIS\HHRijnland\Boezemmeren_plassen\Rijnland_meren_plassen.shp"),
+                     ("concat", folder_path_GIS + r"\GIS\ARKNZK\netwerk_selectie_v4_polygons_merged.shp"),
+                ]
+            )
+
             #clip_extent_path = folder_path_GIS+r"\GIS\peilen\boezem_v2.shp"       # waterways that must be clipped from 2D
-            clip_buffer = 0.5*dx                                                     # int, buffer around the polygons that must be clipped in [meters], 0.5*grid size works often to get a sharp clip
-            clip_selection = ['> 125 meter', '50 - 125 meter']                    # selection of the buffer layer that must be kept, based on the 'breedtekla' column in the shapefile
+            clip_buffer = int(0.6*dx)                                              # int, buffer around the polygons that must be clipped in [meters], 0.5*grid size to 0.7*grid size works often to get a sharp clip
+            #clip_selection = ['> 125 meter', '50 - 125 meter']                    # selection of the buffer layer that must be kept, based on the 'breedtekla' column in the shapefile
 
         class hydrolib_core_options:
             class external_forcing:

@@ -861,29 +861,24 @@ def to_dhydro(
         # Clip polygons from the 2D mesh
         clipped = 0
         if clip_extent is not None:
+            # Explode potential MultiPolygons:
+            clip_extent = clip_extent.explode(index_parts=True).reset_index(drop=True)
+            
             if len(clip_extent) == 1:
                 clip_polygons = clip_extent.loc[0, 'geometry']
                 mesh.mesh2d_clip(network=network, polygon=clip_polygons)
                 print('Clipped 1 polygon from the mesh\n')
             else:
-                n_it = len(clip_extent)
                 n_finish = 0
-                if n_it < 300:
-                    divideby = 5
-                else:
-                    divideby = 25
                 for i, poly in tqdm(enumerate(clip_extent.iterrows()),total=len(clip_extent),desc="clip progress", unit=" rows"):
-                    if n_finish % divideby == 0: # Give some feedback on where the construction is
-                        current_time = datetime.now()
-                        #print(f'Clip progress: {round(n_finish/n_it*100,1)}% at {current_time.strftime("%H:%M")}')
                     clip_polygons = poly[1].geometry.buffer(clip_buffer)
 
+                    # Ensure the result is a single polygon although the result should be exploded already
                     if clip_polygons.type == 'MultiPolygon':
                         merged_polygon = unary_union(clip_polygons)
                     else:
                         merged_polygon = clip_polygons
 
-                    # Ensure the result is a single polygon
                     if merged_polygon.type == 'MultiPolygon':
                         # If still a MultiPolygon, extract the largest polygon
                         largest_polygon = max(merged_polygon, key=lambda p: p.area)
@@ -1341,9 +1336,24 @@ def to_dhydro(
 
             # Stuk uit code Pepijn ter test:
             if hasattr(model_config.FM.two_d, "clip_extent_path") and (model_config.FM.two_d.clip_extent_path is not None):
-                clip_extent_gdf = gpd.read_file(model_config.FM.two_d.clip_extent_path, crs=CRS)
-                clip_extent = clip_extent_gdf[clip_extent_gdf['geometry'].apply(lambda geom: isinstance(geom, Polygon))]    # Only select the ones with a polygon, because that can only be clipped
+                # Concat possible multiple clip_extent_paths
+                if isinstance(model_config.FM.two_d.clip_extent_path, dict):
+                    for key, value in model_config.FM.two_d.clip_extent_path.items():
+                        if "base" in key:
+                            gdf = gpd.read_file(value, crs=CRS)
+                        elif "concat" in key:
+                            gdf = gpd.GeoDataFrame(
+                                data=pd.concat([gdf, gpd.read_file(value, crs=CRS)]),
+                                geometry="geometry",
+                                crs=gdf.crs,
+                            )
+                    clip_extent_gdf = gdf
+                else:
+                    clip_extent_gdf = gpd.read_file(model_config.FM.two_d.clip_extent_path, crs=CRS)
                 
+                #clip_extent = clip_extent_gdf[clip_extent_gdf['geometry'].apply(lambda geom: isinstance(geom, Polygon))]    # Only select the ones with a polygon, because that can only be clipped
+                clip_extent = clip_extent_gdf.copy()
+
                 # Apply selection criteria:
                 #   1. all shapes that have 'meer, plas' in their 'typewater' column must be clipped (must remain in clip_extent)
                 #   2. all shapes that meet the clip_selection criteria for the 'breedtekla' column must be clipped
@@ -1380,7 +1390,7 @@ def to_dhydro(
                 all_branches_gdf = all_branches_gdf.to_crs(CRS)
 
                 clipped_branches_gdf = gpd.sjoin(all_branches_gdf, clip_extent_buffer, how='inner', op='intersects')
-                lst_temp = clipped_branches_gdf.code_left.tolist()
+                lst_temp = clipped_branches_gdf.code.tolist()
                 lateral_branches = lst_temp 
 
             ## EINDE STUK PEPIJN 
