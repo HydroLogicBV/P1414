@@ -8,7 +8,15 @@ class FixedWeirs:
     ## PATHS
     dm_attribute = "overiglijnelement"
     p_folder = folder_path_GIS + r"\GIS"
-    flood_defences_path = p_folder + r"\Keringen_met_hoogte\relief_v2.shp"
+    #flood_defences_path = p_folder + r"\Keringen_met_hoogte\relief_v2.shp"
+
+    flood_defences_path = dict(
+                    [
+                        ("base", p_folder + r"\Keringen_met_hoogte\relief_v2.shp"),
+                        ("concat", p_folder + r"\Keringen_met_hoogte\ontbrekende_hoge_lijnelementen_langs_A4_MiddenDelfland_hoogte.shp"),
+                    ]
+                )
+
     fixed_weir_index_mapping = dict(
         [
             ("code", "lokaalid"),

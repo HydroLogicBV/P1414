@@ -152,6 +152,10 @@ if __name__ == "__main__":
                 r"D:\Work\Project\P1414\GIS\WAGV\Keringen\keringen.shp",
                 r"D:\Work\Project\P1414\GIS\Keringen_met_hoogte\wagv.shp",
             ),
+            (
+                r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\ontbrekende_hoge_lijnelementen_langs_A4_MiddenDelfland\ontbrekende_hoge_lijnelementen_langs_A4_MiddenDelfland.shp",
+                r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\Keringen_met_hoogte\ontbrekende_hoge_lijnelementen_langs_A4_MiddenDelfland_hoogte.shp",
+            ),
         ]
     )
 

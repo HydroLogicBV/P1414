@@ -69,9 +69,9 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     #branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V5_no_coupures.shp"  
-    branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V6.2.shp"        # From V7, renamed the coupures via QGIS such that the name is not duplicated when cut
+    branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V6.3.shp"        # From V7, renamed the coupures via QGIS such that the name is not duplicated when cut
     culvert_path = p_folder + r"\HHSK\Duiker\Duiker_model2.shp"
-    norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V6.2.shp"
+    norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V6.3.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Peilvakken\Praktijkpeilgebieden.shp"
     pump_path = p_folder + r"\HHSK\Gemaal\Gemaal.shp"
     sluice_path = p_folder + r"\HHSK\Sluis\Sluis.shp"

@@ -32,9 +32,9 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
-    branches_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel.shp"
+    branches_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel_verdiepteA4V2.shp"
     culvert_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel.shp"
-    norm_profile_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel.shp"
+    norm_profile_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel_verdiepteA4.shp"
 
     class Peil:
         default_peil = -9.75

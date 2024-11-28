@@ -897,7 +897,7 @@ def to_dhydro(
                         network=network,
                         branchids=lateral_branches,
                         dist_factor=None,   # within=extent.buffer(1e3)
-                        max_length=2*dx,      # Set the maximum length to the grid resolution
+                        max_length=2000,      # Set the maximum length to the grid resolution
                     )
                 
                 # Remove the links that go to end points as these deliver problems when running the simulation
