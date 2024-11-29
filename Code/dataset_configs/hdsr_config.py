@@ -98,7 +98,7 @@ class RawData:
     # )
     peil_gebieden_path = p_folder + r"\HDSR\BR_Peilgebieden\BR_Peilgebieden.shp"
     pump_path = p_folder + r"\HDSR\Gemalen\GemalenV2.shp"
-    sluice_path = p_folder + r"\HDSR\Sluizen_Lijnen\Sluizen_Lijnen.shp"
+    sluice_path = p_folder + r"\HDSR\Sluizen_Lijnen\Sluizen_LijnenV2.shp"
     weir_path = dict(
         [
             ("base", p_folder + r"\HDSR\BR_Stuwen\BR_Stuwen.shp"),

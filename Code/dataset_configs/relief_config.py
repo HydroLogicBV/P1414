@@ -8,8 +8,14 @@ class FixedWeirs:
     ## PATHS
     dm_attribute = "overiglijnelement"
     p_folder = folder_path_GIS + r"\GIS"
-    flood_defences_path = p_folder + r"\Relief en wegen\relief_v4.shp"
+    #flood_defences_path = p_folder + r"\Keringen_met_hoogte\relief_v2.shp"
 
+    flood_defences_path = dict(
+                    [
+                        ("base", p_folder + r"\Relief en wegen\relief_v4.shp"),
+                        ("concat", p_folder + r"\Keringen_met_hoogte\ontbrekende_hoge_lijnelementen_langs_A4_MiddenDelfland_hoogte.shp"),
+                    ]
+                )
     # Selection criteria
     fixed_weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
 

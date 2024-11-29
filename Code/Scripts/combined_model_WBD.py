@@ -19,7 +19,7 @@ folder_path_output = r"P:\HL-P24050\05_Analysis\02_Model"
 #folder_path_output = r"C:\Work\Projects\P24050_ROI_voor_ROR\Testmodellen"
 os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_27_november.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Combined_28_november.gpkg"
 
 gpkgs_list = [
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_27_november.gpkg",             'snap_dist': 10},
@@ -54,9 +54,9 @@ config_list = [
 
 defaults = r"defaults"
 
-build_database = False
+build_database = True
 load_gpkgs = False
-build_model = True
+build_model = False
 
 if build_database:
     dhd = DHydroData()
