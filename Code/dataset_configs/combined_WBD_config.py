@@ -24,8 +24,8 @@ class Models:
 
         class two_d:
             coupling_type = "1Dto2D"
-            dx = 500
-            dy = 500
+            dx = 100
+            dy = 100
             elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN4_WSS_filled.TIF"
             extent_path = folder_path_GIS + r"\GIS\Randstad dijkringen\dijkringen_randstad_merged.shp"
             initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\wd_0_v4.tif"
@@ -36,7 +36,7 @@ class Models:
             clip_extent_path = dict(
                 [
                      ("base", folder_path_GIS + r"\GIS\HHRijnland\Boezemmeren_plassen\Rijnland_meren_plassen.shp"),
-                     ("concat", folder_path_GIS + r"\GIS\ARKNZK\netwerk_selectie_v4_polygons_merged.shp"),
+                     ("concat", folder_path_GIS + r"\GIS\ARKNZK\netwerk_selectie_v5_polygons_merged.shp"),
                 ]
             )
 

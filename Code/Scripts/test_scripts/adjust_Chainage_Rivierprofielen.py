@@ -45,3 +45,8 @@ for u_id in unique_ids:
 
 
 #%%
+import geopandas as gpd
+agv = gpd.read_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\WAGV\AGV_Onderdoorgangen_Extra\AGV_Onderdoorgangen_Extra.shp")
+
+
+# %%

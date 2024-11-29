@@ -2,7 +2,7 @@ import importlib
 
 import geopandas as gpd
 
-from data_structures.hydamo_helpers import load_geo_file, map_columns, merge_to_dm
+from data_structures.hydamo_helpers import load_geo_file, map_columns, merge_to_dm, select_features
 from data_structures.roi_data_model import ROIDataModel as DataModel
 
 
@@ -44,6 +44,9 @@ def create_fixed_weir_data(
         fw_data_config.flood_defences_path is not None
     ):
         fd_gdf = load_geo_file(fw_data_config.flood_defences_path, layer="flood_defence")
+        
+        if hasattr(fw_data_config, "fixed_weir_selection"):
+            fd_gdf = select_features(fw_data_config.fixed_weir_selection, fd_gdf)
         fd_gdf, _ = map_columns(
             code_pad=code_padding,
             defaults=defaults.FixedWeirs,

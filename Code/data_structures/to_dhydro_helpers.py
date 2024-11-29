@@ -32,7 +32,7 @@ from scipy.spatial import KDTree
 from shapely.geometry import LineString, MultiLineString
 from shapely.geometry import Point as sPoint
 from shapely.geometry import Polygon, MultiPolygon
-from shapely.ops import unary_union
+from shapely.ops import unary_union, linemerge
 
 from data_structures.roi_data_model import ROIDataModel as DataModel
 
@@ -629,16 +629,22 @@ def to_dhydro(
     ) -> FMModel:
         if "tunnel" in hydamo.branches.columns:
             branches = hydamo.branches.loc[hydamo.branches.tunnel, :]
+            
         else:
             return fm
-        if extent is None:
-            pass
-        elif isinstance(extent, gpd.GeoDataFrame):
-            branches = branches.overlay(gpd.GeoDataFrame(extent["geometry"]), how="intersection")
-        elif isinstance(extent, Polygon) or isinstance(extent, gpd.GeoSeries):
-            branches = branches.overlay(gpd.GeoDataFrame(geometry=extent), how="intersection")
+        # if extent is None:
+        #     pass
+        # elif isinstance(extent, gpd.GeoDataFrame):
+        #     mask = branches['geometry'].apply(lambda line: line.within(extent['geometry'][0]))
+        #     branches = branches[mask] #TODO: Profiles are not deleted!
+        #     #branches = branches.overlay(gpd.GeoDataFrame(extent["geometry"]), how="within")
+        # elif isinstance(extent, Polygon) or isinstance(extent, gpd.GeoSeries):
+        #     mask = branches['geometry'].apply(lambda line: line.within(extent))
+        #     branches = branches[mask]
+        #     #branches = branches.overlay(gpd.GeoDataFrame(geometry=extent), how="within")
         network = fm.geometry.netfile.network
 
+        
         mesh.mesh1d_add_branches_from_gdf(
             network,
             branches=branches,

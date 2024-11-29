@@ -30,9 +30,9 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    branches_path = p_folder + r"\Rijntakken\RTK_Branches.shp"
-    river_profile_path = p_folder + r"\Rijntakken\ZW_cross_v2.csv"
-    river_roughness_path = p_folder + r"\Rijntakken\roughness.csv"
+    branches_path = p_folder + r"\Rijntakken\RTK_BranchesV3.shp"
+    river_profile_path = p_folder + r"\Rijntakken\ZW_cross_v3.csv"
+    river_roughness_path = p_folder + r"\Rijntakken\roughness_v2.csv"
     weir_path = p_folder + r"\Rijntakken\RTK_Weirs.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"

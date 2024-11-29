@@ -168,7 +168,7 @@ def load_geo_file(
                     data=pd.concat([gdf, load_geo_file(file_path=value).to_crs(gdf.crs)]),
                     geometry="geometry",
                     crs=gdf.crs,
-                ).reset_index()
+                ).reset_index(drop=True)
             elif "sjoin" in key:
                 gdf2 = load_geo_file(file_path=value).to_crs(gdf.crs)
                 gdf2.geometry = gdf2.geometry.buffer(5)
@@ -853,7 +853,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         blen = np.sqrt(2 * underpass_length**2) + 1
         interp_range = 0.1
         in_gdf = branches_gdf #copy(brug_gdf)
-        upass_gdf = branches_gdf
+        #upass_gdf = branches_gdf
         u_list = []
         for name, upass in in_gdf.iterrows():
             midpoint = upass.geometry.interpolate(0.5, normalized=True)
@@ -894,29 +894,29 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
             n_upass = copy(upass)
             n_upass["geometry"] = LineString(list_of_points)
-            bool_crosses = upass_gdf["geometry"].crosses(n_upass["geometry"])
-            upass_gdf = upass_gdf.loc[~bool_crosses, :]
+            #bool_crosses = upass_gdf["geometry"].crosses(n_upass["geometry"])
+            #upass_gdf = upass_gdf.loc[~bool_crosses, :]
             u_list.append(n_upass.to_dict())
 
         u_gdf = gpd.GeoDataFrame(data=u_list, geometry="geometry", crs=in_gdf.crs)
         
-        kering_gdf["geometry"] = kering_gdf["geometry"].buffer(2.5)
-        u_gdf = u_gdf.overlay(kering_gdf, how="difference").explode()
+        # kering_gdf["geometry"] = kering_gdf["geometry"].buffer(2.5)
+        # u_gdf = u_gdf.overlay(kering_gdf, how="difference").explode()
 
-        tunnel_gdf["geometry"] = tunnel_gdf["geometry"].buffer(5)
-        u_gdf = u_gdf.overlay(tunnel_gdf, how="difference").explode()
+        # tunnel_gdf["geometry"] = tunnel_gdf["geometry"].buffer(5)
+        # u_gdf = u_gdf.overlay(tunnel_gdf, how="difference").explode()
 
-        out_u_gdf = copy(u_gdf)
-        for name, upass in u_gdf.iterrows():
-            bool_cross = in_gdf["geometry"].crosses(upass["geometry"])
-            if np.sum(bool_cross.values[:]) == 0:
-                out_u_gdf.drop(index=name, inplace=True)
+        # out_u_gdf = copy(u_gdf)
+        # for name, upass in u_gdf.iterrows():
+        #     bool_cross = in_gdf["geometry"].crosses(upass["geometry"])
+        #     if np.sum(bool_cross.values[:]) == 0:
+        #         out_u_gdf.drop(index=name, inplace=True)
 
-        #out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=11)
-        #out_u_gdf = add_tunnel_dims(gdf=out_u_gdf)
-        out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=10)
-        out_u_gdf = out_u_gdf.reset_index(drop=True)
-        return out_u_gdf
+        # #out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=11)
+        # #out_u_gdf = add_tunnel_dims(gdf=out_u_gdf)
+        # #out_u_gdf = add_height_to_linestrings(gdf=out_u_gdf, ahn_path=ahn_path, buffer=10)
+        # out_u_gdf = out_u_gdf.reset_index(drop=True)
+        return u_gdf
     
     def add_default_peil_to_branch(
         branches_gdf: gpd.GeoDataFrame, default_peil: float = None
@@ -2126,6 +2126,8 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
                     chainages = section_slice["Chainage"]
                     n_levels = chainages.value_counts().max()
+                    if n_levels == 520:
+                        None
                     locations = chainages.value_counts()
 
                     if n_levels > 1:
@@ -2522,12 +2524,16 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         # Validate the branches topography and connections, NOT for underpasses and tunnels
         if name_config.name != 'Tunnel' and name_config.name != 'Onderdoorgangen':
             branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8)
-
+        else:
+            MLS_branches_bool = branches_gdf.geometry.type == "MultiLineString"
+            if np.sum(MLS_branches_bool) > 0:
+                print(f"Warning: found {np.sum(MLS_branches_bool)} multilinestrings")
+                branches_gdf = branches_gdf.explode(ignore_index=True, index_parts=False)
         if name_config.name == 'Onderdoorgangen' and hasattr(data_config, 'ahn_path') and hasattr(data_config, 'keringen_path') and hasattr(data_config, 'tunnel_path'):
             keringen_gdf = gpd.read_file(data_config.keringen_path)
             tunnel_gdf = gpd.read_file(data_config.tunnel_path)
             grid_size = max(model_config.FM.two_d.dx, model_config.FM.two_d.dy)
-            branches_gdf = scale_underpasses(branches_gdf=branches_gdf, kering_gdf=keringen_gdf, tunnel_gdf=tunnel_gdf, ahn_path=data_config.ahn_path, grid_size=grid_size)
+            #branches_gdf = scale_underpasses(branches_gdf=branches_gdf, kering_gdf=keringen_gdf, tunnel_gdf=tunnel_gdf, ahn_path=data_config.ahn_path, grid_size=grid_size)
             print(f'Scaled underpasses to a grid size of {grid_size}m')
 
         branches_gdf, index_mapping = map_columns(
