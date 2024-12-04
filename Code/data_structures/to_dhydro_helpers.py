@@ -9,6 +9,7 @@ from tqdm import tqdm
 import geopandas as gpd
 import numpy as np
 import rasterio
+from rtree import index as rtreeind
 from geo_tools.roughness_to_mesh import create_roughness_xyz
 from hydrolib.core.basemodel import DiskOnlyFileModel
 from hydrolib.core.io.crosssection.models import CrossDefModel, CrossLocModel
@@ -31,7 +32,8 @@ from rasterstats import zonal_stats
 from scipy.spatial import KDTree
 from shapely.geometry import LineString, MultiLineString
 from shapely.geometry import Point as sPoint
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry import Polygon, MultiPolygon, box
+
 from shapely.ops import unary_union, linemerge
 
 from data_structures.roi_data_model import ROIDataModel as DataModel
@@ -840,6 +842,7 @@ def to_dhydro(
         elevation_raster_path: str,
         extent: gpd.GeoDataFrame,
         fm: FMModel,
+        fm_path,
         initial_peil_raster_path: str,
         roughness_2d_raster_path: str,
         two_d_buffer: float,
@@ -925,6 +928,10 @@ def to_dhydro(
             xnodes = network._mesh2d.mesh2d_node_x
             ynodes = network._mesh2d.mesh2d_node_y
 
+            # Read in the initial values in a dictionary to use later 
+            inifile_path = fm_path / fm.geometry.inifieldfile.initial[0].datafile.filepath
+            inifields = read_DHYDRO_file(inifile_path, ['[Branch]'])
+            print('Initial water levels loaded to correct the AHN')
             with rasterio.open(elevation_raster_path) as src:
                 #     bounds = src.bounds
                 #     _box = box(*bounds)
@@ -956,8 +963,40 @@ def to_dhydro(
                 #         if ix in ixs:
                 #             z_new[ix] = z
                 ahn = src.read(1)
+                print('AHN loaded')
                 z = []
+
+                # Creeer een geodataframe van alle branches
+                branches_list = [(branch_id, LineString(coords.geometry)) for branch_id, coords in network._mesh1d.branches.items()]
+                
+                branch_index = rtreeind.Index()
+                for i, (branch_id, branch_line) in enumerate(branches_list):
+                    branch_index.insert(i,branch_line.bounds)
+                print('Created a spatial index for all branches')
+                count_cells_not_high_enough = 0
+                # Per node (xnodes,ynodes) check the intersection met die node. -> Van de nodes nog een box maken zodat er geen gaten vallen?
+                # Assign het peil + 5 cm voor die nodes
                 for ix, (x, y) in tqdm(enumerate(zip(xnodes, ynodes)), total=len(xnodes),desc='Adding height to mesh point'):
+                    
+                    # Check whether the gridcell touches one of the branches
+                   
+                    cell = box(x-0.5*dx, y-0.5*dy, x+0.5*dx, y+0.5*dy)
+                    candidate_indices = list(branch_index.intersection(cell.bounds))
+                    if len(candidate_indices) == 0:
+                        check_peil = -100
+                    else:
+                        check_peil_list = []
+                        for index in candidate_indices:
+                            branch_id, branch_line = branches_list[index]
+                            if branch_line.intersects(cell):
+                                try:
+                                    peil_1, peil_2 = inifields[branch_id]['values'].split(' ')
+                                    check_peil_list.append(np.mean((float(peil_1),float(peil_2))))
+                                except KeyError:
+                                    check_peil_list.append(-100)
+                        if len(check_peil_list) > 0:
+                            check_peil = np.max(check_peil_list) # Take the maximum of the peilen
+                    
                     p = sPoint(x, y)
                     bp = p.buffer((dx + dy) // 2, cap_style=3)
 
@@ -974,7 +1013,11 @@ def to_dhydro(
                         for result in stats:
                             heights.append(result["nanmean"])
 
-                        z.append(*[z for z in heights])
+                        if heights[0] > check_peil:
+                            z.append(*[z for z in heights])
+                        else:
+                            z.append(check_peil+0.05) # Add 5 cm to the initial water level
+                            count_cells_not_high_enough += 1
                     except:
                         z.append(-10)
 
@@ -1005,8 +1048,8 @@ def to_dhydro(
             #             z.append(-10)
 
             #     network._mesh2d.mesh2d_node_z = np.array(z).flatten()
-
-            print("added elevation to 2D mesh")
+            print(f"Bed elevation lower than initial water level for {count_cells_not_high_enough} cells. Set to 0.05 m above initial waterlevel")
+            print("Added elevation to 2D mesh")
 
         if initial_peil_raster_path is not None:
             initial_wl = InitialField(
@@ -1192,6 +1235,45 @@ def to_dhydro(
         fm.time.dtmax = dtmax
         fm.output.statsinterval = [statsinterval]
         return fm
+
+
+    def read_DHYDRO_file(file_path, keyword_list:list):
+        # Read the crsdef and crsloc files
+        with open(file_path, 'r') as _file:
+            dhydro_file = _file.readlines()
+
+        # Create a dictionary of all the csrdef entries
+        item_dict = {}
+        for keyword in keyword_list:
+            for n, line in enumerate(dhydro_file):
+                # Find the start of each definition
+                if line.strip() == keyword:
+                    j = n
+                    item_id = dhydro_file[j+1].strip().split('#')[0].strip().split('=')[-1].strip()
+                    item_dict[item_id] = {}
+                    item_dict[item_id]['type_header'] = keyword
+
+                    # Extract all information until a white line is found
+                    while dhydro_file[j+1].strip() != '':
+                        item_key = dhydro_file[j+1].strip().split('#')[0].strip().split('=')[0].strip()
+                        item_value = dhydro_file[j+1].strip().split('#')[0].strip().split('=')[-1].strip()
+
+                        if item_key not in item_dict[item_id].keys():
+                            item_dict[item_id][item_key] = item_value
+                        else:
+                            i = 1
+                            new_key = f"{item_key}_{i}"
+                            while new_key in item_dict[item_id]:
+                                i +=1 
+                                new_key = f"{item_key}_{i}"
+
+                            item_dict[item_id][new_key] = item_value
+
+                        # Jump to the next line
+                        j = j+1
+
+        return item_dict
+
 
     # load configuration file
     model_config = getattr(importlib.import_module("dataset_configs." + config), "Models")
@@ -1448,11 +1530,13 @@ def to_dhydro(
             
             # add 2D model
             print("\nBuilding 2D model grid\n")
+            fm_path = Path(output_folder) / FM_FOLDER
             self.fm = build_2D_model(
                 dx=model_config.FM.two_d.dx,
                 dy=model_config.FM.two_d.dy,
                 extent=extent,
                 fm=self.fm,
+                fm_path = fm_path,
                 one_d=model_config.FM.one_d_bool,
                 clip_extent=clip_extent,
                 clip_buffer=clip_buffer,
