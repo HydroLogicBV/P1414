@@ -87,12 +87,12 @@ class RawData:
     #    ]
     #)
 
-    sluice_path = p_folder + r"\WAGV\AGV-Update\sluizen\sluisV2.shp"                  
-    #weir_path = p_folder + r"\WAGV\Niet legger\stuw_v13_clipped_with_do.shp"        # Nog aanpassen?, nieuwe in \WAGV\AGV-Update\stuwen\stuw_v13_clipped.shp 
+    sluice_path = p_folder + r"\WAGV\AGV-Update\sluizen\sluisV2.shp"                   
     weir_path = p_folder + r"\WAGV\AGV-Update\stuwen\stuw_v13_clipped.shp"
 
     ## Selection criteria
     branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    sluice_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     
     class Peil:
         default_peil = -0.4

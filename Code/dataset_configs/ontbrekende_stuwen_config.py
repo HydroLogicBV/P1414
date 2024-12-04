@@ -10,7 +10,7 @@ class Name:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    weir_path = folder_path_GIS + r"\GIS\Ontbrekende stuwen in keringen\stuwen.shp"
+    weir_path = folder_path_GIS + r"\GIS\Ontbrekende stuwen in keringen\stuwenV2.shp"
 
     ## Weirs
     weir_index_mapping = dict(

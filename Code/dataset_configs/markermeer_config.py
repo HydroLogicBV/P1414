@@ -59,8 +59,9 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
-    branches_path = p_folder + r"\Markermeer\MarkermeerV2.shp"
-    norm_profile_path = p_folder + r"\Markermeer\MarkermeerV2.shp"
+    branches_path = p_folder + r"\Markermeer\MarkermeerV3.shp"
+    norm_profile_path = p_folder + r"\Markermeer\MarkermeerV3.shp"
+    sluice_path = p_folder + r"\Markermeer\Sluis.shp"
 
     class Peil:
         default_peil = 0
@@ -97,5 +98,24 @@ class RawData:
             ("ruwheidhoog", None),
             ("ruwheidlaag", None),
             ("water_width_index", None),
+        ]
+    )
+
+    ## Sluice
+    sluice_index_mapping = dict(
+        [
+            ("afvoercoefficient_stuw", None),
+            ("afvoercoefficient_opening", None),
+            ("code", "code"),
+            ("geometry", "geometry"),
+            ("globalid", "globalid"),
+            ("hoogstedoorstroombreedte", None),
+            ("hoogstedoorstroomhoogte", "HOOGTE"),
+            ("laagstedoorstroombreedte", "BREEDTE"),
+            ("laagstedoorstroomhoogte", "HOOGTE"),
+            ("overlaatonderlaat", None),
+            ("soortregelbaarheid", None),
+            ("soortstuw", None),
+            ("vormopening", None),
         ]
     )

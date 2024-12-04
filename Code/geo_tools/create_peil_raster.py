@@ -5,9 +5,10 @@ import numpy as np
 import rasterio
 from rasterio import features
 
-boezem_gdf = gpd.read_file(r"D:\Work\Project\P1414\GIS\peilen\boezem_v2.shp")
-orig_raster = r"D:\Work\Project\P1414\GIS\peilen\wd_0_v3.tif"
-outp_raster = r"D:\Work\Project\P1414\GIS\peilen\wd_0_v4.tif"
+
+boezem_gdf = gpd.read_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\peilen\boezem_v3.shp")
+orig_raster = r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\peilen\wd_0_v4.tif"
+outp_raster = r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\peilen\wd_0_v5.tif"
 
 
 src = rasterio.open(orig_raster)

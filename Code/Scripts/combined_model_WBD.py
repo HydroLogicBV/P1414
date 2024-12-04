@@ -19,20 +19,24 @@ folder_path_output = r"P:\HL-P24050\05_Analysis\02_Model"
 #folder_path_output = r"C:\Work\Projects\P24050_ROI_voor_ROR\Testmodellen"
 os.environ['GIS_folder_path'] = folder_path_GIS
 
+<<<<<<< Updated upstream
 gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HHR_test_default.gpkg"
+=======
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_HHR_WAGV_04dec.gpkg"
+>>>>>>> Stashed changes
 
 gpkgs_list = [
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_27_november.gpkg",             'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHSK_27_november.gpkg",                    'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HDSR_28_november.gpkg",                    'snap_dist': 35},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHD_27_november.gpkg",                     'snap_dist': 10},
+    #{'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHSK_27_november.gpkg",                    'snap_dist': 10},
+    #{'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HDSR_28_november.gpkg",                    'snap_dist': 35},
+    #{'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHD_27_november.gpkg",                     'snap_dist': 10},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHR_27_november.gpkg",                     'snap_dist': 10},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\WAGV_20_november.gpkg",                    'snap_dist': 10},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Tunnels_Onderdoorgangen_3_december.gpkg", 'snap_dist': 0},
 ]
 
 # Model name
-output_folder = folder_path_output + r"\HDSR_Test_V2.8_500m"
+output_folder = folder_path_output + r"\Buitenwater_HHR_WAGV_04dec_500m"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
@@ -54,9 +58,15 @@ config_list = [
 
 defaults = r"defaults"
 
+<<<<<<< Updated upstream
 build_database = True
 load_gpkgs = False
 build_model = False
+=======
+build_database = False
+load_gpkgs = True
+build_model = True
+>>>>>>> Stashed changes
 
 if build_database:
     dhd = DHydroData()
@@ -101,8 +111,8 @@ if build_model:
     dhd.hydamo_from_gpkg(gpkg_file)
 
     # remove brug as it needs a cs
-    # del dhd.ddm.brug
-    # dhd.features.remove("brug")
+    del dhd.ddm.brug
+    dhd.features.remove("brug")
     # dhd.ddm.pomp["maximalecapaciteit"] = 0
 
     # 3. save as dhydro model

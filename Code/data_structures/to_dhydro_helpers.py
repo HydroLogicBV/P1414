@@ -419,7 +419,7 @@ def to_dhydro(
                 .explode(index_parts=False)
                 .reset_index(drop=True)
             )
-            fw_gdf["geometry"] = fw_gdf["geometry"].simplify(tolerance=1)
+            fw_gdf["geometry"] = fw_gdf["geometry"].simplify(tolerance=0.1)
 
             for name, row in fw_gdf.iterrows():
                 coord_list = row.geometry.coords[:]
