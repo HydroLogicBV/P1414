@@ -2016,8 +2016,6 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             meta_data = slice.loc[slice["Data_type"] == "meta", :]
             geom_data = slice.loc[slice["Data_type"] == "geom", :]
 
-            if u_id == '101a':
-                None
             branch = str(meta_data["branch"].values[0])
             _branchid = code_padding + branch
             name = code_padding + u_id
@@ -2524,6 +2522,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         # Validate the branches topography and connections, NOT for underpasses and tunnels
         if name_config.name != 'Tunnel' and name_config.name != 'Onderdoorgangen':
             branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8)
+            #branches_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHSK.shp")
         else:
             MLS_branches_bool = branches_gdf.geometry.type == "MultiLineString"
             if np.sum(MLS_branches_bool) > 0:
@@ -2560,10 +2559,17 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             if hasattr(data_config, "np_selection"):
                 np_gdf = select_features(data_config.np_selection, np_gdf)
 
+            buffered_profiles = copy(np_gdf)
+            buffered_profiles.geometry = buffered_profiles.geometry.buffer(1)
+            gdf = gpd.GeoDataFrame(branches_gdf, columns=["geometry"], geometry="geometry", crs=28992)
+
+            # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
+            np_branch_gdf = gdf.sjoin(buffered_profiles, how="left", predicate="within")
+            np_branch_gdf = np_branch_gdf.drop(['index_right'], axis=1)
             np_gdf, index_mapping = map_columns(
                 code_pad=code_padding + "np_",
                 defaults=defaults.Branches,
-                gdf=np_gdf,
+                gdf=np_branch_gdf,
                 index_mapping=data_config.np_index_mapping,
             )
             np_gdf = fill_branch_norm_parm_profiles_data(

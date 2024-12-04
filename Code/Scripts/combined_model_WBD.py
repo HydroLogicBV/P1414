@@ -19,7 +19,7 @@ folder_path_output = r"P:\HL-P24050\05_Analysis\02_Model"
 #folder_path_output = r"C:\Work\Projects\P24050_ROI_voor_ROR\Testmodellen"
 os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HDSR_28_november.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HHR_test_default.gpkg"
 
 gpkgs_list = [
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_27_november.gpkg",             'snap_dist': 10},
@@ -44,19 +44,19 @@ config_list = [
     # {'config': r"hhsk_config",                  'snap_dist': 10},
     # {'config': r"hdsr_config",                  'snap_dist': 20},
     # {'config': r"hhd_config",                   'snap_dist': 10},
-    # {'config': r"hhr_config",                   'snap_dist': 10},
+    {'config': r"hhr_config",                   'snap_dist': 10},
     # {'config': r"wagv_config",                  'snap_dist': 10},
-    # {'config': r"ontbrekende_stuwen_config",    'snap_dist': 10},
+    {'config': r"ontbrekende_stuwen_config",    'snap_dist': 10},
     # {'config': r"randvoorwaarden_config",       'snap_dist': 0},
-    {'config': r"tunnel_config",                'snap_dist': 0},
-    {'config': r"underpass_config",             'snap_dist': 0},
+    # {'config': r"tunnel_config",                'snap_dist': 0},
+    # {'config': r"underpass_config",             'snap_dist': 0},
 ]
 
 defaults = r"defaults"
 
-build_database = False
+build_database = True
 load_gpkgs = False
-build_model = True
+build_model = False
 
 if build_database:
     dhd = DHydroData()
