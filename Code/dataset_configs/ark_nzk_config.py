@@ -47,12 +47,13 @@ class RawData:
     branches_path = p_folder + r"\ARKNZK\netwerk_selectie_v4.shp"
     river_profile_path = p_folder + r"\ARKNZK\ZW_cross_v2.csv"
     sluice_path = p_folder + r"\ARKNZK\RWS_sluizen_clipped.shp"
-    weir_path = p_folder + r"\ARKNZK\netwerk_watergangen_boezemmodel_Weirs.shp"
+    weir_path = p_folder + r"\ARKNZK\netwerk_watergangen_boezemmodel_WeirsV2.shp"
 
     class Peil:
         default_peil = -0.4
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
+    weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
 
     ## Branches
     branch_index_mapping = dict(

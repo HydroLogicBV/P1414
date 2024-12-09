@@ -86,10 +86,10 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    branches_path = p_folder + r"\HDSR\HydroObject\HydroObject_v6.shp"  # Corrected from V7
+    branches_path = p_folder + r"\HDSR\HydroObject\HydroObject_v7.shp"  # Corrected from V7
     #bridges_path = p_folder + r"\HDSR\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Kokers_Lijnen\Kokers_Lijnen.shp"
-    norm_profile_path = p_folder + r"\HDSR\HydroObject\HydroObject_v6.shp"
+    norm_profile_path = p_folder + r"\HDSR\HydroObject\HydroObject_v7.shp"
     # norm_profile_path = dict(
     #     [
     #         ("base", p_folder + r"\Uitgesneden watergangen\HDSR_v3.shp"),
@@ -97,11 +97,11 @@ class RawData:
     #     ]
     # )
     peil_gebieden_path = p_folder + r"\HDSR\BR_Peilgebieden\BR_Peilgebieden.shp"
-    pump_path = p_folder + r"\HDSR\Gemalen\GemalenV2.shp"
+    pump_path = p_folder + r"\HDSR\Gemalen\GemalenV3.shp"
     sluice_path = p_folder + r"\HDSR\Sluizen_Lijnen\Sluizen_LijnenV2.shp"
     weir_path = dict(
         [
-            ("base", p_folder + r"\HDSR\BR_Stuwen\BR_Stuwen.shp"),
+            ("base", p_folder + r"\HDSR\BR_Stuwen\BR_StuwenV2.shp"),
             ("concat", p_folder + r"\HDSR\Kokers_Lijnen_Kerend\Kokers_Lijnen_Kerend.shp"),
         ]
     )

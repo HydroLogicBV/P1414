@@ -12,6 +12,8 @@ class RawData:
     p_folder = folder_path_GIS + r"\GIS"
     weir_path = folder_path_GIS + r"\GIS\Ontbrekende stuwen in keringen\stuwenV2.shp"
 
+    weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+
     ## Weirs
     weir_index_mapping = dict(
         [

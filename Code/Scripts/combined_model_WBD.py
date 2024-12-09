@@ -19,11 +19,7 @@ folder_path_output = r"P:\HL-P24050\05_Analysis\02_Model"
 #folder_path_output = r"C:\Work\Projects\P24050_ROI_voor_ROR\Testmodellen"
 os.environ['GIS_folder_path'] = folder_path_GIS
 
-<<<<<<< Updated upstream
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HHR_test_default.gpkg"
-=======
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_HHR_WAGV_04dec.gpkg"
->>>>>>> Stashed changes
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\ARK_HHD_HHR_09dec.gpkg"
 
 gpkgs_list = [
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_27_november.gpkg",             'snap_dist': 10},
@@ -36,18 +32,18 @@ gpkgs_list = [
 ]
 
 # Model name
-output_folder = folder_path_output + r"\Buitenwater_HHR_WAGV_04dec_500m"
+output_folder = folder_path_output + r"\ARK_HHD_HHR_09dec_500m"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
-    # {'config': r"ark_nzk_config",               'snap_dist': 10},
+    {'config': r"ark_nzk_config",               'snap_dist': 10},
     # {'config': r"rijntakken_config",            'snap_dist': 10},
     # {'config': r"rijnmaasmonding_open_config",  'snap_dist': 100},
     # {'config': r"noordzee_config",              'snap_dist': 200},
     # {'config': r"markermeer_config",            'snap_dist': 100},
     # {'config': r"hhsk_config",                  'snap_dist': 10},
     # {'config': r"hdsr_config",                  'snap_dist': 20},
-    # {'config': r"hhd_config",                   'snap_dist': 10},
+    {'config': r"hhd_config",                   'snap_dist': 10},
     {'config': r"hhr_config",                   'snap_dist': 10},
     # {'config': r"wagv_config",                  'snap_dist': 10},
     {'config': r"ontbrekende_stuwen_config",    'snap_dist': 10},
@@ -58,15 +54,9 @@ config_list = [
 
 defaults = r"defaults"
 
-<<<<<<< Updated upstream
 build_database = True
 load_gpkgs = False
-build_model = False
-=======
-build_database = False
-load_gpkgs = True
 build_model = True
->>>>>>> Stashed changes
 
 if build_database:
     dhd = DHydroData()

@@ -73,8 +73,8 @@ class RawData:
     culvert_path = p_folder + r"\HHSK\Duiker\Duiker_model2.shp"
     norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V6.3.shp"
     peil_gebieden_path = p_folder + r"\HHSK\Peilvakken\Praktijkpeilgebieden.shp"
-    pump_path = p_folder + r"\HHSK\Gemaal\Gemaal.shp"
-    sluice_path = p_folder + r"\HHSK\Sluis\Sluis.shp"
+    pump_path = p_folder + r"\HHSK\Gemaal\GemaalV2.shp"
+    sluice_path = p_folder + r"\HHSK\Sluis\SluisV2.shp"
     weir_path = dict(
         [
             ("base", p_folder + r"\HHSK\Stuw\Stuw.shp"),
