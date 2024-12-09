@@ -1525,7 +1525,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                     or (branch[["bodembreedte", "water_width_index"]].isna().values.all())
                 )
             ):
-                # print("no profile for branch {}".format(branch_gid))
+                print("no profile for branch {}".format(branch_gid))
                 # print(branch)
                 continue
 
@@ -2566,23 +2566,25 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
             np_branch_gdf = gdf.sjoin(buffered_profiles, how="left", predicate="within")
             np_branch_gdf = np_branch_gdf.drop(['index_right'], axis=1)
+            np_branch_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHR.shp")
             np_gdf, index_mapping = map_columns(
                 code_pad=code_padding + "np_",
                 defaults=defaults.Branches,
                 gdf=np_branch_gdf,
                 index_mapping=data_config.np_index_mapping,
             )
+            print(len(np_gdf),'Number of np_gdf after mapping')
             np_gdf = fill_branch_norm_parm_profiles_data(
                 defaults=defaults.Peil, in_branches_gdf=np_gdf, data_config=data_config
             )
-
+            print(len(np_gdf),'Number of np_gdf after filling')
             (
                 profielgroep,
                 profiellijn,
                 profielpunt,
                 ruwheidsprofiel,
             ) = create_mp_from_np(branches_gdf=np_gdf)
-
+            print(len(profiellijn), 'Number of profile lines')
             ddm = merge_to_ddm(ddm=ddm, feature="profielgroep", feature_gdf=profielgroep)
             ddm = merge_to_ddm(ddm=ddm, feature="profiellijn", feature_gdf=profiellijn)
             ddm = merge_to_ddm(ddm=ddm, feature="profielpunt", feature_gdf=profielpunt)

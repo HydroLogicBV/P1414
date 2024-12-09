@@ -57,8 +57,8 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
-    branches_path = p_folder + r"\Noordzee\Noordzee.shp"
-    norm_profile_path = p_folder + r"\Noordzee\Noordzee.shp"
+    branches_path = p_folder + r"\Noordzee\Noordzee_v2.shp"
+    norm_profile_path = p_folder + r"\Noordzee\Noordzee_v2.shp"
     weir_path = p_folder + r"\Noordzee\stuw.shp"
 
     class Peil:
