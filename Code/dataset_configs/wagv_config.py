@@ -93,6 +93,7 @@ class RawData:
     ## Selection criteria
     branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     sluice_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    pump_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     
     class Peil:
         default_peil = -0.4

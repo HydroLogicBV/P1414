@@ -1203,7 +1203,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
     def create_mp_from_np(
         branches_gdf: gpd.GeoDataFrame,
         dist_tol: float = 0.25,
-        min_water_width: float = 0.1,
+        min_water_width: float = 0.005,
         roughness_mapping: List = ROUGHNESS_MAPPING_LIST,
     ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
         def rectangular_point_profile(
@@ -1525,7 +1525,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                     or (branch[["bodembreedte", "water_width_index"]].isna().values.all())
                 )
             ):
-                print("no profile for branch {}".format(branch_gid))
+                print("no profile for branch {}".format(branch['code']))
                 # print(branch)
                 continue
 
@@ -2532,7 +2532,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             keringen_gdf = gpd.read_file(data_config.keringen_path)
             tunnel_gdf = gpd.read_file(data_config.tunnel_path)
             grid_size = max(model_config.FM.two_d.dx, model_config.FM.two_d.dy)
-            #branches_gdf = scale_underpasses(branches_gdf=branches_gdf, kering_gdf=keringen_gdf, tunnel_gdf=tunnel_gdf, ahn_path=data_config.ahn_path, grid_size=grid_size)
+            branches_gdf = scale_underpasses(branches_gdf=branches_gdf, kering_gdf=keringen_gdf, tunnel_gdf=tunnel_gdf, ahn_path=data_config.ahn_path, grid_size=grid_size)
             print(f'Scaled underpasses to a grid size of {grid_size}m')
 
         branches_gdf, index_mapping = map_columns(
@@ -2566,7 +2566,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
             np_branch_gdf = gdf.sjoin(buffered_profiles, how="left", predicate="within")
             np_branch_gdf = np_branch_gdf.drop(['index_right'], axis=1)
-            np_branch_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHR.shp")
+            #np_branch_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHR.shp")
             np_gdf, index_mapping = map_columns(
                 code_pad=code_padding + "np_",
                 defaults=defaults.Branches,

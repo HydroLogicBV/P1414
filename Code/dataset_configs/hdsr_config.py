@@ -74,6 +74,7 @@ class FixedWeirs:
     p_folder = folder_path_GIS + r"\GIS"
     flood_defences_path = p_folder + r"\HDSR\Keringen met hoogte\hdsr.shp"
 
+    fixed_weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     fixed_weir_index_mapping = dict(
         [
             ("code", "OBJECTID"),
@@ -113,7 +114,7 @@ class RawData:
     weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     pump_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     culvert_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
-
+    
     ## Branches
     branch_index_mapping = dict(
         [
@@ -238,10 +239,10 @@ class RawData:
             ("code", "CODE"),
             ("geometry", "geometry"),
             ("globalid", "globalid"),
-            ("hoogstedoorstroombreedte", "DOORSTROOM"),
-            ("hoogstedoorstroomhoogte", "HOOGSTEDOO"),
-            ("laagstedoorstroombreedte", "DOORSTROOM"),
-            ("laagstedoorstroomhoogte", "LAAGSTEDOO"),
+            ("hoogstedoorstroombreedte", ["DOORSTROOM", "HOOGTEOPEN","BREEDTEOPE"]),
+            ("hoogstedoorstroomhoogte", ["HOOGSTEDOO", "Kerend_hoo"]),
+            ("laagstedoorstroombreedte", ["DOORSTROOM", "HOOGTEOPEN","BREEDTEOPE"]),
+            ("laagstedoorstroomhoogte", ["LAAGSTEDOO", "Kerend_hoo"]),
             ("overlaatonderlaat", None),
             ("soortregelbaarheid", "SOORTREGEL"),
             ("soortstuw", "SOORTSTUW"),

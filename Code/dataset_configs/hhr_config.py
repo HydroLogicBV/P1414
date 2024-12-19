@@ -64,10 +64,10 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     # p_folder = r"D:\work\P1414_ROI\GIS"
-    branches_path = p_folder + r"\HHRijnland\Watergang_as\Watergang_as_v2.shp" 
+    branches_path = p_folder + r"\HHRijnland\Watergang_as\Watergang_as_v3.shp" 
     bridges_path = p_folder + r"\HHRijnland\brug\brug.shp"
     culvert_path = p_folder + r"\HHRijnland\duiker\duiker.shp"
-    norm_profile_path = p_folder + r"\HHRijnland\Watergang_as\Watergang_as_v2.shp"
+    norm_profile_path = p_folder + r"\HHRijnland\Watergang_as\Watergang_as_v3.shp"
     
     peil_gebieden_path = p_folder + r"\HHRijnland\gerealiseerde_peilvakken\gerealiseerde_peilvakken.shp"
     pump_path = p_folder + r"\HHRijnland\gemaal\gemaal.shp"
@@ -87,6 +87,7 @@ class RawData:
     weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     sluice_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     pump_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
+    
     ## Branches
     branch_index_mapping = dict(
         [
@@ -136,7 +137,7 @@ class RawData:
     # np_selection = dict([("column", "CATEGORIEO"), ("value", "primair")])
     np_index_mapping = dict(
         [
-            ("bodembreedte", None),
+            ("bodembreedte", "BODEMBREED"),
             ("bodemhoogte benedenstrooms", None),
             ("bodemhoogte bovenstrooms", None),
             ("code", "CODE"),

@@ -27,7 +27,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             # or (feature == "rivier_profielen_data")
             # or (feature == "rivier_profielen_ruwheid")
         ):
-            print(f"Clipped {n_feature}/{len(self.features)} features: {feature}")
+            print(f"Clipped {n_feature+1}/{len(self.features)} features: {feature}")
             continue
 
         ddm_feature = getattr(self.ddm, feature)
@@ -56,7 +56,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             )
             clipped_gdf = clipped_gdf.loc[clipped_gdf["index_right"].notnull(), :]
             clipped_gdf = clipped_gdf[columns]
-            print(f'Clipped {n_feature}/{len(self.features)} features. For {feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
+            print(f'Clipped {n_feature+1}/{len(self.features)} features. For {feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
             setattr(self.ddm, feature, clipped_gdf)
 
             if self.ddm.profielpunt is not None:
@@ -90,7 +90,7 @@ def _clip_structures_by_branches(self, buffer: float = 1, min_overlap: float = 0
             clipped_gdf = clipped_gdf.loc[clipped_gdf["index_right"].notnull(), :]
             clipped_gdf = clipped_gdf[columns]
             #print(clipped_gdf.shape[0])
-            print(f'Clipped {n_feature}/{len(self.features)} features. For {feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
+            print(f'Clipped {n_feature+1}/{len(self.features)} features. For {feature}: {clipped_gdf.shape[0]}/{ddm_feature.shape[0]} objects left. Dropped {ddm_feature.shape[0] - clipped_gdf.shape[0]}')
             # mls_struct_bool = clipped_gdf.geometry.type == "MultiLineString"
             # if np.sum(mls_struct_bool) > 0:
             #     _clipped_gdf = copy(clipped_gdf)

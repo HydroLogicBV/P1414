@@ -6,9 +6,9 @@ import rasterio
 from rasterio import features
 
 
-boezem_gdf = gpd.read_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\peilen\boezem_v3.shp")
+boezem_gdf = gpd.read_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\peilen\boezem_v4.shp")
 orig_raster = r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\peilen\wd_0_v4.tif"
-outp_raster = r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\peilen\wd_0_v5.tif"
+outp_raster = r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\peilen\wd_0_v7.tif"
 
 
 src = rasterio.open(orig_raster)

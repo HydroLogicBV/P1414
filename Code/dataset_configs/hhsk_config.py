@@ -89,6 +89,10 @@ class RawData:
     weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     np_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
 
+    class Peil:
+        default_peil = -6 # Nodig voor coupures
+
+    
     ## Branches
     branch_index_mapping = dict(
         [

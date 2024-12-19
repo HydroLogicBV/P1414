@@ -419,7 +419,7 @@ def to_dhydro(
                 .explode(index_parts=False)
                 .reset_index(drop=True)
             )
-            fw_gdf["geometry"] = fw_gdf["geometry"].simplify(tolerance=0.1)
+            #fw_gdf["geometry"] = fw_gdf["geometry"].simplify(tolerance=0.1)
 
             for name, row in fw_gdf.iterrows():
                 coord_list = row.geometry.coords[:]
@@ -980,7 +980,7 @@ def to_dhydro(
                     
                     # Check whether the gridcell touches one of the branches
                    
-                    cell = box(x-0.5*dx, y-0.5*dy, x+0.5*dx, y+0.5*dy)
+                    cell = box(x-dx, y-dy, x+dx, y+dy)
                     candidate_indices = list(branch_index.intersection(cell.bounds))
                     if len(candidate_indices) == 0:
                         check_peil = -100
@@ -990,10 +990,17 @@ def to_dhydro(
                             branch_id, branch_line = branches_list[index]
                             if branch_line.intersects(cell):
                                 try:
-                                    peil_1, peil_2 = inifields[branch_id]['values'].split(' ')
+                                    peilen_ini = inifields[branch_id]['values'].split(' ')
+                                    if len(peilen_ini) == 2:
+                                        peil_1, peil_2 = peilen_ini
+                                    elif len(peilen_ini) >2:
+                                        peil_1, peil_2 = peilen_ini[:2]
+                                    elif len(peilen_ini) == 1:
+                                        peil_1 = peil_2 = peilen_ini[0]
                                     check_peil_list.append(np.mean((float(peil_1),float(peil_2))))
                                 except KeyError:
                                     check_peil_list.append(-100)
+                               
                         if len(check_peil_list) > 0:
                             check_peil = np.max(check_peil_list) # Take the maximum of the peilen
                     
@@ -1275,6 +1282,25 @@ def to_dhydro(
         return item_dict
 
 
+    def write_DHYDRO_file(new_dict: dict, 
+                        folder: str, 
+                        filename: str):
+        new_file_name = os.path.join(folder, filename)
+        
+        # Write the new initial file
+        with open(new_file_name, mode='w') as file:           
+            # Write a new entry per crosssection
+            for ID, data in new_dict.items():
+                file.write(f"{data['type_header']}\n")
+
+                for keys, values in data.items():
+                    if keys == 'type_header': continue
+
+                    tabs = "\t" * int(np.ceil(5 - len(keys)/4))
+                    file.write('\t'+ keys + tabs + "= " + str(values) + '\n')
+
+                file.write('\n')
+
     # load configuration file
     model_config = getattr(importlib.import_module("dataset_configs." + config), "Models")
 
@@ -1376,6 +1402,31 @@ def to_dhydro(
                     fm=self.fm,
                     fm_path=fm_path,
                 )
+                
+                inifile_path = fm_path / self.fm.geometry.inifieldfile.initial[0].datafile.filepath
+                inifields = read_DHYDRO_file(inifile_path, ['[General]', '[Global]','[Branch]'])
+
+                # Corrigeer de initiële peilen op de Rijntakken en RMM
+                if hasattr(model_config.FM.one_d, "rijntakken_ini_path"):
+                    rijntakken_ini = read_DHYDRO_file(model_config.FM.one_d.rijntakken_ini_path, ['[Branch]'])
+                    for key in rijntakken_ini.keys():
+                        if key in inifields.keys():
+                            inifields[key] = rijntakken_ini[key]
+                        else:
+                            print(f'{key} not present in original branches')
+                    print('Updated initial waterlevels for the Rijntakken')
+                
+                if hasattr(model_config.FM.one_d, 'rmm_ini_path'):
+                    rmm_ini = read_DHYDRO_file(model_config.FM.one_d.rmm_ini_path, ['[Branch]'])
+                    for key in rmm_ini.keys():
+                        if key in inifields.keys():
+                            inifields[key] = rmm_ini[key]
+                        else:
+                            print(f'{key} not present in original branches')
+                    print('Updated initial waterlevels for the RMM')
+                
+                write_DHYDRO_file(inifields, fm_path, self.fm.geometry.inifieldfile.initial[0].datafile.filepath)
+
             else:
                 self.fm = add_1D_initial_waterdepth(
                     fm=self.fm,

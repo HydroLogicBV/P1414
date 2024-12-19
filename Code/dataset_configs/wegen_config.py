@@ -8,7 +8,8 @@ class FixedWeirs:
     ## PATHS
     dm_attribute = "overiglijnelement"
     p_folder = folder_path_GIS + r"\GIS"
-    flood_defences_path = p_folder + r"\Keringen_met_hoogte\hoofd_en_spoorwegen_v2.shp"
+    flood_defences_path = p_folder + r"\Relief en wegen\hoofd_en_spoorwegen_v2.shp"
+    fixed_weir_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     fixed_weir_index_mapping = dict(
         [
             ("code", "lokaalid"),
