@@ -1424,6 +1424,15 @@ def to_dhydro(
                         else:
                             print(f'{key} not present in original branches')
                     print('Updated initial waterlevels for the RMM')
+
+                if hasattr(model_config.FM.one_d, 'correctie_overig_ini_path'):
+                    corr_ini = read_DHYDRO_file(model_config.FM.one_d.correctie_overig_ini_path, ['[Branch]'])
+                    for key in corr_ini.keys():
+                        if key in inifields.keys():
+                            inifields[key] = corr_ini[key]
+                        else:
+                            print(f'{key} not present in original branches')
+                    print('Updated initial waterlevels for the corrections')
                 
                 write_DHYDRO_file(inifields, fm_path, self.fm.geometry.inifieldfile.initial[0].datafile.filepath)
 

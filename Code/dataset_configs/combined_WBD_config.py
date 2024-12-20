@@ -23,6 +23,7 @@ class Models:
             node_distance = 500
             rijntakken_ini_path = folder_path_GIS + r"\GIS\Rijntakken\InitialWaterLevels_Rijn.ini"
             rmm_ini_path = folder_path_GIS + r"\GIS\RMM\InitialWaterLevels_RMM.ini"
+            correctie_overig_ini_path = folder_path_GIS + r"\GIS\peilen\InitialWaterLevels_Correcties.ini"
 
         class two_d:
             coupling_type = "1Dto2D"
