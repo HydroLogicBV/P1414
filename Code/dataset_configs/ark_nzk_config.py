@@ -29,7 +29,14 @@ class Models:
 class FixedWeirs:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    flood_defences_path = p_folder + r"\Keringen_met_hoogte\ARKV2.shp"
+    #flood_defences_path = p_folder + r"\Keringen_met_hoogte\ARKV2.shp"
+
+    flood_defences_path = dict(
+                [
+                     ("base", p_folder + r"\Keringen_met_hoogte\ARKV2.shp"),
+                     ("concat", p_folder + r"\Keringen_met_hoogte\ExtraKeringenNZK.shp"),
+                ]
+            )
 
     fixed_weir_index_mapping = dict(
         [

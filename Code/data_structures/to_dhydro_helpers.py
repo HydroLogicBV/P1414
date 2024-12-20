@@ -380,7 +380,7 @@ def to_dhydro(
         return fm
 
     def add_fixed_weirs(ddm: DataModel, fm=FMModel, data: List = [0, 0, 5, 4, 4, 0]) -> FMModel:
-        def split_line_by_point(line, max_length: float = 500, max_seg_length: float = 25):
+        def split_line_by_point(line, max_length: float = 10000, max_seg_length: float = 10):
             length = line.length
             if length < max_length:
                 return line
@@ -1539,7 +1539,10 @@ def to_dhydro(
 
                 clipped_branches_gdf = gpd.sjoin(all_branches_gdf, clip_extent_buffer, how='inner', op='intersects')
                 lst_temp = clipped_branches_gdf.code.tolist()
-                lateral_branches = lst_temp 
+                lateral_branches = lst_temp
+                if 'wagv_wl_6440_2668' in lateral_branches:
+                    lateral_branches.remove('wagv_wl_6440_2668')
+                    print('\n Removed wagv_wl_6440_2668 from list of branches that get lateral links')
 
             ## EINDE STUK PEPIJN 
             #      
