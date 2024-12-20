@@ -1539,7 +1539,10 @@ def to_dhydro(
 
                 clipped_branches_gdf = gpd.sjoin(all_branches_gdf, clip_extent_buffer, how='inner', op='intersects')
                 lst_temp = clipped_branches_gdf.code.tolist()
-                lateral_branches = lst_temp 
+                lateral_branches = lst_temp
+                if 'wagv_wl_6440_2668' in lateral_branches:
+                    lateral_branches.remove('wagv_wl_6440_2668')
+                    print('\n Removed wagv_wl_6440_2668 from list of branches that get lateral links')
 
             ## EINDE STUK PEPIJN 
             #      
