@@ -31,14 +31,14 @@ class Models:
             dy = 500
             elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN4_WSS_filled.TIF"
             extent_path = folder_path_GIS + r"\GIS\Randstad dijkringen\dijkringen_randstad_merged.shp"
-            initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\wd_0_v7.tif"
+            initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\wd_0_v8.tif"
             roughness_2d_raster_path = (
                 folder_path_GIS + r"\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )
             two_d_buffer = 0
             clip_extent_path = dict(
                 [
-                     ("base", folder_path_GIS + r"\GIS\HHRijnland\Boezemmeren_plassen\Rijnland_meren_plassen.shp"),
+                     ("base", folder_path_GIS + r"\GIS\HHRijnland\Boezemmeren_plassen\Rijnland_meren_plassenV2.shp"),
                      ("concat", folder_path_GIS + r"\GIS\ARKNZK\netwerk_selectie_v6_merged.shp"),
                 ]
             )

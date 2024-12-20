@@ -19,20 +19,20 @@ folder_path_output = r"P:\HL-P24050\05_Analysis\02_Model"
 #folder_path_output = r"C:\Work\Projects\P24050_ROI_voor_ROR\Testmodellen"
 os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HHD_20_december.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_20_december.gpkg"
 
 gpkgs_list = [
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_18_december.gpkg",             'snap_dist': 10},
+    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_20_december.gpkg",             'snap_dist': 10},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHSK_20_december.gpkg",                    'snap_dist': 10},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HDSR_20_december.gpkg",                    'snap_dist': 35},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHD_20_december.gpkg",                     'snap_dist': 10},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHR_20_december.gpkg",                     'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\WAGV_18_december.gpkg",                    'snap_dist': 10},
+    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\WAGV_20_december.gpkg",                    'snap_dist': 10},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Tunnels_Onderdoorgangen_18_december.gpkg", 'snap_dist': 0},
 ]
 
 # Model name
-output_folder = folder_path_output + r"\Buitenwater_20dec"
+output_folder = folder_path_output + r"\Buitenwater_500m_22dec"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
@@ -42,16 +42,11 @@ config_list = [
     # {'config': r"noordzee_config",              'snap_dist': 200},
     # {'config': r"markermeer_config",            'snap_dist': 100},
     # {'config': r"hhsk_config",                  'snap_dist': 10},
-<<<<<<< HEAD
-    #{'config': r"hdsr_config",                  'snap_dist': 20},
-    {'config': r"hhd_config",                   'snap_dist': 10},
-=======
     # {'config': r"hdsr_config",                  'snap_dist': 20},
     # {'config': r"hhd_config",                   'snap_dist': 10},
->>>>>>> origin/main
     # {'config': r"hhr_config",                   'snap_dist': 10},
-    {'config': r"wagv_config",                  'snap_dist': 10},
-    {'config': r"ontbrekende_stuwen_config",    'snap_dist': 10},
+    # {'config': r"wagv_config",                  'snap_dist': 10},
+    # {'config': r"ontbrekende_stuwen_config",    'snap_dist': 10},
     # {'config': r"randvoorwaarden_config",       'snap_dist': 0},
     #{'config': r"tunnel_config",                'snap_dist': 0},
     #{'config': r"underpass_config",             'snap_dist': 0},
@@ -59,9 +54,9 @@ config_list = [
 
 defaults = r"defaults"
 
-build_database = True
+build_database = False
 load_gpkgs = False
-build_model = False
+build_model = True
 
 if build_database:
     dhd = DHydroData()
