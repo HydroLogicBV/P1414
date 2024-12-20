@@ -93,7 +93,8 @@ def add_height_to_linestrings(
 
 
 if __name__ == "__main__":
-    ahn_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.tif"
+    #ahn_path = r"D:\Work\Project\P1414\GIS\AHN\AHN4_WSS_filled.tif"
+    ahn_path = r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\AHN\AHN4_WSS_filled.tif"
     in_out_dict = dict(
         [
             (
@@ -159,7 +160,15 @@ if __name__ == "__main__":
         ]
     )
 
-    for input_path, output_path in in_out_dict.items():
+    in_out_dict2 = dict(
+        [
+            (
+                r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\ARKNZK\ExtraKeringenNZK.shp",
+                r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\ARKNZK\Keringen met hoogte\ExtraKeringenNZK.shp",
+            )
+        ])
+
+    for input_path, output_path in in_out_dict2.items():
         gdf = gpd.read_file(input_path).to_crs(crs="EPSG:28992").explode(ignore_index=True)
         print(np.sum(gdf.geometry.type == "MultiLineString"))
 

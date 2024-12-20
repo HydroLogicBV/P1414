@@ -380,7 +380,7 @@ def to_dhydro(
         return fm
 
     def add_fixed_weirs(ddm: DataModel, fm=FMModel, data: List = [0, 0, 5, 4, 4, 0]) -> FMModel:
-        def split_line_by_point(line, max_length: float = 500, max_seg_length: float = 25):
+        def split_line_by_point(line, max_length: float = 10000, max_seg_length: float = 10):
             length = line.length
             if length < max_length:
                 return line

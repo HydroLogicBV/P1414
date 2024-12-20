@@ -19,28 +19,37 @@ folder_path_output = r"P:\HL-P24050\05_Analysis\02_Model"
 #folder_path_output = r"C:\Work\Projects\P24050_ROI_voor_ROR\Testmodellen"
 os.environ['GIS_folder_path'] = folder_path_GIS
 
+<<<<<<< Updated upstream
 gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HDSR_20_december.gpkg"
 
 gpkgs_list = [
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_18_december.gpkg",             'snap_dist': 10},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHSK_18_december.gpkg",                    'snap_dist': 10},
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HDSR_20_december.gpkg",                    'snap_dist': 35},
+=======
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\test_HHD_kering_20dec.gpkg"
+
+gpkgs_list = [
+    #{'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_18_december.gpkg",             'snap_dist': 10},
+    #{'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHSK_18_december.gpkg",                    'snap_dist': 10},
+    #{'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HDSR_18_december.gpkg",                    'snap_dist': 35},
+>>>>>>> Stashed changes
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHD_18_december.gpkg",                     'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHR_18_december.gpkg",                     'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\WAGV_18_december.gpkg",                    'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Tunnels_Onderdoorgangen_18_december.gpkg", 'snap_dist': 0},
+    #{'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHR_18_december.gpkg",                     'snap_dist': 10},
+    #{'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\WAGV_18_december.gpkg",                    'snap_dist': 10},
+    #{'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Tunnels_Onderdoorgangen_18_december.gpkg", 'snap_dist': 0},
 ]
 
 # Model name
-output_folder = folder_path_output + r"\Combined_V3.2_100m"
+output_folder = folder_path_output + r"\test_HHD_kering_20dec"
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
-    # {'config': r"ark_nzk_config",               'snap_dist': 10},
+    {'config': r"ark_nzk_config",               'snap_dist': 10},
     # {'config': r"rijntakken_config",            'snap_dist': 10},
     # {'config': r"rijnmaasmonding_open_config",  'snap_dist': 100},
     # {'config': r"noordzee_config",              'snap_dist': 200},
-    # {'config': r"markermeer_config",            'snap_dist': 100},
+    {'config': r"markermeer_config",            'snap_dist': 100},
     # {'config': r"hhsk_config",                  'snap_dist': 10},
     {'config': r"hdsr_config",                  'snap_dist': 20},
     # {'config': r"hhd_config",                   'snap_dist': 10},
@@ -48,15 +57,26 @@ config_list = [
     #{'config': r"wagv_config",                  'snap_dist': 10},
     {'config': r"ontbrekende_stuwen_config",    'snap_dist': 10},
     #{'config': r"randvoorwaarden_config",       'snap_dist': 0},
+<<<<<<< Updated upstream
     # {'config': r"tunnel_config",                'snap_dist': 0},
     # {'config': r"underpass_config",             'snap_dist': 0},
+=======
+    #{'config': r"tunnel_config",                'snap_dist': 0},
+    #{'config': r"underpass_config",             'snap_dist': 0},
+>>>>>>> Stashed changes
 ]
 
 defaults = r"defaults"
 
+<<<<<<< Updated upstream
 build_database = True
 load_gpkgs = False
 build_model = False
+=======
+build_database = False
+load_gpkgs = True
+build_model = True
+>>>>>>> Stashed changes
 
 if build_database:
     dhd = DHydroData()
@@ -86,9 +106,9 @@ if load_gpkgs:
         # 2. load data
         dhd.hydamo_from_gpkg(gpkg['gpkg_file'], branch_snap_dist=gpkg['snap_dist'])#, GIS_folder=folder_path_GIS)
 
-    dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
-    dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults, min_length = 100)
-    dhd.fixed_weirs_from_raw_data(config="noordzeekeringen_config", defaults=defaults)
+    #dhd.fixed_weirs_from_raw_data(config="wegen_config", defaults=defaults)
+    #dhd.fixed_weirs_from_raw_data(config="relief_config", defaults=defaults, min_length = 100)
+    #dhd.fixed_weirs_from_raw_data(config="noordzeekeringen_config", defaults=defaults)
 
     # dhd.dambreaks_from_config(config="dambreak_v0_config", defaults=defaults)
     dhd.hydamo_to_gpkg(output_gpkg=gpkg_file)
@@ -101,9 +121,9 @@ if build_model:
     dhd.hydamo_from_gpkg(gpkg_file)
 
     # remove brug as it needs a cs
-    del dhd.ddm.brug
-    dhd.features.remove("brug")
-    dhd.ddm.pomp["maximalecapaciteit"] = 0
+    #del dhd.ddm.brug
+    #dhd.features.remove("brug")
+    #dhd.ddm.pomp["maximalecapaciteit"] = 0
 
     # 3. save as dhydro model
     dhd.to_dhydro(config=config_dhydro, output_folder=output_folder)

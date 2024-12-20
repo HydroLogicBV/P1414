@@ -1,16 +1,72 @@
 # inladen geofile
 
 import geopandas as gpd
+from shapely.geometry import LineString
 
 # Load shapefile
-gdf = gpd.read_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HDSR\HydroObject\HydroObject_v8.shp")
+gdf = gpd.read_file(r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\Markermeer\MarkermeerV3.shp")
 
 # Print column names and CRS
 print("Columns:", gdf.columns)
 print("CRS:", gdf.crs)
+print(gdf)
+#gdf.to_crs('EPSG:28992')
 
-gdf.to_crs('EPSG:28992')
+# Replace the coordinates of branch id 24, index 10
+target_geometry = gdf.loc[10, 'geometry']
+coords = list(target_geometry.coords)
+#print(target_geometry)
+#print(coords)
+print(f'First coordinate: {target_geometry.coords[0]}')
+print(f'Last coordinate: {target_geometry.coords[-1]}')
 
+# coords to map towards:
+left_target = gdf.loc[11, 'geometry']
+left_coords = list(left_target.coords)
+print(f'Left coords: {left_coords}')
+
+# coords to map towards:
+right_target = gdf.loc[2, 'geometry']
+right_coords = list(right_target.coords)
+print(f'Right coords: {right_coords}')
+
+coords_adjusted = [right_coords[0], left_coords[0]]
+
+# Create a new LineString with the adjusted coordinates
+new_geometry = LineString(coords_adjusted)
+
+# Update the geometry in the GeoDataFrame
+gdf.at[10, 'geometry'] = new_geometry
+
+# _____________________________________________________________________
+# Replace the coordinates of branch id 21, index 8
+target_geometry = gdf.loc[8, 'geometry']
+coords = list(target_geometry.coords)
+#print(target_geometry)
+#print(coords)
+print(f'First coordinate: {target_geometry.coords[0]}')
+print(f'Last coordinate: {target_geometry.coords[-1]}')
+
+# coords to map towards:
+left_target = gdf.loc[3, 'geometry']
+left_coords = list(left_target.coords)
+print(f'Left coords: {left_coords}')
+
+# coords to map towards:
+right_target = gdf.loc[9, 'geometry']
+right_coords = list(right_target.coords)
+print(f'Right coords: {right_coords}')
+
+coords_adjusted = [left_coords[-1], right_coords[0]]
+
+# Create a new LineString with the adjusted coordinates
+new_geometry = LineString(coords_adjusted)
+
+# Update the geometry in the GeoDataFrame
+gdf.at[8, 'geometry'] = new_geometry
+
+gdf.to_file(r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\Markermeer\MarkermeerV4.shp")
+"""
 # Make the adjustment to the opnemen column.
 
 names = ['hdsr_wl_H040953',
@@ -65,7 +121,6 @@ gdf.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HDSR\
 
 print("Shapefile export complete.")
 
-"""
 import geopandas as gpd
 from shapely.ops import unary_union
 
