@@ -47,6 +47,7 @@ def to_dhydro(
     config: str,
     extent: Union[gpd.GeoDataFrame, Polygon] = None,
     initial_1D_waterdepth: float = 1,
+    load_mesh2d_path = None,
     output_folder=None,
 ):
     """
@@ -848,7 +849,9 @@ def to_dhydro(
         two_d_buffer: float,
         clip_extent: gpd.GeoDataFrame = None,
         clip_buffer: int = 0,
+        load_mesh2d_path: str = None, # TODO: Implementeren dat er een grid ingeladen kan worden! 
         lateral_branches: list = None,
+        branch_1d2d_embed_list: list = None,
         one_d: bool = False,
         bound_ids: list = ["mark", "noor", "rijn"],
         max_lat_dist: float = 2e3,
@@ -856,207 +859,188 @@ def to_dhydro(
 
         network = fm.geometry.netfile.network
 
-        if two_d_buffer is None:
-            polygon = extent.geometry.values[0]
-        elif isinstance(two_d_buffer, (int, float)):
-            polygon = extent.geometry.values[0].buffer(two_d_buffer)
-        else:
-            raise ValueError("not supported buffer")
-
-        mesh.mesh2d_add_rectilinear(network=network, polygon=polygon, dx=dx, dy=dy)
-        print("created 2D mesh")
-
-        # Clip main branches from the 2D mesh and give them lateral links
-        # Clip polygons from the 2D mesh
-        clipped = 0
-        if clip_extent is not None:
-            # Explode potential MultiPolygons:
-            clip_extent = clip_extent.explode(index_parts=True).reset_index(drop=True)
-            
-            if len(clip_extent) == 1:
-                clip_polygons = clip_extent.loc[0, 'geometry']
-                mesh.mesh2d_clip(network=network, polygon=clip_polygons)
-                print('Clipped 1 polygon from the mesh\n')
+        if load_mesh2d_path is None:
+            print('Start constructing the mesh2d grid, because no exisiting grid has been specified. This might take a while!')
+            if two_d_buffer is None:
+                polygon = extent.geometry.values[0]
+            elif isinstance(two_d_buffer, (int, float)):
+                polygon = extent.geometry.values[0].buffer(two_d_buffer)
             else:
-                n_finish = 0
-                for i, poly in tqdm(enumerate(clip_extent.iterrows()),total=len(clip_extent),desc="clip progress", unit=" rows"):
-                    clip_polygons = poly[1].geometry.buffer(clip_buffer)
+                raise ValueError("not supported buffer")
 
-                    # Ensure the result is a single polygon although the result should be exploded already
-                    if clip_polygons.type == 'MultiPolygon':
-                        merged_polygon = unary_union(clip_polygons)
-                    else:
-                        merged_polygon = clip_polygons
+            mesh.mesh2d_add_rectilinear(network=network, polygon=polygon, dx=dx, dy=dy)
+            print("created 2D mesh")
 
-                    if merged_polygon.type == 'MultiPolygon':
-                        # If still a MultiPolygon, extract the largest polygon
-                        largest_polygon = max(merged_polygon, key=lambda p: p.area)
-                    else:
-                        largest_polygon = merged_polygon
-
-                    clip_polygon = Polygon(largest_polygon.exterior)    # Make a polygon with the exterior = filling up potential holes
-                    clipped += 1
-                    mesh.mesh2d_clip(network=network, polygon=clip_polygon)
-                    n_finish +=1
-                print(f'Clipped {clipped} polygons one by one from the mesh\n')
-
-            # Add lateral 1D-2D links because the regular links are removed when clipped
-            if len(lateral_branches) > 0:
-                mesh.links1d2d_add_links_2d_to_1d_lateral(
-                        network=network,
-                        branchids=lateral_branches,
-                        dist_factor=None,   # within=extent.buffer(1e3)
-                        max_length=2000,      # Set the maximum length to the grid resolution
-                    )
+            # Clip main branches from the 2D mesh and give them lateral links
+            # Clip polygons from the 2D mesh
+            clipped = 0
+            if clip_extent is not None:
+                # Explode potential MultiPolygons:
+                clip_extent = clip_extent.explode(index_parts=True).reset_index(drop=True)
                 
-                # Remove the links that go to end points as these deliver problems when running the simulation
-                #mesh.links1d2d_remove_1d_endpoints(network=network)
-                print('Added lateral links for the clipped branches and removed the ones to end points.')
-        # ---> End add Pepijn
+                if len(clip_extent) == 1:
+                    clip_polygons = clip_extent.loc[0, 'geometry']
+                    mesh.mesh2d_clip(network=network, polygon=clip_polygons)
+                    print('Clipped 1 polygon from the mesh\n')
+                else:
+                    n_finish = 0
+                    for i, poly in tqdm(enumerate(clip_extent.iterrows()),total=len(clip_extent),desc="clip progress", unit=" rows"):
+                        clip_polygons = poly[1].geometry.buffer(clip_buffer)
 
-        if elevation_raster_path is not None:
-            # mesh.mesh2d_altitude_from_raster(
-            #     network=network,
-            #     rasterpath=elevation_raster_path,
-            #     where="node",  # Face does not work
-            #     stat="nanmean",
-            #     fill_option="fill_value",
-            #     fill_value=-10,
-            #     window_size=int(dx + dy),
-            # )
-
-            xnodes = network._mesh2d.mesh2d_node_x
-            ynodes = network._mesh2d.mesh2d_node_y
-
-            # Read in the initial values in a dictionary to use later 
-            inifile_path = fm_path / fm.geometry.inifieldfile.initial[0].datafile.filepath
-            inifields = read_DHYDRO_file(inifile_path, ['[Branch]'])
-            print('Initial water levels loaded to correct the AHN')
-            with rasterio.open(elevation_raster_path) as src:
-                #     bounds = src.bounds
-                #     _box = box(*bounds)
-                #     points = []
-                #     ixs = []
-                #     for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
-                #         p = sPoint(x, y)
-                #         if p.within(_box):
-                #             bp = p.buffer((dx + dy) // 2, cap_style=3)
-                #             points.append(bp)
-                #             ixs.append(ix)
-
-                #     stats = zonal_stats(
-                #         bp,
-                #         src.read(1),
-                #         affine=src.transform,
-                #         stats="",
-                #         add_stats={"nanmean": np.nanmean},
-                #         nodata=np.nan,
-                #     )
-                #     heights = []
-                #     for result in stats:
-                #         heights.append(result["nanmean"])
-
-                #     # convert to numpy array and remove values more than two standard devations from the nanmean
-                #     z = np.array([z for z in heights]).flatten()
-                #     z_new = np.full((network._mesh2d.mesh2d_node_y.shape[0]), -10)
-                #     for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
-                #         if ix in ixs:
-                #             z_new[ix] = z
-                ahn = src.read(1)
-                print('AHN loaded')
-                z = []
-
-                # Creeer een geodataframe van alle branches
-                branches_list = [(branch_id, LineString(coords.geometry)) for branch_id, coords in network._mesh1d.branches.items()]
-                
-                branch_index = rtreeind.Index()
-                for i, (branch_id, branch_line) in enumerate(branches_list):
-                    branch_index.insert(i,branch_line.bounds)
-                print('Created a spatial index for all branches')
-                count_cells_not_high_enough = 0
-                # Per node (xnodes,ynodes) check the intersection met die node. -> Van de nodes nog een box maken zodat er geen gaten vallen?
-                # Assign het peil + 5 cm voor die nodes
-                for ix, (x, y) in tqdm(enumerate(zip(xnodes, ynodes)), total=len(xnodes),desc='Adding height to mesh point'):
-                    
-                    # Check whether the gridcell touches one of the branches
-                   
-                    cell = box(x-dx, y-dy, x+dx, y+dy)
-                    candidate_indices = list(branch_index.intersection(cell.bounds))
-                    if len(candidate_indices) == 0:
-                        check_peil = -100
-                    else:
-                        check_peil_list = []
-                        for index in candidate_indices:
-                            branch_id, branch_line = branches_list[index]
-                            if branch_line.intersects(cell):
-                                try:
-                                    peilen_ini = inifields[branch_id]['values'].split(' ')
-                                    if len(peilen_ini) == 2:
-                                        peil_1, peil_2 = peilen_ini
-                                    elif len(peilen_ini) >2:
-                                        peil_1, peil_2 = peilen_ini[:2]
-                                    elif len(peilen_ini) == 1:
-                                        peil_1 = peil_2 = peilen_ini[0]
-                                    check_peil_list.append(np.mean((float(peil_1),float(peil_2))))
-                                except KeyError:
-                                    check_peil_list.append(-100)
-                               
-                        if len(check_peil_list) > 0:
-                            check_peil = np.max(check_peil_list) # Take the maximum of the peilen
-                    
-                    p = sPoint(x, y)
-                    bp = p.buffer((dx + dy) // 2, cap_style=3)
-
-                    try:
-                        stats = zonal_stats(
-                            bp,
-                            ahn,
-                            affine=src.transform,
-                            stats="",
-                            add_stats={"nanmean": np.nanmean},
-                            nodata=np.nan,
-                        )
-                        heights = []
-                        for result in stats:
-                            heights.append(result["nanmean"])
-
-                        if heights[0] > check_peil:
-                            z.append(*[z for z in heights])
+                        # Ensure the result is a single polygon although the result should be exploded already
+                        if clip_polygons.type == 'MultiPolygon':
+                            merged_polygon = unary_union(clip_polygons)
                         else:
-                            z.append(check_peil+0.05) # Add 5 cm to the initial water level
-                            count_cells_not_high_enough += 1
-                    except:
-                        z.append(-10)
+                            merged_polygon = clip_polygons
 
-                network._mesh2d.mesh2d_node_z = np.array(z).flatten()
+                        if merged_polygon.type == 'MultiPolygon':
+                            # If still a MultiPolygon, extract the largest polygon
+                            largest_polygon = max(merged_polygon, key=lambda p: p.area)
+                        else:
+                            largest_polygon = merged_polygon
 
-            # with rasterio.open(elevation_raster_path) as src:
-            #     ahn = src.read(1)
-            #     z = []
-            #     for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
-            #         p = sPoint(x, y)
-            #         bp = p.buffer((dx + dy) // 2, cap_style=3)
+                        clip_polygon = Polygon(largest_polygon.exterior)    # Make a polygon with the exterior = filling up potential holes
+                        clipped += 1
+                        mesh.mesh2d_clip(network=network, polygon=clip_polygon)
+                        n_finish +=1
+                    print(f'Clipped {clipped} polygons one by one from the mesh\n')
 
-            #         try:
-            #             stats = zonal_stats(
-            #                 bp,
-            #                 ahn,
-            #                 affine=src.transform,
-            #                 stats="",
-            #                 add_stats={"nanmean": np.nanmean},
-            #                 nodata=np.nan,
-            #             )
-            #             heights = []
-            #             for result in stats:
-            #                 heights.append(result["nanmean"])
+                # Add lateral 1D-2D links because the regular links are removed when clipped
+                if len(lateral_branches) > 0:
+                    mesh.links1d2d_add_links_2d_to_1d_lateral(
+                            network=network,
+                            branchids=lateral_branches,
+                            dist_factor=None,   # within=extent.buffer(1e3)
+                            max_length=2000,      # Set the maximum length to the grid resolution
+                        )
+                    
+                    # Remove the links that go to end points as these deliver problems when running the simulation
+                    #mesh.links1d2d_remove_1d_endpoints(network=network)
+                    print('Added lateral links for the clipped branches and removed the ones to end points.')
+            # ---> End add Pepijn
 
-            #             z.append(*[z for z in heights])
-            #         except:
-            #             z.append(-10)
+            if elevation_raster_path is not None:
+                # mesh.mesh2d_altitude_from_raster(
+                #     network=network,
+                #     rasterpath=elevation_raster_path,
+                #     where="node",  # Face does not work
+                #     stat="nanmean",
+                #     fill_option="fill_value",
+                #     fill_value=-10,
+                #     window_size=int(dx + dy),
+                # )
 
-            #     network._mesh2d.mesh2d_node_z = np.array(z).flatten()
-            print(f"Bed elevation lower than initial water level for {count_cells_not_high_enough} cells. Set to 0.05 m above initial waterlevel")
-            print("Added elevation to 2D mesh")
+                xnodes = network._mesh2d.mesh2d_node_x
+                ynodes = network._mesh2d.mesh2d_node_y
+
+                # Read in the initial values in a dictionary to use later 
+                inifile_path = fm_path / fm.geometry.inifieldfile.initial[0].datafile.filepath
+                inifields = read_DHYDRO_file(inifile_path, ['[Branch]'])
+                print('Initial water levels loaded to correct the AHN')
+                with rasterio.open(elevation_raster_path) as src:
+                    #     bounds = src.bounds
+                    #     _box = box(*bounds)
+                    #     points = []
+                    #     ixs = []
+                    #     for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
+                    #         p = sPoint(x, y)
+                    #         if p.within(_box):
+                    #             bp = p.buffer((dx + dy) // 2, cap_style=3)
+                    #             points.append(bp)
+                    #             ixs.append(ix)
+
+                    #     stats = zonal_stats(
+                    #         bp,
+                    #         src.read(1),
+                    #         affine=src.transform,
+                    #         stats="",
+                    #         add_stats={"nanmean": np.nanmean},
+                    #         nodata=np.nan,
+                    #     )
+                    #     heights = []
+                    #     for result in stats:
+                    #         heights.append(result["nanmean"])
+
+                    #     # convert to numpy array and remove values more than two standard devations from the nanmean
+                    #     z = np.array([z for z in heights]).flatten()
+                    #     z_new = np.full((network._mesh2d.mesh2d_node_y.shape[0]), -10)
+                    #     for ix, (x, y) in enumerate(zip(xnodes, ynodes)):
+                    #         if ix in ixs:
+                    #             z_new[ix] = z
+                    ahn = src.read(1)
+                    print('AHN loaded')
+                    z = []
+
+                    # Creeer een geodataframe van alle branches
+                    branches_list = [(branch_id, LineString(coords.geometry)) for branch_id, coords in network._mesh1d.branches.items()]
+                    
+                    branch_index = rtreeind.Index()
+                    for i, (branch_id, branch_line) in enumerate(branches_list):
+                        branch_index.insert(i,branch_line.bounds)
+                    print('Created a spatial index for all branches')
+                    count_cells_not_high_enough = 0
+                    # Per node (xnodes,ynodes) check the intersection met die node. -> Van de nodes nog een box maken zodat er geen gaten vallen?
+                    # Assign het peil + 5 cm voor die nodes
+                    for ix, (x, y) in tqdm(enumerate(zip(xnodes, ynodes)), total=len(xnodes),desc='Adding height to mesh point'):
+                        
+                        # Check whether the gridcell touches one of the branches
+                    
+                        cell = box(x-dx, y-dy, x+dx, y+dy)
+                        candidate_indices = list(branch_index.intersection(cell.bounds))
+                        if len(candidate_indices) == 0:
+                            check_peil = -100
+                        else:
+                            check_peil_list = []
+                            for index in candidate_indices:
+                                branch_id, branch_line = branches_list[index]
+                                if branch_line.intersects(cell):
+                                    try:
+                                        peilen_ini = inifields[branch_id]['values'].split(' ')
+                                        if len(peilen_ini) == 2:
+                                            peil_1, peil_2 = peilen_ini
+                                        elif len(peilen_ini) >2:
+                                            peil_1, peil_2 = peilen_ini[:2]
+                                        elif len(peilen_ini) == 1:
+                                            peil_1 = peil_2 = peilen_ini[0]
+                                        check_peil_list.append(np.mean((float(peil_1),float(peil_2))))
+                                    except KeyError:
+                                        check_peil_list.append(-100)
+                                
+                            if len(check_peil_list) > 0:
+                                check_peil = np.max(check_peil_list) # Take the maximum of the peilen
+                        
+                        p = sPoint(x, y)
+                        bp = p.buffer((dx + dy) // 2, cap_style=3)
+
+                        try:
+                            stats = zonal_stats(
+                                bp,
+                                ahn,
+                                affine=src.transform,
+                                stats="",
+                                add_stats={"nanmean": np.nanmean},
+                                nodata=np.nan,
+                            )
+                            heights = []
+                            for result in stats:
+                                heights.append(result["nanmean"])
+
+                            if heights[0] > check_peil:
+                                z.append(*[z for z in heights])
+                            else:
+                                z.append(check_peil+0.05) # Add 5 cm to the initial water level
+                                count_cells_not_high_enough += 1
+                        except:
+                            z.append(-10)
+
+                    network._mesh2d.mesh2d_node_z = np.array(z).flatten()
+
+                print(f"Bed elevation lower than initial water level for {count_cells_not_high_enough} cells. Set to 0.05 m above initial waterlevel")
+                print("Added elevation to 2D mesh")
+        else:
+            # Use a pre-specified grid
+            network._mesh2d.read_file(Path(load_mesh2d_path))
+            print('Pre-existing mesh has been loaded!')
 
         if initial_peil_raster_path is not None:
             initial_wl = InitialField(
@@ -1131,12 +1115,14 @@ def to_dhydro(
         if one_d:
             if coupling_type == "1Dto2D":
                 mesh.links1d2d_add_links_1d_to_2d(
-                    branchids=branchids, network=network, within=polygon
+                    branchids=branch_1d2d_embed_list, network=network, within=polygon
                 )
+                print('1Dto2D embedded links added')
             elif coupling_type == "2Dto1D":
                 mesh.links1d2d_add_links_2d_to_1d_embedded(
-                    branchids=branchids, network=network, within=polygon
+                    branchids=branch_1d2d_embed_list, network=network, within=polygon
                 )
+                print('2Dto1D embedded links added')
             else:
                 print("No 1D to 2D links have been set")
 
@@ -1153,6 +1139,21 @@ def to_dhydro(
                     dist_factor=None,  # within=extent.buffer(1e3)
                     max_length=max_lat_dist,
                 )
+                print('Lateral 1d2d links added for the boundaries (Rijntakken, RMM, Noordzee, Markermeer')
+
+            # Add lateral 1D-2D links because the regular links are removed when clipped
+            if (len(lateral_branches) > 0) and (clip_extent is not None):
+                mesh.links1d2d_add_links_2d_to_1d_lateral(
+                        network=network,
+                        branchids=lateral_branches,
+                        dist_factor=None,   # within=extent.buffer(1e3)
+                        max_length=2000,      # Set the maximum length to the grid resolution
+                    )
+                
+                # Remove the links that go to end points as these deliver problems when running the simulation
+                #mesh.links1d2d_remove_1d_endpoints(network=network)
+                print('Added lateral links for the clipped branches and removed the ones to end points.')
+
             network._link1d2d.link1d2d, unique_idx = np.unique(network._link1d2d.link1d2d, axis=0, return_index=True)
             network._link1d2d.link1d2d_id = network._link1d2d.link1d2d_id[unique_idx]
             network._link1d2d.link1d2d_long_name = network._link1d2d.link1d2d_long_name[unique_idx]
@@ -1379,7 +1380,7 @@ def to_dhydro(
 
 
             # add 1D model
-            print("\nCompletig 1D model\n")
+            print("\nCompleting 1D model\n")
             self.fm, self.hydamo = build_1D_model(
                 fm=self.fm,
                 features=self.features,
@@ -1593,6 +1594,11 @@ def to_dhydro(
             
             # add 2D model
             print("\nBuilding 2D model grid\n")
+
+            # Get the list of branches that should not get a 1D2D link because they are duikers
+            all_branches_code_list = list(self.ddm.waterloop['code'])
+            duiker_list = list(self.ddm.waterloop[self.ddm.waterloop['is_duiker'] =="JA"]['code'])
+            branch_1d2d_embed_list = [item for item in all_branches_code_list if item not in duiker_list]
             fm_path = Path(output_folder) / FM_FOLDER
             self.fm = build_2D_model(
                 dx=model_config.FM.two_d.dx,
@@ -1603,7 +1609,9 @@ def to_dhydro(
                 one_d=model_config.FM.one_d_bool,
                 clip_extent=clip_extent,
                 clip_buffer=clip_buffer,
+                load_mesh2d_path = load_mesh2d_path,
                 lateral_branches=lateral_branches,
+                branch_1d2d_embed_list = branch_1d2d_embed_list,
                 **kwargs,
             )
 

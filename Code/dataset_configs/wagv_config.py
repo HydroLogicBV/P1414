@@ -105,6 +105,7 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("tunnel", False),
+            ("is_duiker","NEE"),
             ("typeruwheid", "ruwheidsty"),  # changed in hydrovak_combined
         ]
     )

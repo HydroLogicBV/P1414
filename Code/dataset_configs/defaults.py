@@ -14,6 +14,7 @@ class Branches:
     taludhelling_linkerzijde = 0
     taludhelling_rechterzijde = 0
     typeruwheid = "Bos en Bijkerk"
+    is_duiker = "NEE"
     water_width_index = bodembreedte
 
 

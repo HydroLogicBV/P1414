@@ -48,6 +48,7 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("tunnel", True),
+            ("is_duiker", None),
             ("typeruwheid", None),
         ]
     )

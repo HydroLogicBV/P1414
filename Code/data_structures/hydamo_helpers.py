@@ -308,8 +308,12 @@ def map_columns(
                         )
                 elif isinstance(value, (int, float, bool)):
                     _gdf[key] = value
-                else:
+                elif value in _gdf.columns.tolist():
                     _gdf[key] = gdf[value]
+                else:
+                    _gdf[key] = value
+                    print(f'{value} is not a column in the DataFrame. {key} set to \"{value}\"')
+                    
 
                 # if it is in shapefile, but contains missing values, fill them as well
                 if key == "code":
@@ -466,7 +470,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         buffer_dist=5,
         max_distance: float = 2,
         min_connectivity: int = 1,
-        tunnel_mapping: dict = {},
+        branch_mapping: dict = {},
     ) -> gpd.GeoDataFrame:
         
         """
@@ -591,7 +595,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             return out_branches
 
         def validate_network_topology(
-            branches_gdf: gpd.GeoDataFrame, snap_distance: float = None, tunnel_mapping: dict = {}
+            branches_gdf: gpd.GeoDataFrame, snap_distance: float = None, branch_mapping: dict = {}
         ) -> gpd.GeoDataFrame:
             """
             Function to validate the toplogy of the network.
@@ -606,6 +610,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             Returns:
                 branches_gdf (gpd.GeoDataFrame): output geodataframe with branches that properly connect to one another
             """
+            
 
             def snap_nodes(in_branches: gpd.GeoDataFrame, geometry_accuracy: float):
                 def normalize_line_direction(geom):
@@ -676,31 +681,55 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             # For now: geometry_accuracy=2 (1 cm accurate)
             geometry_accuracy = 2
 
-            # Deselect the tunnels
-            if tunnel_mapping['tunnel']:
-                branches_gdf[tunnel_mapping['tunnel']] = branches_gdf[tunnel_mapping['tunnel']].map({'true':True,'false':False})
-                branches_no_tun = branches_gdf.loc[~branches_gdf[tunnel_mapping['tunnel']], :]
-            else:
-                branches_no_tun = copy(branches_gdf)
+            # # Deselect the culverts
+            # if branch_mapping['is_duiker'] is not None:
+            #     mapped_duikers = branches_gdf[branch_mapping['is_duiker']].map({'JA':True,'NEE':False})
+            #     branches_no_tun = branches_gdf.loc[~mapped_duikers, :]
+            # else:
+            #     branches_no_tun = copy(branches_gdf)
 
-            branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_no_tun, snap_dist=snap_distance)
+            branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf, snap_dist=snap_distance)
             #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest0.shp")
-            branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+
+            # Before junction, deselect the duikers
+            if branch_mapping['is_duiker'] is not None:
+                mapped_duikers = branches_gdf_nearest[branch_mapping['is_duiker']].map({'JA':True,'NEE':False})
+                branches_gdf_nearest_no_tun = branches_gdf_nearest.loc[~mapped_duikers, :]
+
+                branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest_no_tun)
+                branches_gdf_junctions = pd.concat([branches_gdf_junctions,branches_gdf_nearest.loc[mapped_duikers, :]],axis=0)
+                print(f"Added {len(branches_gdf_nearest.loc[mapped_duikers,:])} tunnels back to the branches after junctioning")
+            else:
+                branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+                
+
+            #branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest_no_tun)
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_junctions, snap_dist=snap_distance)
             branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_nearest, geometry_accuracy=geometry_accuracy)
-            #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest.shp")
-            #branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctions.shp")
-            #branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snapped.shp")
+            # branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest.shp")
+            # branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctions.shp")
+            # branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snapped.shp")
 
             while count != 0:
                 branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_snapped, snap_dist=snap_distance)
                 #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest0V2.shp")
-                branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+                # Before junction, deselect the duikers
+                if branch_mapping['is_duiker'] is not None:
+                    mapped_duikers = branches_gdf_nearest[branch_mapping['is_duiker']].map({'JA':True,'NEE':False})
+                    branches_gdf_nearest_no_tun = branches_gdf_nearest.loc[~mapped_duikers, :]
+
+                    branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest_no_tun)
+                    branches_gdf_junctions = pd.concat([branches_gdf_junctions,branches_gdf_nearest.loc[mapped_duikers, :]],axis=0)
+                    print(f"Added {len(branches_gdf_nearest.loc[mapped_duikers,:])} tunnels back to the branches after junctioning")
+                else:
+                    branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+
+                #branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
                 branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_junctions, snap_dist=snap_distance)
                 branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_nearest, geometry_accuracy=geometry_accuracy)
-                #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearestV2.shp")
-                #branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctionsV2.shp")
-                #branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snappedV2.shp")
+                # branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearestV2.shp")
+                # branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctionsV2.shp")
+                # branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snappedV2.shp")
             
             """# Create nodes at the junctions of lines and snap nodes
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf, snap_dist=snap_distance)
@@ -714,13 +743,13 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             """
 
             # Merge the tunnels back
-            if tunnel_mapping['tunnel']:
-                print(f"Added {len(branches_gdf.loc[branches_gdf[tunnel_mapping['tunnel']],:])} tunnels back to the branches")
-                branches_out = pd.concat([branches_gdf_snapped,branches_gdf.loc[branches_gdf[tunnel_mapping['tunnel']], :]],axis=0)
-                return branches_out
+            # if branch_mapping['is_duiker'] is not None:
+            #     print(f"Added {len(branches_gdf.loc[branches_gdf[branch_mapping['is_duiker']],:])} tunnels back to the branches")
+            #     branches_out = pd.concat([branches_gdf_snapped,branches_gdf.loc[branches_gdf[branch_mapping['is_duiker']], :]],axis=0)
+            #     return branches_out
             
-            else:
-                return branches_gdf_snapped
+            # else:
+            return branches_gdf_snapped
 
             
 
@@ -824,7 +853,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
     
         # Validate the topology of the network
         print('Start validating branches')
-        branches_gdf = validate_network_topology(branches_gdf=branches_gdf, snap_distance=buffer_dist, tunnel_mapping = tunnel_mapping)
+        branches_gdf = validate_network_topology(branches_gdf=branches_gdf, snap_distance=buffer_dist, branch_mapping = branch_mapping)
 
         # Validate the connection of the branches with each other
         branches_gdf = skip_branches_con(in_branches=branches_gdf, max_distance=max_distance, min_connectivity=min_connectivity)
@@ -2539,7 +2568,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
         # Validate the branches topography and connections, NOT for underpasses and tunnels
         if name_config.name != 'Tunnel' and name_config.name != 'Onderdoorgangen':
-            branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8, tunnel_mapping =data_config.branch_index_mapping)
+            branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8, branch_mapping =data_config.branch_index_mapping)
             #branches_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHSK.shp")
         else:
             MLS_branches_bool = branches_gdf.geometry.type == "MultiLineString"

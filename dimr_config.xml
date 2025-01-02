@@ -3,20 +3,11 @@
   <documentation>
     <fileVersion>1.3</fileVersion>
     <createdBy>hydrolib-core 0.3.0</createdBy>
-<<<<<<< Updated upstream
-    <creationDate>2024-12-20T14:12:29.339083</creationDate>
+    <creationDate>2025-01-02T16:04:31.508510</creationDate>
   </documentation>
   <component name="DFM">
     <library>dflowfm</library>
-    <workingDir>P:\HL-P24050\05_Analysis\02_Model\Buitenwater_500m_22dec\dflowfm</workingDir>
-    <inputFile>P:\HL-P24050\05_Analysis\02_Model\Buitenwater_500m_22dec\dflowfm\test.mdu</inputFile>
-=======
-    <creationDate>2024-12-20T13:03:51.044521</creationDate>
-  </documentation>
-  <component name="DFM">
-    <library>dflowfm</library>
-    <workingDir>P:\HL-P24050\05_Analysis\02_Model\Combined_V3.3_50m\dflowfm</workingDir>
-    <inputFile>P:\HL-P24050\05_Analysis\02_Model\Combined_V3.3_50m\dflowfm\test.mdu</inputFile>
->>>>>>> Stashed changes
+    <workingDir>P:\HL-P24050\05_Analysis\02_Model\HHR_100m_02_januari\dflowfm</workingDir>
+    <inputFile>P:\HL-P24050\05_Analysis\02_Model\HHR_100m_02_januari\dflowfm\test.mdu</inputFile>
   </component>
 </dimrConfig>

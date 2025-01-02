@@ -70,6 +70,7 @@ class StuwSchema(hdm.StuwSchema):
 class WaterloopSchema(hdm.WaterloopSchema):
     peil: Optional[Series[float]] = pa.Field(nullable=True)
     tunnel: Optional[Series[bool]] = pa.Field(nullable=True)
+    is_duiker: Optional[Series[str]] = pa.Field(nullable=True)
     typeruwheid: Series[str] = pa.Field(isin=ROUGHNESS_MAPPING_LIST)  # addition to confluence
 
     class Config:

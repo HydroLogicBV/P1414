@@ -27,11 +27,11 @@ class Models:
 
         class two_d:
             coupling_type = "1Dto2D"
-            dx = 50
-            dy = 50
+            dx = 500
+            dy = 500
             elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN4_WSS_filled.TIF"
             extent_path = folder_path_GIS + r"\GIS\Randstad dijkringen\dijkringen_randstad_merged.shp"
-            initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\wd_0_v8.tif"
+            initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\wd_0_v10.tif"
             roughness_2d_raster_path = (
                 folder_path_GIS + r"\GIS\Landgebruik\randstad_nikuradse_roughness_10m.tif"
             )

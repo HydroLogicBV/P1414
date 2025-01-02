@@ -129,6 +129,7 @@ class RawData:
             ("taludhelling linkerzijde", "IWS_W_TALU"),
             ("taludhelling rechterzijde", "IWS_W_TA_1"),
             ("tunnel", False),
+            ("is_duiker", "IS_DUIKER"),
             ("typeruwheid", None),
             ("ruwheidhoog", None),
             ("ruwheidlaag", None),

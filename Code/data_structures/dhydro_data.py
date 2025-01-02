@@ -145,7 +145,7 @@ class DHydroData:
             for line in better_lines:
                 f.write(line)
 
-    def to_dhydro(self, config: str, output_folder: str, defaults: str = "defaults", write=True):
+    def to_dhydro(self, config: str, output_folder: str, load_mesh2d_path:str = None,defaults: str = "defaults", write=True):
         """
         Class method that converts a DHydamoDataModel to a D-HYDRO Model and saves unless write=False
 
@@ -162,7 +162,7 @@ class DHydroData:
 
         if hasattr(importlib.import_module("dataset_configs." + config), "Dambreak"):
             self.dambreaks_from_config(config=config, defaults=defaults)
-        to_dhydro(self=self, config=config, output_folder=output_folder)
+        to_dhydro(self=self, config=config, load_mesh2d_path=load_mesh2d_path, output_folder=output_folder)
 
         if write:
             self.write_dimr(output_folder=output_folder)
