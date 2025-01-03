@@ -689,7 +689,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             #     branches_no_tun = copy(branches_gdf)
 
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf, snap_dist=snap_distance)
-            #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest0.shp")
+            branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest0.shp")
 
             # Before junction, deselect the duikers
             if branch_mapping['is_duiker'] is not None:
@@ -706,9 +706,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             #branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest_no_tun)
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_junctions, snap_dist=snap_distance)
             branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_nearest, geometry_accuracy=geometry_accuracy)
-            # branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest.shp")
-            # branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctions.shp")
-            # branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snapped.shp")
+            branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest.shp")
+            branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctions.shp")
+            branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snapped.shp")
 
             while count != 0:
                 branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_snapped, snap_dist=snap_distance)
@@ -727,9 +727,9 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 #branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
                 branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_junctions, snap_dist=snap_distance)
                 branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_nearest, geometry_accuracy=geometry_accuracy)
-                # branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearestV2.shp")
-                # branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctionsV2.shp")
-                # branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snappedV2.shp")
+                branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearestV2.shp")
+                branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctionsV2.shp")
+                branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snappedV2.shp")
             
             """# Create nodes at the junctions of lines and snap nodes
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf, snap_dist=snap_distance)
@@ -764,6 +764,10 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 point_list = branch.geometry.coords[:]
                 startpoint = Point(branch.geometry.coords[0])
                 endpoint = Point(branch.geometry.coords[-1])
+
+                # Create a spatial index of the branches without it's own branch such that it can not snap to itself
+                in_branches_without_self = in_branches.drop(index=ix)
+                sindex_ws = in_branches_without_self.sindex
                 
                 for point in [startpoint, endpoint]:
                     # Set the index for which node needs to be altered later
@@ -773,7 +777,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                     buffer_point = point.buffer(distance=snap_dist_n)
 
                     # Get potential matches
-                    possible_match_index = list(sindex.intersection(buffer_point.bounds))
+                    possible_match_index = list(sindex_ws.intersection(buffer_point.bounds))
                     possible_matches = in_branches.iloc[possible_match_index]
 
                     intersect_bool = possible_matches.geometry.intersects(buffer_point)
@@ -781,7 +785,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                     match = possible_matches.geometry[intersect_bool]
 
                     # Drop the intersection with its own branch
-                    match.drop(index=ix, inplace=True)
+                    # match.drop(index=ix, inplace=True)
                     match.drop_duplicates(keep='first', inplace=True)   # added because 2 same entries were present
                     
                     # If no matches have been found, continue

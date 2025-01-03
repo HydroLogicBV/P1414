@@ -910,7 +910,7 @@ def to_dhydro(
                     mesh.links1d2d_add_links_2d_to_1d_lateral(
                             network=network,
                             branchids=lateral_branches,
-                            dist_factor=None,   # within=extent.buffer(1e3)
+                            dist_factor=3,   # within=extent.buffer(1e3)
                             max_length=2000,      # Set the maximum length to the grid resolution
                         )
                     

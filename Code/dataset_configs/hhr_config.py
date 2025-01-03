@@ -49,6 +49,7 @@ class FixedWeirs:
         [
             ("base", p_folder + r"\Keringen_met_hoogte\hhr_primaire_kering.shp"),
             ("concat_1", p_folder + r"\Keringen_met_hoogte\hhr_regionale_kering.shp"),
+            ("concat_2", p_folder + r"\Keringen_met_hoogte\hhr_extraKering.shp"),
         ]
     )
     fixed_weir_index_mapping = dict(

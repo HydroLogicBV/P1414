@@ -163,8 +163,8 @@ if __name__ == "__main__":
     in_out_dict2 = dict(
         [
             (
-                r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\ARKNZK\ExtraKeringenNZK.shp",
-                r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\ARKNZK\Keringen met hoogte\ExtraKeringenNZK.shp",
+                r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HHRijnland\Keringen met hoogte\hhr_extraKering.shp",
+                r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\Keringen_met_hoogte\hhr_extraKering.shp",
             )
         ])
 

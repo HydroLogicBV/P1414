@@ -32,7 +32,7 @@ gpkgs_list = [
 ]
 
 # Model name
-output_folder = folder_path_output + r"\Combined_V3.5_50m"
+output_folder = folder_path_output + r"\HHSK_3jan_100m"
 
 # Existing meshes available
 existing_meshes = {
@@ -64,7 +64,7 @@ defaults = r"defaults"
 
 build_database = True
 load_gpkgs = False
-build_model = False
+build_model = True
 
 if build_database:
     dhd = DHydroData()
@@ -116,6 +116,6 @@ if build_model:
 
     # 3. save as dhydro model
     dhd.to_dhydro(config=config_dhydro, 
-                    load_mesh2d_path = existing_meshes['50m'], 
+                    load_mesh2d_path = existing_meshes['100m'], 
                     output_folder=output_folder
                 )

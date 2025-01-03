@@ -4,14 +4,17 @@ import geopandas as gpd
 from shapely.geometry import LineString
 
 # Load shapefile
-gdf = gpd.read_file(r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\Markermeer\MarkermeerV3.shp")
+gdf = gpd.read_file(r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V6.3.shp")
 
 # Print column names and CRS
 print("Columns:", gdf.columns)
 print("CRS:", gdf.crs)
-print(gdf)
+#print(gdf)
 #gdf.to_crs('EPSG:28992')
 
+gdf.to_file(r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V6.4.shp")
+
+"""
 # Replace the coordinates of branch id 24, index 10
 target_geometry = gdf.loc[10, 'geometry']
 coords = list(target_geometry.coords)
@@ -66,7 +69,7 @@ new_geometry = LineString(coords_adjusted)
 gdf.at[8, 'geometry'] = new_geometry
 
 gdf.to_file(r"\\dc02\Project\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\Markermeer\MarkermeerV4.shp")
-"""
+
 # Make the adjustment to the opnemen column.
 
 names = ['hdsr_wl_H040953',
