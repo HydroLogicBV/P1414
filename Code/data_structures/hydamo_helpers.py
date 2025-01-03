@@ -443,7 +443,7 @@ def merge_to_dm(dm, feature: str, feature_gdf: gpd.GeoDataFrame):
 
     return dm
 
-def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_folder: str, dhydro_config: str) -> Datamodel:
+def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_folder: str, dhydro_config: str, branch_snap_dist: float) -> Datamodel:
     """
     This function creates a full DHYDAMO DataModel, based on an empty DataModel and a defaults and config file. It creates the
     DataModel by adding elements in the following order.
@@ -2568,7 +2568,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
         # Validate the branches topography and connections, NOT for underpasses and tunnels
         if name_config.name != 'Tunnel' and name_config.name != 'Onderdoorgangen':
-            branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=0.8, branch_mapping =data_config.branch_index_mapping)
+            branches_gdf = validate_branches(branches_gdf=branches_gdf, buffer_dist=branch_snap_dist, branch_mapping =data_config.branch_index_mapping)
             #branches_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHSK.shp")
         else:
             MLS_branches_bool = branches_gdf.geometry.type == "MultiLineString"

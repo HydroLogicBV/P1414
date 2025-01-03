@@ -76,7 +76,7 @@ class DHydroData:
         """
         # load features and add to DHydamoDataModel
         ddm = DataModel()
-        ddm = convert_to_dhydamo_data(ddm=ddm, defaults=defaults, config=config, GIS_folder=GIS_folder, dhydro_config=dhydro_config)
+        ddm = convert_to_dhydamo_data(ddm=ddm, defaults=defaults, config=config, GIS_folder=GIS_folder, dhydro_config=dhydro_config, branch_snap_dist=branch_snap_dist)
 
         self._set_ddm(branch_snap_dist=branch_snap_dist, ddm=ddm)
 
