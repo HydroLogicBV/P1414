@@ -86,3 +86,4 @@ class Weirs:
     soortregelbaarheid = 1
     soortstuw = 11
     vormopening = 3
+    flowdir = "both"

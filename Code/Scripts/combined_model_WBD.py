@@ -19,7 +19,7 @@ folder_path_output = r"P:\HL-P24050\05_Analysis\02_Model"
 
 os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\HHSK_6_januari.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_8_januari.gpkg"
 
 gpkgs_list = [
     {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_6_januari.gpkg",              'snap_dist': 10},
@@ -32,7 +32,7 @@ gpkgs_list = [
 ]
 
 # Model name
-output_folder = folder_path_output + r"\Buitenwater_V3.6_500m"
+output_folder = folder_path_output + r"\Buitenwater_test_500m"
 
 # Existing meshes available
 existing_meshes = {
@@ -44,27 +44,27 @@ existing_meshes = {
 
 config_dhydro = r"combined_WBD_config"
 config_list = [
-    # {'config': r"ark_nzk_config",               'snap_dist': 10},
-    # {'config': r"rijnmaasmonding_open_config",  'snap_dist': 10},
-    # {'config': r"rijntakken_config",            'snap_dist': 10},
-    # {'config': r"noordzee_config",              'snap_dist': 200},
-    # {'config': r"markermeer_config",            'snap_dist': 100},
-    {'config': r"hhsk_config",                  'snap_dist': 10},
+    {'config': r"ark_nzk_config",               'snap_dist': 10},
+    {'config': r"rijnmaasmonding_open_config",  'snap_dist': 10},
+    {'config': r"rijntakken_config",            'snap_dist': 10},
+    {'config': r"noordzee_config",              'snap_dist': 200},
+    {'config': r"markermeer_config",            'snap_dist': 100},
+    # {'config': r"hhsk_config",                  'snap_dist': 10},
     # {'config': r"hdsr_config",                  'snap_dist': 20},
     # {'config': r"hhd_config",                   'snap_dist': 10},
     # {'config': r"hhr_config",                   'snap_dist': 10},
     # {'config': r"wagv_config",                  'snap_dist': 10},
     {'config': r"ontbrekende_stuwen_config",    'snap_dist': 10},
-    # {'config': r"randvoorwaarden_config",       'snap_dist': 0},
+    {'config': r"randvoorwaarden_config",       'snap_dist': 0},
     # {'config': r"tunnel_config",                'snap_dist': 0},
     # {'config': r"underpass_config",             'snap_dist': 0},
 ]
 
 defaults = r"defaults"
 
-build_database = True
+build_database = False
 load_gpkgs = False
-build_model = False
+build_model = True
 
 if build_database:
     dhd = DHydroData()

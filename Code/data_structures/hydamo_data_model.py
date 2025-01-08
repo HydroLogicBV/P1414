@@ -94,6 +94,7 @@ class KunstwerkopeningSchema(PDBasicShema):
     laagstedoorstroombreedte: Series[float] = pa.Field(gt=0)
     laagstedoorstroomhoogte: Series[float]
     stuwid: Series[str] = pa.Field(unique=True)
+    flowdir: Series[str]
     vormopening: Series[int] = pa.Field(
         isin=HYDAMO_SHAPE_NUMS
     )  # accepteer enkel waarden volgend hydamo standaard

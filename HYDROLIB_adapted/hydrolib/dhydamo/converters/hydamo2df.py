@@ -558,7 +558,7 @@ class StructuresIO:
                     crestlevel=weir_opening.laagstedoorstroomhoogte.values[0],
                     crestwidth=weir_opening.laagstedoorstroombreedte.values[0],
                     corrcoeff=weir.afvoercoefficient,
-                    allowedflowdir="both",
+                    allowedflowdir=weir_opening.flowdir.values[0],
                     usevelocityheight=usevelocityheight,
                 )
 
@@ -576,7 +576,7 @@ class StructuresIO:
                     crestlevel=weir_opening.laagstedoorstroomhoogte.values[0],
                     crestwidth=weir_opening.laagstedoorstroombreedte.values[0],
                     corrcoeff=weir.afvoercoefficient,
-                    allowedflowdir="both",
+                    allowedflowdir=weir_opening.flowdir,
                     usevelocityheight=usevelocityheight,
                     gateloweredgelevel=weir_mandev.hoogteopening.values[0],
                     uselimitflowpos=limitflow,
