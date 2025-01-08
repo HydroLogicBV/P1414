@@ -1644,7 +1644,7 @@ def write_dimr(fm: FMModel, output_folder: str):
         )
     )
     dimr.save(recurse=True)
-    dimr_path = r"C:\Program Files\Deltares\D-HYDRO Suite 2023.01 1D2D\plugins\DeltaShell.Dimr\kernels\x64\dimr\scripts\run_dimr.bat"
+    dimr_path = r"C:\Program Files\Deltares\D-HYDRO Suite 2024.03 1D2D\plugins\DeltaShell.Dimr\kernels\x64\bin\run_dimr.bat"
     dimr = DIMRWriter(dimr_path=dimr_path, output_path=output_path)
     dimr.write_dimrconfig(fm=fm)  # , rr_model=drrmodel, rtc_model=drtcmodel)
     dimr.write_runbat()

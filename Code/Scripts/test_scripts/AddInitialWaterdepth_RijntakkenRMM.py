@@ -271,7 +271,7 @@ for n, row in RMM_branches.iterrows():
     else:
         RMM_waterlevels = RMM_df[(RMM_df['branchId']==row['Name'])]
         for n_row, RMM_row in RMM_waterlevels.iterrows():
-            chainages.append(str(RMM_row['chainage'] - max_chain))
+            chainages.append(str(RMM_row['chainage']))
             values.append(str(RMM_row['value']))
 
     RMM_new_ini_dict[row['Name']]['numLocations'] = str(len(chainages))

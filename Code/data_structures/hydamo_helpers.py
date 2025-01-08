@@ -800,16 +800,48 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                     if one_match_bool: continue
                     
                     else:
-                            dist = [point.distance(Point(x)) for x in match.iloc[0].coords[:]]
+                            # Select the closest branch out of the branches 
+                            distances = [point.distance(x) for x in match.geometry]
+                            close_idx = match.index[np.argmin(distances)]
+
+                            # Make sure that the selected branch does not already contain the other coordinate
+                            other_pnt_index = -1 if point_index == 0 else 0
+                            min_dist_point = np.min(distances)
+                            min_dist_other_point = Point(branch.geometry.coords[other_pnt_index]).distance(match.loc[close_idx])
+
+                            while min_dist_point > min_dist_other_point:
+                                match.drop(index=close_idx, inplace=True)
+                                if not match.any(): 
+                                    break
+
+                                distances = [point.distance(x) for x in match.geometry]
+                                close_idx = match.index[np.argmin(distances)]
+
+                                min_dist_point = np.min(distances)
+                                min_dist_other_point = Point(branch.geometry.coords[other_pnt_index]).distance(match.loc[close_idx])
+
+                            # while branch.geometry.coords[other_pnt_index] in match.loc[close_idx].coords[:]:
+                            #     match.drop(index=close_idx, inplace=True)
+                            #     if not match.any(): break
+
+                            #     distances = [point.distance(x) for x in match.geometry]
+                            #     close_idx = match.index[np.argmin(distances)]
+
+                            # If no matches have been found, continue
+                            if not match.any(): continue
+
+
+                            dist = [point.distance(Point(x)) for x in match.loc[close_idx].coords[:]]
+
                             if min(dist) <= snap_dist_n:
                                 min_idx = np.argmin(dist)
-                                point_list[point_index] = match.iloc[0].coords[:][min_idx]
+                                point_list[point_index] = match.loc[close_idx].coords[:][min_idx]
                                 outbranches.loc[ix, 'geometry'] = LineString(point_list)
 
                             else: 
                                 # If no point is close enough in the matching branch, create a nearest point
                                 count += 1
-                                nearest_point = nearest_points(match.iloc[0],point)[0]
+                                nearest_point = nearest_points(match.loc[close_idx],point)[0]
                                 new_coord = nearest_point.coords[:][0]
                                 
                                 # Assign the new start/end coord to the branch
@@ -817,7 +849,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                                 outbranches.loc[ix, 'geometry'] = LineString(point_list)
 
                                 # Create the new nearest_point on the branch that is it closest to
-                                dist_line = [nearest_point.distance(Point(x)) for x in match.iloc[0].coords[:]]
+                                dist_line = [nearest_point.distance(Point(x)) for x in match.loc[close_idx].coords[:]]
                                 
                                 # Find the index where the distance is least and find the split_direction.
                                 # The split direction indicates whether the nearest_point is to the right or to the left 
@@ -828,7 +860,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                                 if min_idx_coord == (len(dist_line)-1): 
                                     split_direction = 'down'
                                 else: # If not at one of the edgenodes, find out on which side of the min_idx node it is
-                                    prev_line = LineString([match.iloc[0].coords[:][min_idx_coord -1], match.iloc[0].coords[:][min_idx_coord]])
+                                    prev_line = LineString([match.loc[close_idx].coords[:][min_idx_coord -1], match.loc[close_idx].coords[:][min_idx_coord]])
                                     if prev_line.distance(Point(new_coord)) < 0.001:
                                         split_direction = 'down'
                                     else: 
@@ -840,14 +872,14 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
                                 # Add the nearest point to the connecting branch
                                 if split_direction == 'up':
-                                    point_list_part1 = match.iloc[0].coords[:][0:min_idx_coord+1]
-                                    point_list_part2 = match.iloc[0].coords[:][min_idx_coord+1:]
+                                    point_list_part1 = match.loc[close_idx].coords[:][0:min_idx_coord+1]
+                                    point_list_part2 = match.loc[close_idx].coords[:][min_idx_coord+1:]
                                 elif split_direction == 'down':
-                                    point_list_part1 = match.iloc[0].coords[:][0:min_idx_coord]
-                                    point_list_part2 = match.iloc[0].coords[:][min_idx_coord:]
+                                    point_list_part1 = match.loc[close_idx].coords[:][0:min_idx_coord]
+                                    point_list_part2 = match.loc[close_idx].coords[:][min_idx_coord:]
 
                                 point_list_branch = point_list_part1 + [new_coord] + point_list_part2
-                                outbranches.loc[match.index[0], 'geometry'] = LineString(point_list_branch)
+                                outbranches.loc[close_idx, 'geometry'] = LineString(point_list_branch)
 
             endtime = time()
             print(f'Elapsed time: {endtime - starttime} seconds')
@@ -2601,7 +2633,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             branches_out_gdf.at[ix, "typeruwheid"] = type_ruwheid
 
         branches_gdf = branches_out_gdf
-
+        branches_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_branches_HHSK.shp")
         if hasattr(data_config, "norm_profile_path") and (
             data_config.norm_profile_path is not None
         ):
@@ -2611,13 +2643,13 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 np_gdf = select_features(data_config.np_selection, np_gdf)
 
             buffered_profiles = copy(np_gdf)
-            buffered_profiles.geometry = buffered_profiles.geometry.buffer(1)
+            buffered_profiles.geometry = buffered_profiles.geometry.buffer(branch_snap_dist)
             gdf = gpd.GeoDataFrame(branches_gdf, columns=["geometry"], geometry="geometry", crs=28992)
 
             # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
             np_branch_gdf = gdf.sjoin(buffered_profiles, how="left", predicate="within")
             np_branch_gdf = np_branch_gdf.drop(['index_right'], axis=1)
-            #np_branch_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHR.shp")
+            np_branch_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHSK.shp")
             np_gdf, index_mapping = map_columns(
                 code_pad=code_padding + "np_",
                 defaults=defaults.Branches,
