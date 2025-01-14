@@ -60,6 +60,7 @@ class RawData:
             ("globalid", "globalid"),
             ("tunnel", True),
             ("typeruwheid", None),
+            ("is_duiker", None)
         ]
     )
 

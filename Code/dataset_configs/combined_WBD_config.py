@@ -21,14 +21,14 @@ class Models:
             max_dist_to_struct = 5
             max_snap_dist = 5
             node_distance = 500
-            rijntakken_ini_path = folder_path_GIS + r"\GIS\Rijntakken\InitialWaterLevels_Rijn.ini"
+            rijntakken_ini_path = folder_path_GIS + r"\GIS\Rijntakken\InitialWaterLevels_Rijn_v2.ini"
             rmm_ini_path = folder_path_GIS + r"\GIS\RMM\InitialWaterLevels_RMM.ini"
             correctie_overig_ini_path = folder_path_GIS + r"\GIS\peilen\InitialWaterLevels_Correcties.ini"
 
         class two_d:
             coupling_type = "1Dto2D"
-            dx = 500
-            dy = 500
+            dx = 100
+            dy = 100
             elevation_raster_path = folder_path_GIS + r"\GIS\AHN\AHN4_WSS_filled.TIF"
             extent_path = folder_path_GIS + r"\GIS\Randstad dijkringen\dijkringen_randstad_merged.shp"
             initial_peil_raster_path = folder_path_GIS + r"\GIS\peilen\wd_0_v10.tif"

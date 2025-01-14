@@ -694,21 +694,23 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             # Before junction, deselect the duikers
             if branch_mapping['is_duiker'] is not None:
                 mapped_duikers = branches_gdf_nearest[branch_mapping['is_duiker']].map({'JA':True,'NEE':False})
-                branches_gdf_nearest_no_tun = branches_gdf_nearest.loc[~mapped_duikers, :]
-
-                branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest_no_tun)
-                branches_gdf_junctions = pd.concat([branches_gdf_junctions,branches_gdf_nearest.loc[mapped_duikers, :]],axis=0)
+                #branches_gdf_nearest_no_tun = branches_gdf_nearest.loc[~mapped_duikers, :]
+                branches_gdf_nearest_tun = branches_gdf_nearest.loc[mapped_duikers,:]
+                branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+                branches_gdf_junctions_no_tun = branches_gdf_junctions[~branches_gdf_junctions.geometry.within(branches_gdf_nearest_tun.buffer(0.1).unary_union)]
+                #branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest_no_tun)
+                branches_gdf_junctions = pd.concat([branches_gdf_junctions_no_tun,branches_gdf_nearest_tun],axis=0, ignore_index=True)
                 print(f"Added {len(branches_gdf_nearest.loc[mapped_duikers,:])} tunnels back to the branches after junctioning")
             else:
                 branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
                 
-
+            branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctions.shp")
             #branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest_no_tun)
             branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_junctions, snap_dist=snap_distance)
             branches_gdf_snapped = snap_nodes(in_branches=branches_gdf_nearest, geometry_accuracy=geometry_accuracy)
-            branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest.shp")
-            branches_gdf_junctions.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_junctions.shp")
-            branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snapped.shp")
+            #branches_gdf_nearest.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_nearest.shp")
+            
+            #branches_gdf_snapped.to_file(r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\HYDAMO\testfiles\branches_gdf_snapped.shp")
 
             while count != 0:
                 branches_gdf_nearest, count = snap_nearest_branches(in_branches = branches_gdf_snapped, snap_dist=snap_distance)
@@ -716,11 +718,13 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 # Before junction, deselect the duikers
                 if branch_mapping['is_duiker'] is not None:
                     mapped_duikers = branches_gdf_nearest[branch_mapping['is_duiker']].map({'JA':True,'NEE':False})
-                    branches_gdf_nearest_no_tun = branches_gdf_nearest.loc[~mapped_duikers, :]
-
-                    branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest_no_tun)
-                    branches_gdf_junctions = pd.concat([branches_gdf_junctions,branches_gdf_nearest.loc[mapped_duikers, :]],axis=0)
-                    print(f"Added {len(branches_gdf_nearest.loc[mapped_duikers,:])} tunnels back to the branches after junctioning")
+                    #branches_gdf_nearest_no_tun = branches_gdf_nearest.loc[~mapped_duikers, :]
+                    branches_gdf_nearest_tun = branches_gdf_nearest.loc[mapped_duikers,:]
+                    branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
+                    branches_gdf_junctions_no_tun = branches_gdf_junctions[~branches_gdf_junctions.geometry.within(branches_gdf_nearest_tun.buffer(0.1).unary_union)]
+                    #branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest_no_tun)
+                    branches_gdf_junctions = pd.concat([branches_gdf_junctions_no_tun,branches_gdf_nearest_tun],axis=0, ignore_index=True)
+                    print(f"Added {len(branches_gdf_nearest_tun)} tunnels back to the branches after junctioning")
                 else:
                     branches_gdf_junctions = create_nodes_at_junctions(branches_gdf = branches_gdf_nearest)
 
@@ -759,7 +763,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             starttime = time()
             #sindex = in_branches.sindex
 
-            for ix, branch in tqdm(in_branches.iterrows()):
+            for ix, branch in tqdm(in_branches.iterrows(), total=len(in_branches), desc='Correcting branch geometries: '):
                 snap_dist_n = snap_dist
                 point_list = branch.geometry.coords[:]
                 startpoint = Point(branch.geometry.coords[0])
@@ -883,7 +887,10 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
             endtime = time()
             print(f'Elapsed time: {endtime - starttime} seconds')
-            print(f'Nodes not in reach in {count} cases')
+            if count == 0:
+                print(f'Nodes not in reach in {count} cases, finishing validation process')
+            else:
+                print(f'Nodes not in reach in {count} cases, iterating again to validate the branches.')
                 
             return outbranches, count   
     
@@ -897,7 +904,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
         return branches_gdf
     
     def scale_underpasses(
-            branches_gdf: gpd.GeoDataFrame, kering_gdf: gpd.GeoDataFrame, tunnel_gdf: gpd.GeoDataFrame, ahn_path: str, grid_size: int = 100  
+            branches_gdf: gpd.GeoDataFrame, grid_size: int = 100  
     ) -> gpd.GeoDataFrame:
         "Scale the underpasses to the grid size such that underpasses always connect to 2 different 2D cells."
         
@@ -2376,8 +2383,8 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 try:
                     management = MANAGEMENT_DEVICE_TYPES[weir["soortregelbaarheid"]]
                 except KeyError as e:
-                    print(e)
-                    print("choosing niet regelbaar")
+                    print('Soortregelbaarheid \'',e, ' not available. Set to \'Niet regelbaar\'')
+                    #print("choosing niet regelbaar")
                     management = 1
 
             management_device = dict(
@@ -2469,7 +2476,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                 in_branches_gdf, peil_gebieden_gdf, how="left", predicate="intersects"
             )
 
-            for name, branch in in_branches_with_peil.iterrows():
+            for name, branch in tqdm(in_branches_with_peil.iterrows(), total=len(in_branches_with_peil), desc='Filling profile information with waterlevels'):
                 gid = branch["globalid"]
                 bool_ix = out_branches_gdf["globalid"] == gid
 
@@ -2548,7 +2555,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             out_branches_gdf = copy(in_branches_gdf)
             results = []
             save = False
-            for ix, (name, branch) in enumerate(in_branches_gdf.iterrows()):
+            for ix, (name, branch) in tqdm(enumerate(in_branches_gdf.iterrows()), total=len(in_branches_gdf), desc='Deriving water width from watervlakken'):
                 if ((branch["bodembreedte"] is None) or np.isnan(branch["bodembreedte"])) and (
                     (branch["water_width_index"] is None) or np.isnan(branch["water_width_index"])
                 ):
@@ -2612,11 +2619,10 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             if np.sum(MLS_branches_bool) > 0:
                 print(f"Warning: found {np.sum(MLS_branches_bool)} multilinestrings")
                 branches_gdf = branches_gdf.explode(ignore_index=True, index_parts=False)
-        if name_config.name == 'Onderdoorgangen' and hasattr(data_config, 'ahn_path') and hasattr(data_config, 'keringen_path') and hasattr(data_config, 'tunnel_path'):
-            keringen_gdf = gpd.read_file(data_config.keringen_path)
-            tunnel_gdf = gpd.read_file(data_config.tunnel_path)
+        if name_config.name == 'Onderdoorgangen':
+            
             grid_size = max(model_config.FM.two_d.dx, model_config.FM.two_d.dy)
-            branches_gdf = scale_underpasses(branches_gdf=branches_gdf, kering_gdf=keringen_gdf, tunnel_gdf=tunnel_gdf, ahn_path=data_config.ahn_path, grid_size=grid_size)
+            branches_gdf = scale_underpasses(branches_gdf=branches_gdf, grid_size=grid_size)
             print(f'Scaled underpasses to a grid size of {grid_size}m')
 
         branches_gdf, index_mapping = map_columns(
@@ -2634,7 +2640,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             branches_out_gdf.at[ix, "typeruwheid"] = type_ruwheid
 
         branches_gdf = branches_out_gdf
-        branches_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_branches_HHSK.shp")
+        #branches_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_branches_HHSK.shp")
         if hasattr(data_config, "norm_profile_path") and (
             data_config.norm_profile_path is not None
         ):
@@ -2642,7 +2648,12 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
 
             if hasattr(data_config, "np_selection"):
                 np_gdf = select_features(data_config.np_selection, np_gdf)
+            
+            if name_config.name == 'Onderdoorgangen':
+                grid_size = max(model_config.FM.two_d.dx, model_config.FM.two_d.dy)
+                np_gdf = scale_underpasses(branches_gdf=np_gdf, grid_size=grid_size)
 
+                
             buffered_profiles = copy(np_gdf)
             buffered_profiles.geometry = buffered_profiles.geometry.buffer(branch_snap_dist)
             gdf = gpd.GeoDataFrame(branches_gdf, columns=["geometry"], geometry="geometry", crs=28992)
@@ -2651,6 +2662,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             np_branch_gdf = gdf.sjoin(buffered_profiles, how="left", predicate="within")
             np_branch_gdf = np_branch_gdf.drop(['index_right'], axis=1)
             np_branch_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHSK.shp")
+            
             np_gdf, index_mapping = map_columns(
                 code_pad=code_padding + "np_",
                 defaults=defaults.Branches,

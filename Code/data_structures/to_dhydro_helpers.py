@@ -136,7 +136,7 @@ def to_dhydro(
         hydamo.branches.set_data(
             ddm.waterloop, index_col="code", check_geotype=False
         )  # using globalid leads to errors in D-HYDRO. Probably too long name
-
+        circular_branches = []
         # Check for circular features in branches
         hydamo.branches_popped = copy(hydamo.branches)  # .copy()
         for _, branch in hydamo.branches.iterrows():
@@ -147,6 +147,7 @@ def to_dhydro(
                 code = branch.code
                 hydamo.branches_popped = hydamo.branches_popped.drop(code)
                 print(f'Dropped branch with code: {code} because it is circular')
+                circular_branches.append(code)
             if branch.geometry.length < 1e-3:
                 hydamo.branches_popped = hydamo.branches_popped.drop(code)
 
@@ -239,7 +240,7 @@ def to_dhydro(
             hydamo.param_profile_values.set_data(
                 ddm.normgeparamprofielwaarde, index_col="normgeparamprofielid"
             )
-        return hydamo
+        return hydamo, circular_branches
 
     def add_bridges(
         ddm: DataModel, hydamo: HyDAMO, default_height=0, max_snap_dist: float = 5
@@ -1341,7 +1342,7 @@ def to_dhydro(
 
             # add branches, profiles and norm profiles
             print("\nworking on 1D branches\n")
-            self.hydamo = add_branches(ddm=self.ddm, features=self.features, hydamo=self.hydamo)
+            self.hydamo, circular_branches = add_branches(ddm=self.ddm, features=self.features, hydamo=self.hydamo)
 
             if ("rivier_profielen_data" in self.features) and (
                 "rivier_profielen" in self.features
@@ -1407,6 +1408,12 @@ def to_dhydro(
                 inifile_path = fm_path / self.fm.geometry.inifieldfile.initial[0].datafile.filepath
                 inifields = read_DHYDRO_file(inifile_path, ['[General]', '[Global]','[Branch]'])
 
+                # Pop the branches that are circular
+                for circular_branch in circular_branches:
+                    if circular_branch in inifields.keys():
+                        inifields.__delitem__(circular_branch)
+                print(f'{len(circular_branches)} circular branches deleted from Initial Waterlevels')
+                
                 # Corrigeer de initiële peilen op de Rijntakken en RMM
                 if hasattr(model_config.FM.one_d, "rijntakken_ini_path"):
                     rijntakken_ini = read_DHYDRO_file(model_config.FM.one_d.rijntakken_ini_path, ['[Branch]'])

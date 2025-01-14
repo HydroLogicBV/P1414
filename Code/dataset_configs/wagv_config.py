@@ -105,7 +105,7 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("tunnel", False),
-            ("is_duiker","NEE"),
+            ("is_duiker", None),
             ("typeruwheid", "ruwheidsty"),  # changed in hydrovak_combined
         ]
     )
@@ -216,6 +216,7 @@ class RawData:
             ("soortregelbaarheid", None),
             ("soortstuw", None),
             ("vormopening", None),
+            ("flowdir", None),
         ]
     )
 
@@ -235,5 +236,6 @@ class RawData:
             ("soortregelbaarheid", "typeregelb"),         
             ("soortstuw", "typestuw"),                    
             ("vormopening", None),
+            ("flowdir", None),
         ]
     )

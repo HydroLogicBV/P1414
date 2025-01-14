@@ -229,6 +229,7 @@ class RawData:
             ("soortregelbaarheid", None),
             ("soortstuw", "SOORTSLUIS"),
             ("vormopening", None),
+            ("flowdir", None),
         ]
     )
 
@@ -248,5 +249,6 @@ class RawData:
             ("soortregelbaarheid", "SOORTREGEL"),
             ("soortstuw", "SOORTSTUW"),
             ("vormopening", None),
+            ("flowdir", None),
         ]
     )

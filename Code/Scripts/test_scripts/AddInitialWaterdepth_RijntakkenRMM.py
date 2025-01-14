@@ -188,7 +188,12 @@ for n, row in RTK_branches.iterrows():
             
             # Add the chainages and the values 
             chainages.append(str(prof['chainage']))
-            values.append(str(np.round(min_level + float(waterdepth), 2)))
+
+            # Add 50 cm to  the hoogwatergeul at Wapenveld to prevent crashing
+            if 'Wapenveld' in row['Name']:
+                values.append(str(np.round(min_level + 0.5 + float(waterdepth), 2))) 
+            else:
+                values.append(str(np.round(min_level + float(waterdepth), 2)))
 
     RTK_new_ini_dict[row['Name']]['numLocations'] = str(len(chainages))
     RTK_new_ini_dict[row['Name']]['chainage'] = ' '.join(chainages)
@@ -201,7 +206,7 @@ RTK_new_ini_dict['Lek_3']['chainage'] = '110.3'
 
 write_DHYDRO_file(RTK_new_ini_dict, 
                 folder = r"P:\HL-P24050\05_Analysis\01_GIS\03_Complete_GIS_database\GIS\Rijntakken",
-                filename='InitialWaterLevels_Rijn.ini')
+                filename='InitialWaterLevels_Rijn_v2.ini')
 
 # %%
 
