@@ -2320,6 +2320,10 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
                     branch = branches_gdf.loc[bool_intersect, "geometry"].iloc[0]
                     branch_loc = branch.project(centroid, normalized=True)
                     branch_loc = np.amax([0.01, np.amin([0.99, branch_loc])])
+                    if abs(branch_loc - 0.5) < 1e-3:  # Check if location is not exactly in the middle of the branch
+                        shift = 0.05 / branch.length  # Shift the location slightly by ±5 cm (normalized for branch length)
+                        branch_loc += shift
+                        branch_loc = np.amax([0.01, np.amin([0.99, branch_loc])])
                     geom = branch.interpolate(branch_loc, normalized=True)
                 else:
                     geom = centroid
@@ -2661,7 +2665,7 @@ def convert_to_dhydamo_data(ddm: Datamodel, defaults: str, config: str, GIS_fold
             # add data from buffered branches if lines in gdf fall within. But keep geometry of branches in gdf
             np_branch_gdf = gdf.sjoin(buffered_profiles, how="left", predicate="within")
             np_branch_gdf = np_branch_gdf.drop(['index_right'], axis=1)
-            np_branch_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHSK.shp")
+            #np_branch_gdf.to_file(r"C:\Work\Projects\P24050_ROI_voor_ROR\Test_validate_HHSK.shp")
             
             np_gdf, index_mapping = map_columns(
                 code_pad=code_padding + "np_",

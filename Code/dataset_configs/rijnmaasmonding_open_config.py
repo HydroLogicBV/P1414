@@ -33,7 +33,7 @@ class RawData:
     branches_path = p_folder + r"\RMM\RMM_Branches_V3.shp"
     river_profile_path = p_folder + r"\RMM\ZW_cross_v4.csv"
     river_roughness_path = p_folder + r"\RMM\roughness_v3.csv"
-    weir_path = p_folder + r"\RMM\RMM_Weirs_open_MK.shp"
+    weir_path = p_folder + r"\RMM\RMM_Weirs_open_MKV2.shp"
 
     # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
 
