@@ -13,7 +13,7 @@ STOPTIME = 86400*7
 class Models:
     class FM:
         one_d_bool = True
-        two_d_bool = True
+        two_d_bool = False
         start_time = STARTTIME
         stop_time = STOPTIME
 

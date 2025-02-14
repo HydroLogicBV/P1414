@@ -92,21 +92,20 @@ def merge_networks(data_base_input, data_match_input, max_dist=1, outputfile_pat
 
     # Get the geometries of the branches
     geometry_branches = data_base.geometry
-
+    
     for ix, (name, branch) in enumerate(data_base.iterrows()):
         if bool_array[ix * 2] and bool_array[ix * 2 + 1]:
-
+            
             min_idx_start, min_dist_start = non_zero_min_idx(sdm.toarray()[ix * 2])
             min_idx_end, min_dist_end = non_zero_min_idx(sdm.toarray()[ix * 2 + 1])
 
-            if min_dist_start <= min_dist_end:
-                min_idx_coords = min_idx_start
-                coord_index = ix * 2
-                replace_coord = 0
-            else:
-                min_idx_coords = min_idx_end
-                coord_index = ix * 2 + 1
-                replace_coord = -1
+            # First, correct the starting geometry
+            coords = branch.geometry.coords[:]
+
+            min_idx_coords = min_idx_start
+            coord_index = ix * 2
+            replace_coord = 0
+
             try:
                 closest_branch_check = check_more_branches(
                     sdm.toarray(), coord_index, min_idx_coords
@@ -114,11 +113,26 @@ def merge_networks(data_base_input, data_match_input, max_dist=1, outputfile_pat
             except:
                 min_idx_coords = None
 
-            if min_idx_coords != None and closest_branch_check:
-                coords = branch.geometry.coords[:]
-                # print(min_idx_coords)
-                coords[replace_coord] = point_list_match[min_idx_coords]
-                geometry_branches[ix] = shapely.geometry.LineString(coords)
+            #if min_idx_coords != None and closest_branch_check:
+            coords[replace_coord] = point_list_match[min_idx_coords]
+
+            # Then, correct the end geometry
+            min_idx_coords = min_idx_end
+            coord_index = ix * 2 + 1
+            replace_coord = -1
+            
+            try:
+                closest_branch_check = check_more_branches(
+                    sdm.toarray(), coord_index, min_idx_coords
+                )
+            except:
+                min_idx_coords = None
+
+            #if min_idx_coords != None and closest_branch_check:
+            coords[replace_coord] = point_list_match[min_idx_coords]
+
+            # Replace the geometries back
+            geometry_branches[ix] = shapely.geometry.LineString(coords)
 
         elif bool_array[ix * 2]:
 
@@ -142,5 +156,5 @@ def merge_networks(data_base_input, data_match_input, max_dist=1, outputfile_pat
 
     if outputfile_path is not None:
         data_base.to_file(outputfile_path)
-
+    
     return data_base

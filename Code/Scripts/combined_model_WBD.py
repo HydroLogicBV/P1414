@@ -19,24 +19,24 @@ folder_path_output = r"P:\HL-P24050\05_Analysis\02_Model"
 
 os.environ['GIS_folder_path'] = folder_path_GIS
 
-gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\WAGV_14_januari.gpkg"
+gpkg_file = folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_11_februari.gpkg"
 
 gpkgs_list = [
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_10_januari.gpkg",              'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHSK_14_januari.gpkg",                       'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HDSR_14_januari.gpkg",                       'snap_dist': 35},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHD_14_januari.gpkg",                      'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHR_9_januari.gpkg",                      'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\WAGV_14_januari.gpkg",                     'snap_dist': 10},
-    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Tunnels_50m_10_januari.gpkg",             'snap_dist': 0},
+    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Buitenwater_11_februari.gpkg",              'snap_dist': 10},
+    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHSK_11_februari.gpkg",                     'snap_dist': 10},
+    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HDSR_11_februari.gpkg",                     'snap_dist': 35},
+    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHD_15_januari.gpkg",                       'snap_dist': 10},
+    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\HHR_11_februari.gpkg",                      'snap_dist': 10},
+    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\WAGV_14_januari.gpkg",                      'snap_dist': 10},
+    {'gpkg_file': folder_path_GIS + r"\GIS\HYDAMO\Tunnels_50m_10_januari.gpkg",               'snap_dist': 0},
 ]
 
 # Model name
-output_folder = folder_path_output + r"\WAGV_V3.9_500m"
+output_folder = folder_path_output + r"\Rivieren_V3.16"
 
 # Existing meshes available
 existing_meshes = {
-    '500m': r"P:\HL-P24050\05_Analysis\02_Model\HHSK_500m_02_januari\dflowfm\network.nc",
+    '500m': r"P:\HL-P24050\05_Analysis\02_Model\Combined_V3.16_50m\dflowfm\network.nc",
     '100m': r"P:\HL-P24050\05_Analysis\02_Model\Combined_V3.4_100m\dflowfm\network.nc",
     '50m': r"P:\HL-P24050\05_Analysis\02_Model\Combined_V3.3_50m\dflowfm\network.nc",
     'None': None
@@ -50,8 +50,8 @@ config_list = [
     # {'config': r"noordzee_config",              'snap_dist': 200},
     # {'config': r"markermeer_config",            'snap_dist': 10},
     # {'config': r"hhsk_config",                  'snap_dist': 10},
-    # {'config': r"hdsr_config",                  'snap_dist': 20},
-    {'config': r"hhd_config",                   'snap_dist': 10},
+    {'config': r"hdsr_config",                  'snap_dist': 20},
+    # {'config': r"hhd_config",                   'snap_dist': 10},
     # {'config': r"hhr_config",                   'snap_dist': 10},
     # {'config': r"wagv_config",                  'snap_dist': 10},
     {'config': r"ontbrekende_stuwen_config",    'snap_dist': 10},
@@ -62,10 +62,9 @@ config_list = [
 
 defaults = r"defaults"
 
-build_database = True
+build_database = False
 load_gpkgs = False
-build_model = False
-
+build_model = True
 if build_database:
     dhd = DHydroData()
     for ix, config in enumerate(config_list):
@@ -112,10 +111,11 @@ if build_model:
     del dhd.ddm.brug
     if "brug" in dhd.features:
         dhd.features.remove("brug")
-    dhd.ddm.pomp["maximalecapaciteit"] = 0
+    if "gemaal" in dhd.features:
+        dhd.ddm.pomp["maximalecapaciteit"] = 0
 
     # 3. save as dhydro model
     dhd.to_dhydro(config=config_dhydro, 
-                    load_mesh2d_path = existing_meshes['500m'], 
+                    load_mesh2d_path = existing_meshes['50m'], 
                     output_folder=output_folder
                 )

@@ -162,6 +162,11 @@ class DHydroData:
 
         if hasattr(importlib.import_module("dataset_configs." + config), "Dambreak"):
             self.dambreaks_from_config(config=config, defaults=defaults)
+
+        if not load_mesh2d_path == None:
+            if not os.path.exists(load_mesh2d_path):
+                raise AttributeError("Existing model mesh not found, check the path")
+
         to_dhydro(self=self, config=config, load_mesh2d_path=load_mesh2d_path, output_folder=output_folder)
 
         if write:

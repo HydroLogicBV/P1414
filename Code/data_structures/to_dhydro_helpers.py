@@ -1009,6 +1009,8 @@ def to_dhydro(
                                 
                             if len(check_peil_list) > 0:
                                 check_peil = np.max(check_peil_list) # Take the maximum of the peilen
+                            else:
+                                check_peil = -100
                         
                         p = sPoint(x, y)
                         bp = p.buffer((dx + dy) // 2, cap_style=3)
