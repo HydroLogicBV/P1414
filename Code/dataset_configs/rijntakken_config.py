@@ -35,8 +35,6 @@ class RawData:
     river_roughness_path = p_folder + r"\Rijntakken\roughness_v2.csv"
     weir_path = p_folder + r"\Rijntakken\RTK_Weirs.shp"
 
-    # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
-
     class Peil:
         default_peil = 4
 

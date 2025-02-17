@@ -59,17 +59,11 @@ class RawData:
     p_folder = folder_path_GIS + r"\GIS"
     
     branches_path = p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped_V4.shp"
-    #branches_path = dict(
-    #    [
-    #        ("base", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp")
-    #        #("base", p_folder + r"\Uitgesneden watergangen\AGV_v3.shp"),                # deze moet worden verwijderd?
-    #        #("sjoin", p_folder + r"\WAGV\AGV-Update\hydrovakken\hydroobject_v13_clipped.shp"),
-    #    ]
-    #)
 
     bridges_path = p_folder + r"\WAGV\brug_v13_clipped\brug_v13_clipped.shp"
     culvert_path = p_folder + r"\WAGV\AGV-Update\duikers\duikersifonhevel_v13_clipped.shp"
     measured_profile_path = (p_folder + r"\WAGV\metingprofielpunt_v13_clipped\metingprofielpunt_v13_clipped.shp")
+    
     norm_profile_path = dict(
         [
             ("base", p_folder + r"\WAGV\hydrovak\hydrovakV2.shp"),
@@ -79,14 +73,6 @@ class RawData:
     peil_gebieden_path = p_folder + r"\WAGV\vigerende_peilgebieden\peilgebieden.shp"
     pump_path = p_folder + r"\WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clippedV2.shp"
     
-    #pump_path = dict(
-    #    [
-    #        #("base", p_folder + r"\WAGV\Niet legger\pomp_gemaal_v13_clipped_streefpeil.shp"),       # Nog aanpassen?, nieuwe in \WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clipped.shp
-    #        #("concat", p_folder + r"\WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clipped.shp"),
-    #        #("concat", p_folder + r"\WAGV\gemaal_v13\gemaal_v13_clipped.shp"),                      # Nog aanpassen?, nieuwe in \WAGV\AGV-Update\gemalen\pomp_gemaal_v13_clipped.shp
-    #    ]
-    #)
-
     sluice_path = p_folder + r"\WAGV\AGV-Update\sluizen\sluisV2.shp"                   
     weir_path = p_folder + r"\WAGV\AGV-Update\stuwen\stuw_v13_clipped.shp"
 
@@ -106,7 +92,7 @@ class RawData:
             ("globalid", "globalid"),
             ("tunnel", False),
             ("is_duiker", None),
-            ("typeruwheid", "ruwheidsty"),  # changed in hydrovak_combined
+            ("typeruwheid", "ruwheidsty"),  
         ]
     )
 
@@ -197,7 +183,7 @@ class RawData:
             ("globalid", "globalid"),
             ("maximalecapaciteit", "maximaleca"),
             ("peil_marge", None),
-            ("streefwaarde", None),              # was "peil1"
+            ("streefwaarde", None),             
         ]
     )
     ## Sluice

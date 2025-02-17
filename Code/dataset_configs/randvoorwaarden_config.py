@@ -31,7 +31,6 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
     boundary_path = p_folder + r"\Randvoorwaarden\randvoorwaarden_ROI_ROR.shp"
     
     ## Boundaries

@@ -8,7 +8,6 @@ class FixedWeirs:
     ## PATHS
     dm_attribute = "overiglijnelement"
     p_folder = folder_path_GIS + r"\GIS"
-    #flood_defences_path = p_folder + r"\Keringen_met_hoogte\relief_v2.shp"
 
     flood_defences_path = dict(
                     [

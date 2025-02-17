@@ -29,7 +29,7 @@ class Models:
 class FixedWeirs:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    #flood_defences_path = p_folder + r"\Keringen_met_hoogte\ARKV2.shp"
+    
 
     flood_defences_path = dict(
                 [
@@ -50,7 +50,7 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
+    
     branches_path = p_folder + r"\ARKNZK\netwerk_selectie_v7.shp"
     river_profile_path = p_folder + r"\ARKNZK\ZW_cross_v3.csv"
     sluice_path = p_folder + r"\ARKNZK\RWS_sluizen_clipped.shp"

@@ -64,7 +64,6 @@ class FixedWeirs:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    # p_folder = r"D:\work\P1414_ROI\GIS"
     branches_path = p_folder + r"\HHRijnland\Watergang_as\Watergang_as_v3.shp" 
     bridges_path = p_folder + r"\HHRijnland\brug\brug.shp"
     culvert_path = p_folder + r"\HHRijnland\duiker\duiker.shp"
@@ -80,7 +79,7 @@ class RawData:
     )
     weir_path = p_folder + r"\HHRijnland\stuw\stuw.shp"
 
-    # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
+    
 
     # Selection criteria
     branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
@@ -136,7 +135,6 @@ class RawData:
     )
 
     ## Normprofielen
-    # np_selection = dict([("column", "CATEGORIEO"), ("value", "primair")])
     np_index_mapping = dict(
         [
             ("bodembreedte", "BODEMBREED"),
@@ -175,7 +173,7 @@ class RawData:
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("maximalecapaciteit", "MAXIMALECA"),
-            ("streefwaarde", None),     # Was: "streefpeil", wordt ingevuld in het script
+            ("streefwaarde", None),     
             ("peil_marge", None),
         ]
     )
@@ -191,7 +189,7 @@ class RawData:
             ("hoogstedoorstroombreedte", "BREEDTE"),
             ("hoogstedoorstroomhoogte", ["KERENDEHOO", "HOOGTE"]), # HOOGTE van noodwaterkering toevoegen
             ("laagstedoorstroombreedte", "BREEDTE"),
-            ("laagstedoorstroomhoogte", ["KERENDEHOO", "HOOGTE"]), # Hoogte van Noodwaterkering toevoegen
+            ("laagstedoorstroomhoogte", ["KERENDEHOO", "HOOGTE"]), # HOOGTE van Noodwaterkering toevoegen
             ("overlaatonderlaat", None),
             ("soortregelbaarheid", None),
             ("soortstuw", None),

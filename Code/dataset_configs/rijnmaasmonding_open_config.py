@@ -35,8 +35,6 @@ class RawData:
     river_roughness_path = p_folder + r"\RMM\roughness_v3.csv"
     weir_path = p_folder + r"\RMM\RMM_Weirs_open_MKV2.shp"
 
-    # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
-
     class Peil:
         default_peil = 0.0
 

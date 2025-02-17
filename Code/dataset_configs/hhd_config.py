@@ -68,9 +68,7 @@ class RawData:
     p_folder = folder_path_GIS + r"\GIS"
     
     branches_path = p_folder + r"\HHDelfland\Primair water\WaterganglijnenV3.shp"  # Manually edited watergang OBJECTID 19185 at around 77923.620 444003.300, 77931.750
-    
-    # bridges_path = p_folder + r"\HDSR\Legger\Bruggen\Bruggen.shp"
-   
+       
     culvert_path = dict(
         [
             ("base",     p_folder + r"\HHDelfland\Open duiker\Open duiker.shp", ),
@@ -80,18 +78,9 @@ class RawData:
             ("concat_4", p_folder + r"\HHDelfland\Inlaatduiker\Inlaatduiker.shp", ),
         ]
     )
-    #norm_profile_path = p_folder + r"\HHDelfland\Temp_Normprofile\HHD_v3_ww.shp"
+    
     norm_profile_path = p_folder + r"\HHDelfland\Primair water\WaterganglijnenV3.shp"         # Manually edited watergang OBJECTID 19185 at around 77923.620 444003.300, 77931.750
-    # norm_profile_path = dict(
-    #     [
-    #         ("base", p_folder + r"\Uitgesneden watergangen\HHD_v3.shp"),
-    #         (
-    #             "sjoin",
-    #             p_folder
-    #             + r"\HHDelfland\Legger_Delfland_shp\Oppervlaktewaterlichamen\Primair water_ww.shp",
-    #         ),
-    #     ]
-    # )
+    
     peil_gebieden_path = p_folder + r"\HHDelfland\PeilgebiedPraktijk\PeilgebiedPraktijk.shp"
     pump_path = p_folder + r"\HHDelfland\Gemaal\Gemaal.shp"
     sluice_path = p_folder + r"\HHDelfland\Sluis\Sluis.shp"
@@ -102,27 +91,6 @@ class RawData:
     # Selection criteria
     branch_selection = dict([("column", "Opnemen"), ("value", "Ja")])
     np_selection = dict([("column", "Opnemen"), ("value", "Ja")])
-
-    ## Branches
-    # branch_index_mapping = dict(
-    #     [
-    #         ("bodembreedte", None),
-    #         ("bodemhoogte benedenstrooms", None),
-    #         ("bodemhoogte bovenstrooms", None),
-    #         ("code", "CODE"),
-    #         ("diepte", "LEGDIEPNUM"),
-    #         ("geometry", "geometry"),
-    #         ("globalid", "globalid"),
-    #         ("hoogte insteek linkerzijde", None),
-    #         ("hoogte insteek rechterzijde", None),
-    #         ("taludhelling linkerzijde", None),
-    #         ("taludhelling rechterzijde", None),
-    #         ("typeruwheid", None),
-    #         ("ruwheidhoog", None),
-    #         ("ruwheidlaag", None),
-    #         ("water_width_index", None),
-    #     ]
-    # )
 
     # branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
     branch_index_mapping = dict(
@@ -135,20 +103,6 @@ class RawData:
             ("typeruwheid", None),
         ]
     )
-
-    # ## Bridges
-    # bridge_index_mapping = dict(
-    #     [
-    #         ("code", "CODE"),
-    #         ("geometry", "geometry"),
-    #         ("globalid", "globalid"),
-    #         ("intreeverlies", None),
-    #         ("typeruwheid", None),
-    #         ("ruwheid", None),
-    #         ("uittreeverlies", None),
-    #         ("lengte", "WS_DOORVAA"),
-    #     ]
-    # )
 
     culvert_index_mapping = dict(
         [
@@ -168,27 +122,6 @@ class RawData:
             ("vormkoker", ["VORMKOKER_", "VORM"]),  # Check
         ]
     )
-
-    # ## Normprofielen
-    # np_index_mapping = dict(
-    #     [
-    #         ("bodembreedte", "bodembreed"),
-    #         ("bodemhoogte benedenstrooms", "bodemhoogt"),
-    #         ("bodemhoogte bovenstrooms", "bodemhoo_1"),
-    #         ("code", "code"),
-    #         ("diepte", "diepte"),
-    #         ("geometry", "geometry"),
-    #         ("globalid", "globalid"),
-    #         ("hoogte insteek linkerzijde", "hoogte ins"),
-    #         ("hoogte insteek rechterzijde", "hoogte i_1"),
-    #         ("taludhelling linkerzijde", "taludhelli"),
-    #         ("taludhelling rechterzijde", "taludhel_1"),
-    #         ("typeruwheid", "typeruwhei"),
-    #         ("ruwheidhoog", "ruwheidhoo"),
-    #         ("ruwheidlaag", "ruwheidlaa"),
-    #         ("water_width_index", None),
-    #     ]
-    # )
 
     # ## Normprofielen
     np_index_mapping = dict(

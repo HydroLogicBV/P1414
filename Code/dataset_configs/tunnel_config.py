@@ -31,7 +31,6 @@ class Models:
 class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
-    # p_folder = r"D:\work\P1414_ROI\Boezemmodel_Waternet_dimr"
     branches_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel_verdiepteA4V2.shp"
     culvert_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel.shp"
     norm_profile_path = p_folder + r"\Tunnels en onderdoorgangen\tunnel_verdiepteA4.shp"
@@ -39,7 +38,7 @@ class RawData:
     class Peil:
         default_peil = -9.75
 
-    # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
+    
 
     ## Branches
     branch_index_mapping = dict(

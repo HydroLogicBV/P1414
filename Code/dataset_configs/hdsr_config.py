@@ -88,15 +88,9 @@ class RawData:
     ## PATHS
     p_folder = folder_path_GIS + r"\GIS"
     branches_path = p_folder + r"\HDSR\HydroObject\HydroObject_v7.shp"  # Corrected from V7
-    #bridges_path = p_folder + r"\HDSR\Bruggen\Bruggen.shp"
     culvert_path = p_folder + r"\HDSR\Kokers_Lijnen\Kokers_Lijnen_V2.shp"
     norm_profile_path = p_folder + r"\HDSR\HydroObject\HydroObject_v7.shp"
-    # norm_profile_path = dict(
-    #     [
-    #         ("base", p_folder + r"\Uitgesneden watergangen\HDSR_v3.shp"),
-    #         ("sjoin", p_folder + r"\HDSR\Legger\Hydro_Objecten(2)\HydroObject_primair.shp"),
-    #     ]
-    # )
+
     peil_gebieden_path = p_folder + r"\HDSR\BR_Peilgebieden\BR_Peilgebieden.shp"
     pump_path = p_folder + r"\HDSR\Gemalen\GemalenV3.shp"
     sluice_path = p_folder + r"\HDSR\Sluizen_Lijnen\Sluizen_LijnenV2.shp"
@@ -136,20 +130,6 @@ class RawData:
             ("water_width_index", "IWS_W_WATB"),
         ]
     )
-
-    ## Bridges
-    # bridge_index_mapping = dict(
-    #     [
-    #         ("code", "CODE"),
-    #         ("geometry", "geometry"),
-    #         ("globalid", "globalid"),
-    #         ("intreeverlies", None),
-    #         ("typeruwheid", None),
-    #         ("ruwheid", None),
-    #         ("uittreeverlies", None),
-    #         ("lengte", "WS_DOORVAA"),
-    #     ]
-    # )
 
     ## Culverts
     culvert_index_mapping = dict(

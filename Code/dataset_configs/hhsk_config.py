@@ -67,8 +67,7 @@ class FixedWeirs:
 
 class RawData:
     ## PATHS
-    p_folder = folder_path_GIS + r"\GIS"
-    #branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V5_no_coupures.shp"  
+    p_folder = folder_path_GIS + r"\GIS"  
     branches_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V6.5.shp"        # From V7, renamed the coupures via QGIS such that the name is not duplicated when cut
     culvert_path = p_folder + r"\HHSK\Duiker\Duiker_model2.shp"
     norm_profile_path = p_folder + r"\HHSK\Hoofdwatergang\Hoofdwatergangen_model_V6.5.shp"
@@ -81,7 +80,7 @@ class RawData:
             ("concat_1", p_folder + r"\HHSK\Stuw\Coupures_primaire_waterkeringen_V2.shp"),
         ]
     )
-    # output_gpkg = p_folder + r"\HDSR\HDSR_hydamo.gpkg"
+    
 
     # Selection criteria
     branch_selection = dict([("column", "OPNEMEN"), ("value", "JA")])
@@ -105,20 +104,6 @@ class RawData:
         ]
     )
 
-    # ## Bridges
-    # bridge_index_mapping = dict(
-    #     [
-    #         ("code", "CODE"),
-    #         ("geometry", "geometry"),
-    #         ("globalid", "globalid"),
-    #         ("intreeverlies", None),
-    #         ("typeruwheid", None),
-    #         ("ruwheid", None),
-    #         ("uittreeverlies", None),
-    #         ("lengte", "DOORSTRO_1"),
-    #     ]
-    # )
-
     ## Culverts
     culvert_index_mapping = dict(
         [
@@ -129,7 +114,7 @@ class RawData:
             ("globalid", "globalid"),
             ("hoogtebinnenonderkantbene", "HOOGTEBINN"),
             ("hoogtebinnenonderkantbov", "HOOGTEBI_1"),
-            ("hoogteopening", "HOOGTEOPEN"),   # temporary, must be HOOGTEOPEN, but has invalid values for now
+            ("hoogteopening", "HOOGTEOPEN"),   
             ("intreeverlies", None),
             ("lengte", "LENGTE"),
             ("typeruwheid", None),
@@ -146,7 +131,7 @@ class RawData:
             ("bodemhoogte benedenstrooms", "BODEMHGTE"),       # bodemhoogte alleen aanwezig voor coupures
             ("bodemhoogte bovenstrooms", "BODEMHGTE"),
             ("code", "CODE"),
-            ("diepte", "DIEPTE"), # Was: ["DIEPTE", "MAXIMALEWA"]), -> Aandachtspunt! 
+            ("diepte", "DIEPTE"), # Was: ["DIEPTE", "MAXIMALEWA"])
             ("geometry", "geometry"),
             ("globalid", "globalid"),
             ("hoogte insteek linkerzijde", None),
