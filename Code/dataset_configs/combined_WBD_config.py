@@ -13,7 +13,7 @@ STOPTIME = 86400*7
 class Models:
     class FM:
         one_d_bool = True
-        two_d_bool = False
+        two_d_bool = True
         start_time = STARTTIME
         stop_time = STOPTIME
 
@@ -39,7 +39,7 @@ class Models:
             clip_extent_path = dict(
                 [
                      ("base", folder_path_GIS + r"\GIS\HHRijnland\Boezemmeren_plassen\Rijnland_meren_plassenV2.shp"),
-                     ("concat", folder_path_GIS + r"\GIS\ARKNZK\netwerk_selectie_v6_merged.shp"),
+                     ("concat", folder_path_GIS + r"\GIS\ARKNZK\Oud\netwerk_selectie_v6_merged.shp"),
                 ]
             )
 
